@@ -486,9 +486,14 @@ export const people: Person[] = [
   {
     id: 'seo-chul-gu',
     nameKo: '서출구',
-    nameEn: 'Seo Chul-gu',
+    /* His STAGE NAME, not a romanisation of 서출구 — the bio two lines down has
+       always said 활동명 XITSUH, and the English build was the only surface
+       still calling him by a transliteration nobody uses. The romanisation moves
+       to `aka` rather than being deleted: a reader who knows him as 서출구 will
+       type "Seo Chul-gu", and search has to keep answering that. */
+    nameEn: 'XITSUH',
     realNameKo: '서해랑',
-    aka: ['XITSUH', 'Mr.Note'],
+    aka: ['Seo Chul-gu', 'Mr.Note'],
     occupation: 'Rapper · internet broadcaster',
     occupationKo: '래퍼 · 인터넷 방송인',
     category: 'musician',

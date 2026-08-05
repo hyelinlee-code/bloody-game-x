@@ -98,7 +98,7 @@ export const glossaryEn: Record<string, GlossaryEn> = {
   '개인 자금': {
     termKo: '개인 자금',
     meaning:
-      "A player's own pot — the money they earn, spend and have taken off them inside the game. In season 2 that pot only turned into prize money if you won, so Seo Chul-gu, who finished with the largest balance of anyone in the house, was paid nothing whatsoever, while Lee Jin-hyung won with zero in the bank and left with the 50 million won winner's prize and not a won more.",
+      "A player's own pot — the money they earn, spend and have taken off them inside the game. In season 2 that pot only turned into prize money if you won, so XITSUH, who finished with the largest balance of anyone in the house, was paid nothing whatsoever, while Lee Jin-hyung won with zero in the bank and left with the 50 million won winner's prize and not a won more.",
   },
   '승자독식': {
     termKo: '승자독식',

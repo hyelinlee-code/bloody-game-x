@@ -123,7 +123,9 @@ export const peopleEn: Record<string, PersonEn> = {
 
   'seo-chul-gu': {
     realName: 'Seo Hae-rang (서해랑)',
-    aka: ['XITSUH', 'Mr.Note'],
+    /* Mirrors people.ts: XITSUH is the printed name now, so the romanisation is
+       what belongs here — it is the string a reader who knows 서출구 will search. */
+    aka: ['Seo Chul-gu', 'Mr.Note'],
     occupation: 'Rapper · internet broadcaster',
     bio:
       "A rapper and internet broadcaster who performs as XITSUH. He enrolled at Brigham Young University in the United States and left without finishing, then made his name on Mnet's Show Me The Money 5. He has been through Bloody Game twice, in seasons 2 and 3 back to back.",

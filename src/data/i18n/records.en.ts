@@ -111,9 +111,9 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     {
       season: 2,
       placement: '7th of 13 — conceded midway through his Death Match',
-      arc: "He arrived holding a win from a web-variety survival show. He began on the mansion's inside team, was recruited by the hidden players on the night before the raid and crossed to the outside team, then broke away again to build the pool alliance with Ha Seung-jin and the rapper Nucks — he changed sides more than once. His high point was winning 'Day and Night' (낮과 밤): it brought him personal funds and immunity, made him the power inside the mansion, and let him banish Seo Chul-gu out into the wild, and he also opened Pandora's Box (판도라의 상자) on the quiet before anyone else, which forced every player's money to be redistributed in equal shares. Then Lee Jin-hyung, whom he had taken for an ally, named him for the Death Match (데스매치) — and, never having got hold of the rules, he declared his forfeit partway through the game.",
+      arc: "He arrived holding a win from a web-variety survival show. He began on the mansion's inside team, was recruited by the hidden players on the night before the raid and crossed to the outside team, then broke away again to build the pool alliance with Ha Seung-jin and the rapper Nucks — he changed sides more than once. His high point was winning 'Day and Night' (낮과 밤): it brought him personal funds and immunity, made him the power inside the mansion, and let him banish XITSUH out into the wild, and he also opened Pandora's Box (판도라의 상자) on the quiet before anyone else, which forced every player's money to be redistributed in equal shares. Then Lee Jin-hyung, whom he had taken for an ally, named him for the Death Match (데스매치) — and, never having got hold of the rules, he declared his forfeit partway through the game.",
       beats: [
-        "Won 'Day and Night' (낮과 밤), took the mansion, and banished Seo Chul-gu to the wild",
+        "Won 'Day and Night' (낮과 밤), took the mansion, and banished XITSUH to the wild",
         "Opened Pandora's Box (판도라의 상자) in secret and flattened everyone's money into equal shares",
         'Named by the ally he trusted, Lee Jin-hyung, and conceded mid-Death Match',
       ],
@@ -124,7 +124,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     {
       season: 2,
       placement: 'Winner — 1st of 13',
-      arc: "He started inside the men's alliance and was expelled from it for refusing to carry the blame for a defeat; from there he assembled a much smaller minority bloc and survived by working the seams in the majority. In the back half of the season he was, in effect, its most productive killer — he put Yoon Bi, an ally by any reasonable reading, into the Death Match (데스매치), then dropped his last remaining partner himself, dismantling his own alliance with his own hands. He beat Seo Chul-gu 17–8 in the first final round and took the closing round, 'Jungle Maze' (정글 메이즈). His personal bank stood at zero, so he left with nothing beyond the 50 million won winner's prize, and his summing-up — that he had chosen an ugly victory over a beautiful defeat — split the audience sharply.",
+      arc: "He started inside the men's alliance and was expelled from it for refusing to carry the blame for a defeat; from there he assembled a much smaller minority bloc and survived by working the seams in the majority. In the back half of the season he was, in effect, its most productive killer — he put Yoon Bi, an ally by any reasonable reading, into the Death Match (데스매치), then dropped his last remaining partner himself, dismantling his own alliance with his own hands. He beat XITSUH 17–8 in the first final round and took the closing round, 'Jungle Maze' (정글 메이즈). His personal bank stood at zero, so he left with nothing beyond the 50 million won winner's prize, and his summing-up — that he had chosen an ugly victory over a beautiful defeat — split the audience sharply.",
       beats: [
         "Expelled from the men's alliance, rebuilt as a minority of a few",
         'Sent Yoon Bi to the Death Match, then finished off his last partner himself',
@@ -137,9 +137,9 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     {
       season: 2,
       placement: '3rd of 13',
-      arc: "He was the oldest player in season 2 and the byword for the brain-survival genre, and he opened the season outside the house as a hidden player with Dex, the ex-UDT special forces presenter, and Park Ji-min, a full day ahead of everyone in the mansion. He worked the house night after night, pulled Seo Chul-gu and Yoon Bi across, and served as the political axis of the outside alliance. On the Day of the Raid (습격의 날) he went to check the CCTV, slipped on an unlit staircase and fractured his ankle; he played the rest of the season in a cast and on crutches. He came through the semi-final in first place, and then lost the first final round, 'Colour Turn' (컬러턴), on a misread of the rules — he was trying to build a line of four in any colour rather than in his own, and that was the difference.",
+      arc: "He was the oldest player in season 2 and the byword for the brain-survival genre, and he opened the season outside the house as a hidden player with Dex, the ex-UDT special forces presenter, and Park Ji-min, a full day ahead of everyone in the mansion. He worked the house night after night, pulled XITSUH and Yoon Bi across, and served as the political axis of the outside alliance. On the Day of the Raid (습격의 날) he went to check the CCTV, slipped on an unlit staircase and fractured his ankle; he played the rest of the season in a cast and on crutches. He came through the semi-final in first place, and then lost the first final round, 'Colour Turn' (컬러턴), on a misread of the rules — he was trying to build a line of four in any colour rather than in his own, and that was the difference.",
       beats: [
-        'Started outside as a hidden player and recruited Seo Chul-gu and Yoon Bi',
+        'Started outside as a hidden player and recruited XITSUH and Yoon Bi',
         'Fractured his ankle on the stairs during the raid, then finished the season on crutches',
         "First out of the semi-final, then out of the season on a misread rule in 'Colour Turn' (컬러턴)",
       ],
@@ -186,7 +186,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     {
       season: 3,
       placement: '10th of 18',
-      arc: "On day one she went into a Death Match (데스매치) for Paradise (낙원) paired with Hong Jin-ho and destroyed the opposing pair 58 chips to 12 — and the rules still sent her down to the ruins (잔해), while Hong Jin-ho passed her win off as his own and kept his place upstairs. Through the middle of the season her footing shifted every time the strongholds were redrawn, but she attached herself to the bloc around Seo Chul-gu and Chungju-man, the civil-servant YouTuber, and held her line above elimination. Her peak was day nine's 'Try13', where she rode Seo Chul-gu's winning formula cleanly to 75 points and the season's first outright solo win, worth 20 million won and two immunity passes. The very next day, in the Death Match, she walled in one of her own tiles and cut off her own scoring route, finished bottom and went out.",
+      arc: "On day one she went into a Death Match (데스매치) for Paradise (낙원) paired with Hong Jin-ho and destroyed the opposing pair 58 chips to 12 — and the rules still sent her down to the ruins (잔해), while Hong Jin-ho passed her win off as his own and kept his place upstairs. Through the middle of the season her footing shifted every time the strongholds were redrawn, but she attached herself to the bloc around XITSUH and Chungju-man, the civil-servant YouTuber, and held her line above elimination. Her peak was day nine's 'Try13', where she rode XITSUH's winning formula cleanly to 75 points and the season's first outright solo win, worth 20 million won and two immunity passes. The very next day, in the Death Match, she walled in one of her own tiles and cut off her own scoring route, finished bottom and went out.",
       beats: [
         'Won her day-one Death Match 58 chips to 12 and was sent down to the ruins regardless',
         "Day nine's 'Try13': 75 points, 20 million won and two immunity passes",

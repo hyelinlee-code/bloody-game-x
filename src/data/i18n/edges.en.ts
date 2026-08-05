@@ -13,7 +13,7 @@ export const edgesEn: Record<string, EdgeEn> = {
   'hong-jin-ho--seo-chul-gu--alliance-s2-0': {
     label: 'Two seasons as a duo',
     description:
-      "In Bloody Game 2 (2023) the wild team of hidden players that Hong Jin-ho belonged to abducted Seo Chul-gu out of the mansion on day three and recruited him, and from that point the two ran as the season's core pair. Seo called himself Hong Jin-ho's calculator, and played the part — a partner who deferred to Hong's reading of the board. They lined up together again in Bloody Game 3 (2024–25), Seo joining the alliance built around Hong. The connection outlived the broadcast: Seo took up poker after season 2 because of Hong, and says Hong went through his play with him point by point, from first to last.",
+      "In Bloody Game 2 (2023) the wild team of hidden players that Hong Jin-ho belonged to abducted XITSUH out of the mansion on day three and recruited him, and from that point the two ran as the season's core pair. XITSUH called himself Hong Jin-ho's calculator, and played the part — a partner who deferred to Hong's reading of the board. They lined up together again in Bloody Game 3 (2024–25), XITSUH joining the alliance built around Hong. The connection outlived the broadcast: XITSUH took up poker after season 2 because of Hong, and says Hong went through his play with him point by point, from first to last.",
   },
 
   'hong-jin-ho--hyun-seong-joo--prior-show-1': {
@@ -37,7 +37,7 @@ export const edgesEn: Record<string, EdgeEn> = {
   'lee-jin-hyung--yoon-bi--betrayal-s2-4': {
     label: 'A payback Death Match',
     description:
-      "On day nine of Bloody Game 2, Lee Jin-hyung joined Yoon Bi in the Money Challenge (머니 챌린지) 'Main Colour' (메인컬러), the two of them attaching to the Hong Jin-ho–Seo Chul-gu pair to make a four-way alliance. The alliance was a performance aimed squarely at Yoon Bi: Lee was repaying an earlier round in which Yoon had pushed him into last place, and he named Yoon as his Death Match (데스매치) opponent. Called out by the man he had taken for an ally, and never having got hold of the rules, Yoon declared his forfeit partway through the game and took the loss — he had thought his nerve was strong, he said, and apparently it was not.",
+      "On day nine of Bloody Game 2, Lee Jin-hyung joined Yoon Bi in the Money Challenge (머니 챌린지) 'Main Colour' (메인컬러), the two of them attaching to the Hong Jin-ho–XITSUH pair to make a four-way alliance. The alliance was a performance aimed squarely at Yoon Bi: Lee was repaying an earlier round in which Yoon had pushed him into last place, and he named Yoon as his Death Match (데스매치) opponent. Called out by the man he had taken for an ally, and never having got hold of the rules, Yoon declared his forfeit partway through the game and took the loss — he had thought his nerve was strong, he said, and apparently it was not.",
   },
 
   'lee-jin-hyung--park-ji-min--betrayal-s2-5': {
@@ -103,19 +103,19 @@ export const edgesEn: Record<string, EdgeEn> = {
   'seo-chul-gu--yoon-bi--alliance-s2-15': {
     label: 'Recruited, then recruiter',
     description:
-      "Seo Chul-gu and Yoon Bi were the two rappers the wild team abducted and turned in succession on the evenings of days two and three of Bloody Game 2. Seo, taken first, advised that being summoned outright makes a person more compliant than they expect — advice that helped bring Yoon across. Then on day six, in 'Real Time' (리얼 타임), Yoon leaned on his own side — Shin Hyun-ji and Dex, the ex-UDT special forces presenter — telling them he would name them for the Death Match (데스매치) if they did not betray their side; word of it reached Hong Jin-ho and Seo, and the two were finished with him. After Yoon's departure the wild team re-formed around Hong, Dex, Shin Hyun-ji and Seo.",
+      "XITSUH and Yoon Bi were the two rappers the wild team abducted and turned in succession on the evenings of days two and three of Bloody Game 2. XITSUH, taken first, advised that being summoned outright makes a person more compliant than they expect — advice that helped bring Yoon across. Then on day six, in 'Real Time' (리얼 타임), Yoon leaned on his own side — Shin Hyun-ji and Dex, the ex-UDT special forces presenter — telling them he would name them for the Death Match (데스매치) if they did not betray their side; word of it reached Hong Jin-ho and XITSUH, and the two were finished with him. After Yoon's departure the wild team re-formed around Hong, Dex, Shin Hyun-ji and XITSUH.",
   },
 
   'seo-chul-gu--ha-seung-jin--rivalry-s2-16': {
     label: 'Would have hit anyone else',
     description:
-      "During 'Day and Night' (낮과 밤), the day-eight Money Challenge (머니 챌린지) of Bloody Game 2, Ha Seung-jin threw open obstruction at the wild team as a whole: listening in on their conversations and cutting them off, taking their notes and hints, and drowning them out with shrieking and opera-volume noise. Seo Chul-gu took the brunt of it, isolated to the point that he could not get a sentence through to his own teammates; the official Wavve clip is titled, flatly, 'Seo Chul-gu, cut off even from talking to his own team'. None of it broke the written rules, but the backlash over the unwritten ones was heavy enough to produce articles questioning his character, and Seo said afterwards that if it had been anyone other than Seung-jin hyung, he would have hit him.",
+      "During 'Day and Night' (낮과 밤), the day-eight Money Challenge (머니 챌린지) of Bloody Game 2, Ha Seung-jin threw open obstruction at the wild team as a whole: listening in on their conversations and cutting them off, taking their notes and hints, and drowning them out with shrieking and opera-volume noise. XITSUH took the brunt of it, isolated to the point that he could not get a sentence through to his own teammates; the official Wavve clip is titled, flatly, 'XITSUH, cut off even from talking to his own team'. None of it broke the written rules, but the backlash over the unwritten ones was heavy enough to produce articles questioning his character, and XITSUH said afterwards that if it had been anyone other than Seung-jin hyung, he would have hit him.",
   },
 
   'seo-chul-gu--heo-seong-beom--rivalry-s3-17': {
     label: 'Day 10, and the man who felt ignored',
     description:
-      "They spent Bloody Game 3 (November 2024 – January 2025, Wavve) on opposite ground from day one — Seo Chul-gu started in the mansion of blood, Heo Seong-beom in the paradise of blood — and the production had already sorted them apart, billing Seo as an all-star and Heo as a new star. As the blocs formed later in the season Seo was the brain of the side around Hong Jin-ho and Heo went with the Jang Dong-min alliance. The one head-on clash between them came in day ten's 'Good and Evil': Heo said in interview that he had tried to explain his thinking and had simply been ignored. It was that game and no more — there is no season-long feud on record. Both then turned up as contestants on Netflix's Death Game: Bet Ten Million Won (데스게임: 천만원을 걸어라, 28 January – 1 April 2026) and its sequel Death Game 2: The Last Winner (데스게임2: 최후의 승자, 22 April – 17 June 2026), which makes three programmes running at the same table.",
+      "They spent Bloody Game 3 (November 2024 – January 2025, Wavve) on opposite ground from day one — XITSUH started in the mansion of blood, Heo Seong-beom in the paradise of blood — and the production had already sorted them apart, billing XITSUH as an all-star and Heo as a new star. As the blocs formed later in the season XITSUH was the brain of the side around Hong Jin-ho and Heo went with the Jang Dong-min alliance. The one head-on clash between them came in day ten's 'Good and Evil': Heo said in interview that he had tried to explain his thinking and had simply been ignored. It was that game and no more — there is no season-long feud on record. Both then turned up as contestants on Netflix's Death Game: Bet Ten Million Won (데스게임: 천만원을 걸어라, 28 January – 1 April 2026) and its sequel Death Game 2: The Last Winner (데스게임2: 최후의 승자, 22 April – 17 June 2026), which makes three programmes running at the same table.",
   },
 
   'heo-seong-beom--choi-hye-sun--alliance-s3-33': {
@@ -139,7 +139,7 @@ export const edgesEn: Record<string, EdgeEn> = {
   'ha-seung-jin--hyun-seong-joo--alliance-s2-19': {
     label: "Mansion men's alliance",
     description:
-      "On the mansion team in Bloody Game 2, Ha Seung-jin and Hyun Seong-joo — Komong (코몽) — belonged to the men's alliance together with the rapper Nucks, Lee Jin-hyung, Seo Chul-gu and Yoon Bi. Namu Wiki sets out the factions inside the house as that alliance, plus solo play from the model Yurisa and the actor Fujii Mina, plus the two outcasts, Pi and Park Ji-min. The pair were on the inside team together and were pushed out of the mansion together after the raid. The alliance lost team game after team game, which earned it the names 'a household in pieces' (콩가루 집안) and 'the picket squad' (피켓단). No individual moment of loyalty or support between these two specifically is on record.",
+      "On the mansion team in Bloody Game 2, Ha Seung-jin and Hyun Seong-joo — Komong (코몽) — belonged to the men's alliance together with the rapper Nucks, Lee Jin-hyung, XITSUH and Yoon Bi. Namu Wiki sets out the factions inside the house as that alliance, plus solo play from the model Yurisa and the actor Fujii Mina, plus the two outcasts, Pi and Park Ji-min. The pair were on the inside team together and were pushed out of the mansion together after the raid. The alliance lost team game after team game, which earned it the names 'a household in pieces' (콩가루 집안) and 'the picket squad' (피켓단). No individual moment of loyalty or support between these two specifically is on record.",
   },
 
   'hong-jin-ho--ha-seung-jin--rivalry-s2-20': {
@@ -151,7 +151,7 @@ export const edgesEn: Record<string, EdgeEn> = {
   'hong-jin-ho--choi-hye-sun--alliance-s3-21': {
     label: 'He vouched for her',
     description:
-      "In Bloody Game 3 the two sat in the Paradise alliance (낙원 연합) that Hong Jin-ho led, alongside Steve Yeh, Seo Chul-gu, Im Hyun-seo and Chungju-man, the civil-servant YouTuber, among others. When Steve Yeh and Joo Eon-gyu began treating Choi Hye-sun as a double agent, Hong put himself between them — he would believe a woman's tears once, he said — and talked the team into hearing her explanation. The infighting kept returning, and on day nine he dissolved the thing himself: team disbanded, every player for themselves. From that point he moved as a duo with Joo Eon-gyu.",
+      "In Bloody Game 3 the two sat in the Paradise alliance (낙원 연합) that Hong Jin-ho led, alongside Steve Yeh, XITSUH, Im Hyun-seo and Chungju-man, the civil-servant YouTuber, among others. When Steve Yeh and Joo Eon-gyu began treating Choi Hye-sun as a double agent, Hong put himself between them — he would believe a woman's tears once, he said — and talked the team into hearing her explanation. The infighting kept returning, and on day nine he dissolved the thing himself: team disbanded, every player for themselves. From that point he moved as a duo with Joo Eon-gyu.",
   },
 
   'hong-jin-ho--heo-seong-beom--rivalry-s3-22': {
@@ -169,19 +169,19 @@ export const edgesEn: Record<string, EdgeEn> = {
   'hong-jin-ho--yoon-bi--alliance-s2-24': {
     label: 'Joined, then left the wild team',
     description:
-      "In Bloody Game 2 (2023) Hong Jin-ho was in practice the leader of the wild team of hidden players, and Yoon Bi began on the mansion's inside team before being abducted as the second recruitment target after Seo Chul-gu and reassigned to the wild side. Around day six Yoon tried to play both the mansion and the wild team at once, fell out with Seo, and lost the wild team's trust in the process; Hong likewise pulled back once Yoon made plain how much he wanted to finish first.",
+      "In Bloody Game 2 (2023) Hong Jin-ho was in practice the leader of the wild team of hidden players, and Yoon Bi began on the mansion's inside team before being abducted as the second recruitment target after XITSUH and reassigned to the wild side. Around day six Yoon tried to play both the mansion and the wild team at once, fell out with XITSUH, and lost the wild team's trust in the process; Hong likewise pulled back once Yoon made plain how much he wanted to finish first.",
   },
 
   'hyun-seong-joo--seo-chul-gu--mentor-25': {
     label: 'Poker lessons, then a duel',
     description:
-      "They met as fellow players on Bloody Game 2 (2023). Inside the season both started on the mansion team before Seo Chul-gu crossed to the wild team, which left them on opposite sides. Once it was over, Seo took up hold'em under the influence of Hong Jin-ho and of Hyun Seong-joo, the professional who plays as Komong (코몽), and says he asked both of them for feedback — Hyun's advice mostly encouragement, Hong's finely itemised. Seo later turned up as an opponent on the one-on-one hold'em challenge series on Hyun's poker YouTube channel Arte Poker (아르테포커) — one of a run of challengers that also took in the StarCraft professional Lim Yo-hwan and the poker player Kim Su-jo.",
+      "They met as fellow players on Bloody Game 2 (2023). Inside the season both started on the mansion team before XITSUH crossed to the wild team, which left them on opposite sides. Once it was over, XITSUH took up hold'em under the influence of Hong Jin-ho and of Hyun Seong-joo, the professional who plays as Komong (코몽), and says he asked both of them for feedback — Hyun's advice mostly encouragement, Hong's finely itemised. XITSUH later turned up as an opponent on the one-on-one hold'em challenge series on Hyun's poker YouTube channel Arte Poker (아르테포커) — one of a run of challengers that also took in the StarCraft professional Lim Yo-hwan and the poker player Kim Su-jo.",
   },
 
   'lee-jin-hyung--hyun-seong-joo--alliance-s2-26': {
     label: 'Same alliance, kept losing',
     description:
-      "In the early mansion inside team of Bloody Game 2 (2023), Lee Jin-hyung and Hyun Seong-joo — Komong (코몽) — belonged to the men's alliance the house had split along gender lines, with Ha Seung-jin, the rapper Nucks, Seo Chul-gu and Yoon Bi. Straight after the Day of the Raid (습격의 날) the two went along with Ha in sending the model Yurisa down to the underground prison, and in the Money Challenge (머니 챌린지) 'Number Change' (넘버 체인지) it was Nucks and Lee who drove the team's strategy while Hyun followed it. That old mansion side lost the raid and then lost every subsequent team Money Challenge, a run bad enough to have it called 'a household in pieces' (콩가루 집안).",
+      "In the early mansion inside team of Bloody Game 2 (2023), Lee Jin-hyung and Hyun Seong-joo — Komong (코몽) — belonged to the men's alliance the house had split along gender lines, with Ha Seung-jin, the rapper Nucks, XITSUH and Yoon Bi. Straight after the Day of the Raid (습격의 날) the two went along with Ha in sending the model Yurisa down to the underground prison, and in the Money Challenge (머니 챌린지) 'Number Change' (넘버 체인지) it was Nucks and Lee who drove the team's strategy while Hyun followed it. That old mansion side lost the raid and then lost every subsequent team Money Challenge, a run bad enough to have it called 'a household in pieces' (콩가루 집안).",
   },
 
   'lee-sang-min--kim-yoo-hyun--prior-show-27': {
@@ -193,13 +193,13 @@ export const edgesEn: Record<string, EdgeEn> = {
   'seo-chul-gu--choi-hye-sun--alliance-s3-28': {
     label: 'He handed her the win',
     description:
-      "Through the back half of Bloody Game 3 (Wavve, 2024–25) the two sat in the Paradise alliance (낙원 연합) together, and they stayed on the same side when it was rebuilt as the Hong Jin-ho alliance, seeing the season out together. The high point is day nine's 'Try13'. Choi Hye-sun rode the winning line Seo Chul-gu had worked out cleanly enough to take the season's first outright solo victory — and the price of it was that Seo had to burn his own alliance whole.",
+      "Through the back half of Bloody Game 3 (Wavve, 2024–25) the two sat in the Paradise alliance (낙원 연합) together, and they stayed on the same side when it was rebuilt as the Hong Jin-ho alliance, seeing the season out together. The high point is day nine's 'Try13'. Choi Hye-sun rode the winning line XITSUH had worked out cleanly enough to take the season's first outright solo victory — and the price of it was that XITSUH had to burn his own alliance whole.",
   },
 
   'seo-chul-gu--lee-jin-hyung--rivalry-s2-29': {
     label: 'Exiled him, met him again',
     description:
-      "In Bloody Game 2 (2023, Wavve) Seo Chul-gu started on the mansion team, was abducted and recruited by the wild team on the evenings of days two and three and changed sides, while Lee Jin-hyung stayed in the mansion. Mid-season, with consecutive wins in the equation-based Money Challenges (머니 챌린지) making him the power inside the house, Seo banished Lee out into the wild. They met again in the first final round at the end of the season, and this time Lee's double-declaration gambit took Seo apart.",
+      "In Bloody Game 2 (2023, Wavve) XITSUH started on the mansion team, was abducted and recruited by the wild team on the evenings of days two and three and changed sides, while Lee Jin-hyung stayed in the mansion. Mid-season, with consecutive wins in the equation-based Money Challenges (머니 챌린지) making him the power inside the house, XITSUH banished Lee out into the wild. They met again in the first final round at the end of the season, and this time Lee's double-declaration gambit took XITSUH apart.",
   },
 
   'lee-sang-min--lee-tae-gyun--co-season-s1-30': {
