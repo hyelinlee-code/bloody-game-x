@@ -516,8 +516,22 @@ export const ui = {
     'about.portraitsHeading': '초상 사진',
     'about.portraitsBody':
       '{total}명 중 {n}명의 플레이트가 실제 사진이다. 파일은 저장소의 public/portraits 폴더에서 빌드 시점에 읽어 들이고, 파일이 없는 사람은 자기 기록으로 그린 플레이트가 대신 나온다. 다만 이 앱은 그 사진들의 출처를 모른다 — 촬영자도, 원본 위치도, 사용 근거도 데이터에 적혀 있지 않고 파일 안에도 남아 있지 않다. 아래 본문의 모든 주장에는 근거 문서가 붙어 있는데 이 {n}장에는 없다는 뜻이고, 그 예외를 감추지 않기 위해 여기 적어 둔다.',
+    /* The credited variant of the body above. Printed instead of it when
+       dataset.meta.portraits is set — the set has a stated origin now, so the
+       "출처를 모른다" paragraph would be a false statement. It still says what
+       is NOT known (which file came from which of the two) and still refuses to
+       call the pictures cleared, because a named source is not a licence.
+
+       `{credit}` is followed by 에서 and never by a 은/는 · 이/가 · 으로/로
+       pair. Those alternate on whether the preceding syllable ends in a
+       consonant, and the value is dataset copy this file cannot see — the first
+       draft wrote '{credit}으로' and rendered '나무위키으로', which is wrong for
+       any vowel-final source. 에서 takes the same form either way, so the
+       sentence stays correct whatever the owner puts in the field. */
+    'about.portraitsCredited':
+      '{total}명 중 {n}명의 플레이트가 실제 사진이다. 파일은 저장소의 public/portraits 폴더에서 빌드 시점에 읽어 들이고, 파일이 없는 사람은 자기 기록으로 그린 플레이트가 대신 나온다. 이 {n}장은 {credit}에서 가져왔다. 다만 어느 파일이 둘 중 어디에서 왔는지까지는 기록돼 있지 않아 장별로 표기하지 못하고, 파일 안에도 촬영자 정보는 남아 있지 않다.',
     'about.portraitsRights':
-      '그러므로 이 사진들은 재사용이 허가된 자료가 아니다. 폴더에 넣는 파일은 넣는 쪽이 쓸 권리를 가진 것이어야 하고, 권리가 없으면 비워 두면 된다 — 생성 플레이트는 자리 표시가 아니라 그 자체로 완성된 표현이다.',
+      '그러므로 이 사진들은 재사용이 허가된 자료가 아니다. 출처를 아는 것과 쓸 권리를 갖는 것은 다른 문제이고, 방송 스틸과 위키 이미지의 권리는 각 촬영자에게 있다. 폴더에 넣는 파일은 넣는 쪽이 쓸 권리를 가진 것이어야 하고, 권리가 없으면 비워 두면 된다 — 생성 플레이트는 자리 표시가 아니라 그 자체로 완성된 표현이다.',
 
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': '검색 열기',
@@ -1034,8 +1048,10 @@ export const ui = {
     'about.portraitsHeading': 'The portraits',
     'about.portraitsBody':
       "{n} of the {total} plates in this atlas are photographs. The files are read out of the repository's public/portraits folder at build time, and anyone without a file gets a plate drawn from their own record instead. Where those pictures came from is not recorded: no photographer, no source, no licence in the data, and nothing left inside the files either. Every claim in the text below carries the page it was written from; these {n} images carry nothing, and this is the app saying so rather than letting you assume otherwise.",
+    'about.portraitsCredited':
+      "{n} of the {total} plates in this atlas are photographs. The files are read out of the repository's public/portraits folder at build time, and anyone without a file gets a plate drawn from their own record instead. These {n} images are credited to {credit}. Which file came from which of the two is not recorded, so the credit is stated for the set rather than per picture, and no photographer is named inside the files themselves.",
     'about.portraitsRights':
-      'Treat them as uncleared. A file belongs in that folder only if whoever puts it there holds the right to use it, and leaving it out is a complete answer — the generated plate is a finished presentation, not a placeholder.',
+      'Treat them as uncleared. Knowing where a picture came from is not the same as holding the right to use it: broadcast stills and wiki images remain their photographers’ property. A file belongs in that folder only if whoever puts it there holds the right to use it, and leaving it out is a complete answer — the generated plate is a finished presentation, not a placeholder.',
 
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': 'Open search',

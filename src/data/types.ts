@@ -330,5 +330,30 @@ export interface Dataset {
      */
     sourcing: string;
     sourcingEn: string;
+    /**
+     * Where the photographs in `public/portraits/` came from.
+     *
+     * The files carry nothing — measured, every one of the twenty is a bare
+     * `VP8 ` chunk with no EXIF, no XMP and no ICCP — so this is the only place
+     * their origin can be stated, and until it existed the About sheet printed
+     * an apology instead of a credit.
+     *
+     * `credit` is a SET-LEVEL statement and deliberately not per-image: the
+     * owner supplied the set with two named origins and no mapping from file to
+     * origin, and inventing that mapping would be the exact failure the
+     * paragraph it replaces exists to avoid. If a per-image line is ever
+     * recorded, add `per?: Record<string, { credit: string; source?: string }>`
+     * here and print it beside this.
+     *
+     * `licence` is optional and is NOT set: a named origin is not a grant.
+     * `about.portraitsRights` keeps saying so, and the copy must keep the two
+     * apart — "we know where these came from" and "we are allowed to use them"
+     * are different claims and only the first one is true.
+     */
+    portraits?: {
+      credit: string;
+      creditEn?: string;
+      licence?: string;
+    };
   };
 }

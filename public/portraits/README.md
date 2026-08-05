@@ -70,17 +70,26 @@ the generated plate exists and why it is a complete presentation rather than a
 placeholder. Leaving a file out is a complete answer; putting one in you cannot
 account for is not.
 
-**Nothing in this repository records where the twenty shipped files came from.**
-Measured on the current set: every one of the twenty is a bare `VP8 ` chunk with
-no `EXIF`, no `XMP` and no `ICCP` — so there is no photographer, no source URL
-and no licence statement in the files, and the schema has no field to put one
-in either. That is the one uncited thing in a product that counts its citations
-to one decimal place, and the app now says so out loud: the field guide's
-출처 / SOURCES tab prints a 초상 사진 / THE PORTRAITS block stating how many
-plates are photographs, that they enter the build from this folder, and that
-their origin is unrecorded (`about.portraits*` in `src/data/i18n/ui.ts`).
+**The twenty shipped files are credited to the Wavve official site and
+namu.wiki**, supplied by the product owner on 2026-08-03 and recorded in
+`dataset.meta.portraits` (`src/data/dataset.ts`). The field guide's
+출처 / SOURCES tab prints it — see `about.portraitsCredited` in
+`src/data/i18n/ui.ts`.
 
-If you are adding files, do better than that paragraph:
+Two things that credit does **not** say, and the copy is careful about both:
+
+- **It is not per-image.** No file-to-origin mapping was supplied, so the
+  credit is stated for the set. The files themselves still carry nothing —
+  measured on the current set, every one of the twenty is a bare `VP8 ` chunk
+  with no `EXIF`, no `XMP` and no `ICCP`, so there is no photographer and no
+  source URL inside any of them.
+- **It is not a licence.** `meta.portraits.licence` exists in the schema and is
+  deliberately left unset. Broadcast stills and wiki images remain their
+  photographers' property; naming where a picture came from is a different
+  claim from holding the right to use it, and the 권리 / rights paragraph in the
+  same panel keeps the two apart.
+
+If you are adding files, do better than a set-level credit:
 
 1. Keep a line per image — supplier, where it came from, and the basis you are
    using it on (own work, permission, a licence with a name and a version).

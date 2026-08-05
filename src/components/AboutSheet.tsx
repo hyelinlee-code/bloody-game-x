@@ -1710,6 +1710,14 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
   const sourcesPanel = () => {
     const cast = dataset.people ?? [];
     const photoCount = cast.filter((p) => portraitUrl(p.id) !== undefined).length;
+    /* Set-level, in the reader's language, and empty when the dataset does not
+       state one — which is what switches the paragraph below back to the
+       uncredited wording. See `meta.portraits` in types.ts. */
+    const portraitCredit = meta?.portraits
+      ? (lang === 'en' && has(meta.portraits.creditEn)
+          ? meta.portraits.creditEn
+          : meta.portraits.credit) ?? ''
+      : '';
     return (
     <>
       <SecH lang={lang} k="about.sourcesHeading" />
@@ -1741,8 +1749,19 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       {HAS_PORTRAITS && photoCount > 0 && (
         <section className="abt-block">
           <SecSub lang={lang} k="about.portraitsHeading" />
+          {/* Credited when the dataset states an origin, apologetic when it does
+              not. The two strings are alternatives rather than neighbours: the
+              uncredited one asserts "이 앱은 그 사진들의 출처를 모른다", and
+              printing that under a stated credit would make the sheet contradict
+              itself on the one tab a reader opens to check exactly this. */}
           <p className="abt-prose">
-            {fill(t(lang, 'about.portraitsBody'), { n: photoCount, total: cast.length })}
+            {portraitCredit
+              ? fill(t(lang, 'about.portraitsCredited'), {
+                  n: photoCount,
+                  total: cast.length,
+                  credit: portraitCredit,
+                })
+              : fill(t(lang, 'about.portraitsBody'), { n: photoCount, total: cast.length })}
           </p>
           <p className="abt-note">{t(lang, 'about.portraitsRights')}</p>
         </section>

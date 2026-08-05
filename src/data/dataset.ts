@@ -58,6 +58,16 @@ export const dataset: Dataset = {
       '순위와 탈락 순서는 각 시즌의 진행 결과 표를 기준으로 정리했고, 하루 단위로 갈리는 대목은 해당 일차 문서까지 내려가 확인했다. 시즌 기록 하나하나에 그 기록을 쓴 근거 문서가 붙어 있다. 다만 근거의 대부분은 한 곳에서 나온다 — 전체 인용 290건 중 223건, 약 77%가 나무위키다. 나무위키는 누구나 고칠 수 있는 위키이고 시즌 문서는 계속 바뀐다. 그래서 실명 인물에게 가장 무거운 주장을 하는 다섯 개의 배신 관계는 전부 위키가 아닌 출처를 하나 이상 함께 달았고, 방송 당시 기사나 본인 인터뷰가 있으면 그쪽을 우선했다. 남은 몫은 반올림하지 않고 세어 둔다 — 관계선 47개 가운데 27개가 아직 나무위키 인용만으로 서 있다. 그중 열다섯은 \'미확인\' 표시가 붙지 않는 서른두 개, 즉 이 앱이 가장 세게 주장하는 쪽에 속한다. 그 열다섯이라는 숫자는 빌드 검사에 박혀 있어서 늘어나면 통과하지 못하고, 줄어들면 검사에 적힌 숫자도 함께 내려야 한다. 한 방향으로만 움직인다는 뜻이다.',
     sourcingEn:
       "Placements and elimination order were settled against each season's own result table, and anything that turns on a single day was checked down to that day's page; every season run in this atlas carries the pages it was written from. Most of that evidence comes from one place, though — 223 of 290 citations, about 77%, are namu.wiki, a wiki anyone can edit and whose season pages keep moving. So the five betrayal edges, which make the heaviest claims about named real people, each carry at least one non-wiki source, with contemporaneous reporting or the person's own interview preferred where it exists. What is left is counted rather than rounded off: of the 47 relationship lines, 27 still stand on namu.wiki citations alone. Fifteen of those are among the thirty-two this app does NOT stamp 미확인 / Unverified — the ties it argues hardest for. That fifteen is pinned in the build check: it fails if the number rises, and if the number falls the pinned figure has to come down with it. It moves in one direction only.",
+    /* Supplied by the product owner, 2026-08-03, as a set-level origin: the
+       Wavve official site and namu.wiki. No file-to-origin mapping came with
+       it, so this is not printed per image — see the field's own note in
+       types.ts. `licence` is deliberately absent: broadcast stills and wiki
+       images stay their photographers' property, and naming where a picture
+       came from is not the same as holding the right to use it. */
+    portraits: {
+      credit: 'Wavve 공식 홈페이지 및 나무위키',
+      creditEn: 'Wavve official site and namu.wiki',
+    },
     lastUpdated: '2026.07.31',
     sources: [
       'https://ko.wikipedia.org/wiki/피의_게임',
