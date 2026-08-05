@@ -26,3 +26,5 @@ shots
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
