@@ -106,3 +106,8 @@ Four of the twenty have no verified tie to anyone else in the cast. That is a fi
 shared schools and shared credentials were checked and deliberately not counted as relationships,
 so the app says "no tie found in public sources" rather than inventing one. Those four get their
 own labelled row in the graph.
+
+## Live
+
+- **App** — https://bloody-game-x.vercel.app
+- **Source** — https://github.com/hyelinlee-code/bloody-game-x
