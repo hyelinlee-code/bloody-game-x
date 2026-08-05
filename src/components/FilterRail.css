@@ -1,0 +1,1495 @@
+/* ==========================================================================
+   FilterRail — the left dossier: what is on screen, and why.
+   Shell geometry (.rail / .pane) lives in styles/app.css; everything here is
+   the inside of the panel.
+   ========================================================================== */
+
+.frail {
+  /* Explicit and deliberately not derived from --d-*: the spec asks for a
+     180ms thumb. The reduced-motion block below still zeroes it. */
+  --sw-d: 180ms;
+  --frail-stagger: 16ms;
+  --frail-pad: var(--sp-4);
+  /* The scrollbar allowance `.frail__body` reserves. Every block in this
+     column subtracts the same value on its right edge, so the head, the body
+     and the foot cannot drift apart if the gutter width ever changes. */
+  --frail-gutter: 10px;
+  /* Dimmed ink: a real step down from --ink-mid that still clears 4.5:1 on
+     the glass. The old 50/50 mix measured 3.75:1 under the panel's own
+     backdrop, which put every English gloss and the Reset eyebrow below AA. */
+  --frail-dim: color-mix(in oklab, var(--ink-low) 28%, var(--ink-mid));
+  /* One step below that, for marks that are decoration rather than reading:
+     separators, rank ordinals. Still well clear of --ink-faint. */
+  --frail-quiet: var(--ink-low);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* Micro-labels use the house .eyebrow; only the ink is lifted for contrast. */
+.frail .eyebrow {
+  color: var(--frail-dim);
+}
+
+/* Korean is the source of record and the browser default breaks Hangul between
+   any two syllable blocks, which is the equivalent of hyphenating "conne /
+   ction" with no hyphen. Thirty-six `keep-all` declarations were spread across
+   the other components one element at a time and this panel — the one that is
+   open 100% of the time — had none, so 배신's gloss wrapped as '…등에 칼을 꽂'
+   / '았다', splitting 꽂았다 down the middle in eight of the supplied
+   screenshots. `text-wrap: pretty` was already on that line and does nothing
+   for CJK; it only rebalances the last line of a Latin paragraph.
+
+   Declared once for every run of prose in the rail rather than on the one row
+   that was caught, so the next row added here cannot miss it — the same shape
+   as the rule at the top of Gallery.css. `:where()` keeps it at zero
+   specificity so any element that genuinely needs to break mid-token (none
+   today) can override it without an !important. */
+.frail :where(p, h2, h3, span, li, button) {
+  word-break: keep-all;
+}
+
+/* ── entrance ──────────────────────────────────────────────────────────── */
+
+@keyframes frail-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The rail mounts underneath the intro overlay, so this stagger used to play
+   in full where nobody could see it and the panel simply existed once the
+   curtain lifted. `.is-ready` is set the moment the overlay leaves the DOM.
+
+   ── the gate is on the PANE, not only on its contents ──────────────────
+   `.is-ready` used to gate the rows and leave the plate itself — background,
+   1px border, 14px radius, backdrop blur — painting at full opacity from
+   mount. Captured 1137ms after ENTER: a fully-formed empty rounded rectangle
+   where the rail is, a top bar holding nothing but two hairline dividers, and
+   underneath them a status bar already populated and a graph already drawn.
+   That is a skeleton screen nobody designed, and the reader's first
+   impression of the app proper is that three of its four regions failed to
+   load. Hold the whole pane, then fade the container with the item stagger
+   nested inside it — `.rail` already carries the 240ms opacity transition
+   (app.css), and prefers-reduced-motion already collapses --d-base. */
+.frail:not(.is-ready) {
+  opacity: 0;
+}
+
+.frail:not(.is-ready) .frail__head,
+.frail:not(.is-ready) .frail__sec,
+.frail:not(.is-ready) .frail__chips > *,
+.frail:not(.is-ready) .frail__rows > li,
+.frail:not(.is-ready) .frail__top > li,
+.frail:not(.is-ready) .frail__below,
+.frail:not(.is-ready) .frail__foot {
+  opacity: 0;
+}
+
+/* ── why there is no lead any more, and why the tail is shorter ─────────
+   The pane's own 240ms opacity transition (app.css) starts the instant
+   `.is-ready` lands, while the contents used to start 80ms after it. Sampled
+   after ENTER: t=802ms pane 0.80 / head 0.00 / last row 0.00. The plate won
+   its own race by about 130ms at ≥80% opacity — a fully-formed empty rounded
+   rectangle with a border, which is precisely the skeleton the note above says
+   gating the pane was supposed to kill. It was shortened, not removed.
+
+   Slot 0 now starts with the pane, so the plate and the first row rise
+   together and there is never a frame of empty plate. The stagger came down
+   with it: eleven rows at 18ms plus a 240ms rise is a 438ms cascade on a
+   static list, and the tail was still arriving 335ms after the plate. At
+   16ms per section and 10ms per row the last item in the column starts at
+   112ms and everything has landed by ~350ms. */
+.frail.is-ready .frail__head,
+.frail.is-ready .frail__sec,
+.frail.is-ready .frail__chips > *,
+.frail.is-ready .frail__rows > li,
+.frail.is-ready .frail__top > li,
+.frail.is-ready .frail__below,
+.frail.is-ready .frail__foot {
+  animation: frail-rise var(--d-base) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--frail-stagger));
+}
+
+/* Rows tick faster than sections so a 11-row list never feels like a queue. */
+.frail__chips > *,
+.frail__rows > li,
+.frail__top > li {
+  --frail-stagger: 10ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frail {
+    --sw-d: 1ms;
+  }
+  .frail:not(.is-ready) .frail__head,
+  .frail:not(.is-ready) .frail__sec,
+  .frail:not(.is-ready) .frail__chips > *,
+  .frail:not(.is-ready) .frail__rows > li,
+  .frail:not(.is-ready) .frail__top > li,
+  .frail.is-ready .frail__head,
+  .frail.is-ready .frail__sec,
+  .frail.is-ready .frail__chips > *,
+  .frail.is-ready .frail__rows > li,
+  .frail.is-ready .frail__top > li,
+  .frail:not(.is-ready) .frail__below,
+  .frail.is-ready .frail__below,
+  .frail:not(.is-ready) .frail__foot,
+  .frail.is-ready .frail__foot {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ── header ────────────────────────────────────────────────────────────── */
+
+/* The head and the scrolling body below it are one continuous column and have
+   to right-align to one edge. `.frail__body` reserves a scrollbar gutter
+   (`scrollbar-gutter: stable`) and the head did not, so measured at 1600x1000
+   the head's content box ended at x=287 — RESET's right edge, and PEOPLE
+   SHOWN's — while the body's ended at 277 and the first right-aligned count
+   landed at 269. A right-aligned numeric column read against a caption sitting
+   10px proud of it is the kind of misalignment that registers as "something is
+   off" without ever being located. Published once (--frail-gutter, top of the
+   file), subtracted once. */
+.frail__head {
+  flex: 0 0 auto;
+  padding: var(--frail-pad) calc(var(--frail-pad) + var(--frail-gutter)) var(--sp-3)
+    var(--frail-pad);
+}
+
+.frail__head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.frail__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.frail__close {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: -4px -4px 0 0;
+  border-radius: var(--rad-sm);
+  color: var(--ink-mid);
+  transition: background var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out);
+}
+
+.frail__close:hover {
+  background: var(--bg-hover);
+  color: var(--ink-hi);
+}
+
+/* This button only exists below 901px (see the responsive block at the foot of
+   this file), i.e. only where the rail is an overlay covering the graph — so
+   every device that can see it is a device where it is the primary way out,
+   and it was the one dismissal control in the app still shipping at its drawn
+   size. 30×30 measured on a 390px phone against the 44px every other raised
+   target in the app now hits.
+
+   Overlay rather than a bigger button, for the reason .fmini gives: the drawn
+   control is sized against the rail's masthead type and growing it would
+   reflow the title beside it. Same one query as everywhere else. */
+@media (pointer: coarse), (max-width: 640px) {
+  .frail__close::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* The headline number: how much of the cast survives the current filters.
+
+   The face comes from `.fig` in the markup, not from here. This block used to
+   re-declare the sans and then force it back onto three children with
+   `font-family: inherit`, which is three declarations saying what one utility
+   class now says — and the old comment carved out an exception ("the small
+   counters elsewhere stay mono — at 13px the dot doesn't register") that was
+   false the moment a counter contained a zero. base.css carries the rule and
+   every counted figure in this panel reads it. */
+.frail__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4ch;
+  margin-top: var(--sp-4);
+}
+
+.frail__count-n {
+  font-size: var(--t-h2);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.frail__count-sep {
+  font-size: var(--t-sm);
+  color: var(--frail-quiet);
+}
+
+.frail__count-tot {
+  font-size: var(--t-sm);
+  color: var(--frail-dim);
+}
+
+.frail__count-lab {
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  text-align: right;
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.frail__reset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 36px;
+  margin-top: var(--sp-4);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-sm);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink);
+  background: color-mix(in oklab, var(--bg-raised) 55%, transparent);
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out),
+    color var(--d-fast) var(--ease-out);
+}
+
+/* "filters are on" — brass. Crimson is reserved for the brand and for the
+   betrayal edge; a red dot here was competing with both. */
+.frail__reset-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 8px var(--brass-glow);
+}
+
+.frail__reset:hover:not(:disabled) {
+  color: var(--ink-hi);
+  background: var(--bg-hover);
+  border-color: color-mix(in oklab, var(--brass) 48%, transparent);
+}
+
+.frail__reset:disabled {
+  cursor: default;
+  color: var(--ink-low);
+  background: transparent;
+  border-color: var(--glass-edge);
+}
+
+.frail .frail__reset:disabled .eyebrow {
+  color: var(--ink-low);
+}
+
+.frail__reset:disabled .frail__reset-dot {
+  background: var(--ink-faint);
+  box-shadow: none;
+}
+
+/* The coarse-pointer height for this button is at the foot of the file rather
+   than here, because the short-viewport block down there takes it to 32px and
+   would otherwise win on source order. Both numbers are in one place. */
+
+.frail__note {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-left: 2px solid var(--ink-faint);
+  border-radius: 0 var(--rad-xs) var(--rad-xs) 0;
+  background: color-mix(in oklab, var(--bg-raised) 60%, transparent);
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.frail__note-flag {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.frail__head-rule {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* ── the dashed-line key ────────────────────────────────────────────────
+   A static key, not filter content, so it does not live in the scroll box.
+
+   It used to be the relationships section's footnote, which put it inside
+   `.frail__body` roughly one line box past the fold at every desktop height
+   the app ships at — so the 52px bottom ramp was permanently parked on it. In
+   every desktop capture in the set the Korean line rendered at about 55% and
+   the English gloss at about 25%, sheared through the x-height: legible but
+   half-painted, which is the exact failure the ramp exists to prevent, applied
+   to the one line in the panel that explains what a dashed edge means. Out
+   here it is always at full opacity and always the last thing in the column. */
+.frail__foot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) calc(var(--frail-pad) + var(--frail-gutter)) var(--sp-3)
+    var(--frail-pad);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.frail__foot-swatch {
+  flex: 0 0 auto;
+  margin-top: 0.42em;
+  color: var(--ink-low);
+}
+
+.frail__foot-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.frail__foot-gloss {
+  color: var(--frail-dim);
+}
+
+/* ── "still below the fold" ───────────────────────────────────────────────
+   The bottom ramp says "this box continues" and nothing more; it does not say
+   what it continues INTO, and at 1280x800 what it continues into is a whole
+   filter dimension. This row names the sections still under the fold and
+   jumps to them.
+
+   It sits between the scroller and the dashed-line foot, outside both. Inside
+   the scroller it would be in the ramp — dissolving — which is the failure it
+   is answering; below the foot it would separate the foot's swatch from the
+   panel edge it is anchored to.
+
+   Quiet on purpose. It is a wayfinding line, not a filter, so it takes the
+   panel's dimmed ink and no fill; the only thing that carries any weight is
+   the arrow, which is what makes it read as a direction rather than as more
+   controls. It also renders only when it has something to say, so on a tall
+   viewport this row does not exist and the rail ends where it always did. */
+.frail__below {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px var(--sp-1);
+  padding: var(--sp-2) calc(var(--frail-pad) + var(--frail-gutter)) var(--sp-2) var(--frail-pad);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+}
+
+.frail__below-mark {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--ink-mid);
+  margin-right: 1px;
+}
+
+/* The separator is a rule between buttons rather than a '·' glyph in the
+   markup, because a middot between two controls is announced as content and
+   read out between their names. */
+.frail__below-b + .frail__below-b {
+  border-left: 1px solid var(--glass-edge-strong);
+  padding-left: var(--sp-2);
+}
+
+.frail__below-b {
+  padding: 2px 3px;
+  border-radius: var(--rad-xs);
+  color: var(--frail-dim);
+  text-align: left;
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.frail__below-b:hover,
+.frail__below-b:focus-visible {
+  color: var(--ink-hi);
+}
+
+/* A thumb is not a cursor, here as everywhere. No ::after overlay on these
+   three: the strip is 36px tall and a 44px overlay would hang over the bottom
+   of the scroller, so a tap aimed at the last legend row would open a jump
+   instead. The row grows instead — the buttons stretch to a 44px strip and
+   the hairlines between them become full-height dividers, which is what a
+   toolbar of three destinations should have looked like anyway. Same one
+   query as .fmini, .frail__close and .frail__reset. */
+@media (pointer: coarse), (max-width: 640px) {
+  .frail__below {
+    align-items: stretch;
+    padding-block: 0;
+    /* 45, not 44: the 1px top border is inside the box, so at 44 the stretched
+       buttons measure 43. */
+    min-height: 45px;
+  }
+  .frail__below-mark {
+    align-items: center;
+  }
+  .frail__below-b {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* ── body / sections ───────────────────────────────────────────────────── */
+
+/* Three quarters of this panel is below the fold at 1280x800 (measured:
+   1557px of content in a 520px box) and the cut used to land mid-row against
+   the panel's rounded bottom edge, which reads as a paint failure rather than
+   as "there is more". The bottom fade says continue; the gutter stops the
+   rows shifting when the scrollbar appears; --sp-7 of tail padding means the
+   last row is never bisected.
+
+   The mask itself is base.css's `.scroll--faded`, not a local reimplementation
+   — the rail used to hardcode its own 12px/30px pair, ungated, so the first
+   section heading was permanently soft-topped at scrollTop 0. Only the bottom
+   depth is overridden, because the rail's last row is a 36px control and a
+   28px fade cuts it. */
+.frail__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-height: 0;
+  padding: var(--sp-5) var(--frail-pad) var(--sp-7);
+  scrollbar-gutter: stable;
+  /* ── the ramp comes to rest in a gap, not on a chip ────────────────────
+     The bottom ramp is 52px of dissolve and it landed wherever the wheel
+     stopped. Measured at 1600×1000: two lineage chips half-painted at 50%
+     with a third invisible under them, which reads as a clipping bug rather
+     than as "there is more". Proximity snapping plus a snap point on every
+     section start means a rest puts a section's top edge at the top ramp's
+     end, so what the bottom ramp holds is the tail of a section rather than
+     the middle of a chip row. Proximity, not mandatory: the reader can still
+     stop anywhere they mean to, and a nudge is not hijacked into a jump. */
+  scroll-snap-type: y proximity;
+  /* The start pad is the TOP ramp and not the shared 18px: everything that
+     scrolls something into this box — the "still below" jump, a Tab into a row
+     four sections down — lands its target at the top edge, and the top edge is
+     52px of dissolve once the box has moved at all. At 18px the jump delivered
+     the reader to a heading painted at about a third alpha, which is the same
+     sheared-row failure one gesture later. */
+  scroll-padding-block: 56px var(--scroll-fade-b);
+}
+
+/* The TOP ramp, raised from the shared default of 18px.
+
+   18px against a --t-body line box of 16 × 1.62 = 25.9px means a whole line
+   sits mostly outside the ramp and gets cut through the middle of its own
+   glyphs: measured in this panel at scrollTop 420, the 동맹 row's top sat
+   43.4px above the container edge, so 12.6px of a 25.9px line box was painted
+   between 0% and about 70% alpha. Half a square Hangul syllable block is a
+   legible-but-wrong shape rather than an obviously clipped one, which is the
+   exact failure the fade exists to prevent, left in place on the top edge
+   while the bottom was rewritten to 52px to fix it.
+
+   52px is the bottom's number, i.e. two line boxes: at one line box in the
+   ramp is at 50% and the topmost line is unambiguously dissolving rather than
+   half-painted. Both ends of one box, one depth. The shared default belongs at
+   this value too — see the handoff. */
+.frail__body[data-scrolled='true'] {
+  --scroll-fade-t: 52px;
+}
+
+.frail__sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  /* The snap unit. `scroll-margin-top` is the top ramp's own depth, so a
+     snapped rest lands the heading's first painted pixel at the ramp's end
+     rather than inside it — the same arithmetic the gallery's ramp uses, and
+     the reason both numbers are read from one place. */
+  scroll-snap-align: start;
+  scroll-margin-top: 56px;
+}
+
+/* The heading row wraps; it does not truncate.
+   Measured live in Korean at 1280/1440/1600/1920 — the rail is a fixed 292px
+   at all four — the Latin gloss was the only thing in this panel that was ever
+   visually clipped, and it was clipped at every one of them: 'RELATIONSHIPS'
+   needs 96.5px and was given 72 at 1280 and 64 at 1600, so an English reader
+   has never once seen the word on the app's most permanent surface. 'NODE
+   KEY', 'ARCHETYPE' and 'MOST CONNECTED' each lost 2px to the same squeeze and
+   ellipsised one glyph, which is the version that reads as a CSS bug rather
+   than as a translation.
+
+   The old note below .frail__sec-gloss argued the gloss is the right thing to
+   lose. It is the right thing to lose to a LONGER TITLE; it is not the right
+   thing to lose to 전체 / 없음, which is an action pair and not part of the
+   title at all. So the row wraps and the bulk pair drops to a second line when
+   the two cannot share one — the pair keeps its right edge in both cases via
+   the auto margin on .frail__bulk. In English there is no gloss and the row
+   never wraps, which is why this costs nothing on that side. */
+.frail__sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--sp-2);
+  min-height: 18px;
+}
+
+/* Section starts have to be findable without reading. The panel was set at a
+   single 13px size with seven weights doing the work one size step should do;
+   headings now sit a step above the rows and the captions a step below. */
+.frail__sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  /* The head is space-between with a fixed-width bulk group at the other end
+     and nothing in it shrinks, so if the title ever outgrew its share the two
+     would simply overlap rather than reflow. At the tightest shipping width
+     (880px, Korean) they clear by exactly the row's own 8px gap — fine, but
+     with no margin for a longer translation. `min-width: 0` plus the ellipsis
+     on the Latin gloss below means the gloss gives way first, which is the
+     right thing to lose: it is a translation of the Korean word beside it. */
+  min-width: 0;
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+/* `min-width: max-content` is what makes the wrap above fire instead of the
+   ellipsis. Flex resolves wrapping BEFORE shrinking, so as long as the gloss
+   refuses to compress, a header that cannot hold its title and its action pair
+   on one line breaks the line rather than eating a word. The ellipsis stays as
+   the floor for a viewport narrower than any this app ships at. */
+.frail__sec-gloss {
+  min-width: max-content;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── disclosures ────────────────────────────────────────────────────────
+   The three long blocks fold. See the note above the fold state in
+   FilterRail.tsx for which ones and why.
+
+   The header keeps the heading's own type — it is still the heading, it has
+   simply become operable — so a shut section reads as a section and not as a
+   button that happens to be at the top of one. The chevron is the only added
+   mark, and it points down when open and right when shut, which is the one
+   disclosure convention that needs no legend. */
+.frail__sec-btn {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+  width: 100%;
+  padding: 2px 4px 2px 0;
+  margin: -2px 0 -2px -2px;
+  border-radius: var(--rad-xs);
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.frail__sec-btn:hover {
+  color: var(--ink-hi);
+}
+
+/* The heading itself never wraps inside the button: a two-word title ('Node
+   key', '노드 읽는 법') broke across two lines against a shrinkable flex item
+   and left the chevron centred on a stack. The gloss beside it is the flexible
+   part and already gives way with an ellipsis, which is the right thing to
+   lose — it is a translation of the word next to it. */
+.frail__sec-btn .frail__sec-line {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.frail__sec-chev {
+  flex: 0 0 auto;
+  /* Baseline alignment puts an icon's box on the text baseline, which hangs a
+     symmetrical glyph high; this is the optical drop measured against the
+     13px heading. */
+  align-self: center;
+  margin-top: 1px;
+  color: var(--frail-quiet);
+  transition: transform var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out);
+}
+
+.frail__sec--fold.is-shut .frail__sec-chev {
+  transform: rotate(-90deg);
+}
+
+.frail__sec-btn:hover .frail__sec-chev {
+  color: var(--ink-mid);
+}
+
+/* The count on the header is what makes a shut section still say what it
+   holds — the reason to fold at all was that a soft mask says "end of
+   content" and a heading with a number on it cannot. */
+.frail__sec-n {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: var(--sp-2);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  color: var(--frail-quiet);
+}
+
+/* A shut section is one row; the open gap below the head would read as a
+   dangling indent. */
+.frail__sec--fold.is-shut {
+  gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frail__sec-chev {
+    transition: none;
+  }
+}
+
+/* ── the node key ───────────────────────────────────────────────────────── */
+
+.frail__nodekey {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.frail__nodekey .platekey__row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-3);
+}
+
+.frail__nodekey .platekey__mark {
+  width: 18px;
+  /* Optically centred on the first line of the label, not on the row box. */
+  margin-top: 1px;
+}
+
+.frail__nodekey .platekey__what {
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+.frail__keymore {
+  align-self: flex-start;
+  padding: 2px 0;
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--frail-dim);
+  text-align: left;
+  border-bottom: 1px solid transparent;
+  transition: color var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+}
+
+.frail__keymore:hover {
+  color: var(--ink-hi);
+  border-bottom-color: var(--glass-edge);
+}
+
+.frail__keymore--static:hover {
+  color: var(--frail-dim);
+  border-bottom-color: transparent;
+}
+
+.frail__sec-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: var(--sp-1);
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.frail__sec-foot-gloss {
+  color: var(--frail-dim);
+}
+
+/* `margin-left: auto` rather than relying on the head's space-between: when
+   the pair wraps to a line of its own it is the only item on that line, and
+   space-between would park it at the left edge under the chevron. The auto
+   margin holds its right edge on both the shared line and the wrapped one. */
+.frail__bulk {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* '전체 / 없음' is the fastest route into a useful filter state and the
+   fastest route out of a zero-result dead end. At --ink-faint it measured
+   2.24:1 and read as punctuation; it now carries an underline at rest so it
+   is legible as two buttons before you hover it.
+
+   SIZE. These were 22×25, then 24×25 with a 30×32 invisible overlay — i.e.
+   clearing WCAG 2.5.8's 24×24 by one pixel in the visible box and asking a
+   pseudo-element to make up the difference. The previous round declined to
+   widen the ink because the bulk group shares its row with the section title
+   and the two would collide. Measured, they do not. The group grew from 77 to
+   93px, and the slack left on the section-head row after the title is:
+     1600×1000  ko 22.5 / 32.5px    en 55.7 / 77.4px
+     1280×800   ko 30.5 / 40.5px
+     880×820    ko  8.0 / 12.5px    en 35.7 / 57.4px   ← the tightest case
+     390×844    ko 138.5 / 148.5px
+   i.e. positive everywhere, and the title/group boxes were checked for actual
+   overlap at each width rather than inferred. So the box is now a real 28px
+   tall with 8px flanks — the ink is unchanged, the target is not.
+
+   The overlay stays, and grows rather than being retired: a mouse gets 34px
+   and a finger gets 44, which is the size touch actually wants and which
+   nothing on this row is close to. It bleeds ±3px sideways, exactly half the
+   6px gap, so the two buttons meet without overlapping and the separator
+   between them is never the thing you hit. */
+/* inline-FLEX, not inline-grid. As a grid the single anonymous text item sat
+   in a track whose used size Chromium floored to the integer below the text's
+   own 22.5px, so 전체 and 없음 each overflowed their content box by 0.5px —
+   absorbed by the 8px padding, so nothing was ever sliced, but it is the
+   reading behind the 'hard clip' this control was filed for and it makes
+   `scrollWidth > clientWidth` true on a box that fits. Flex sizes the item to
+   its own max-content and the overflow goes to zero. */
+.fmini {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 3px 8px;
+  border-radius: var(--rad-xs);
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--ink-mid) 40%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition: color var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out),
+    text-decoration-color var(--d-fast) var(--ease-out);
+}
+
+.fmini:hover:not(:disabled),
+.fmini:focus-visible:not(:disabled) {
+  color: var(--ink-hi);
+  background: var(--bg-hover);
+  text-decoration-color: currentColor;
+}
+
+.fmini:disabled {
+  color: var(--frail-quiet);
+  text-decoration-color: transparent;
+  cursor: default;
+}
+
+.fmini::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: 50%;
+  height: 34px;
+  transform: translateY(-50%);
+}
+
+/* A thumb is not a cursor. The graph's own pick radius already branches on
+   pointer type for the same reason; this is the DOM half of that.
+
+   The width clause is the other half. The app used to raise targets under two
+   disjoint conditions — this file on pointer, TopBar on width — so a coarse
+   tablet at 1024px got the rail's fix and not the bar's, and a narrow desktop
+   window got the bar's and not the rail's. Every raised target in the app now
+   fires on this one pair. */
+@media (pointer: coarse), (max-width: 640px) {
+  .fmini::after {
+    height: 44px;
+  }
+}
+
+.fmini__sep {
+  font-size: var(--t-sm);
+  color: var(--frail-quiet);
+}
+
+/* ── lineage chips ─────────────────────────────────────────────────────── */
+
+.frail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-full);
+  background: color-mix(in oklab, var(--bg-raised) 55%, transparent);
+  font-size: var(--t-sm);
+  color: var(--frail-dim);
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out),
+    color var(--d-fast) var(--ease-out);
+}
+
+/* The dot is the chip's state, so it is where the actuation reads. --ease-spring
+   overshoots by 1.56 and is on the transform ONLY — the fill and the glow ease
+   out normally, because an overshoot on a colour is clamped at both ends and
+   just stutters. See the motion block in tokens.css for the whole list of
+   things allowed to spend this curve. */
+.fchip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--tint, var(--ink-low));
+  background: transparent;
+  transition: background var(--d-fast) var(--ease-out), box-shadow var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-spring);
+}
+
+.fchip__label {
+  letter-spacing: var(--tr-tight);
+}
+
+.fchip__n {
+  padding-left: 2px;
+  font-size: var(--t-sm);
+  color: var(--frail-dim);
+}
+
+.fchip:hover {
+  border-color: var(--glass-edge-strong);
+  background: var(--bg-hover);
+}
+
+.fchip[aria-pressed='true'] {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--tint, var(--ink-mid)) 52%, transparent);
+  background: color-mix(in oklab, var(--tint, var(--ink-mid)) 13%, var(--bg-raised));
+}
+
+.fchip[aria-pressed='true'] .fchip__dot {
+  background: var(--tint, var(--ink-mid));
+  box-shadow: 0 0 9px color-mix(in oklab, var(--tint, var(--ink-mid)) 60%, transparent);
+  /* 1.15 of 8px is a single pixel of growth. It is not meant to be seen as a
+     size change — it is meant to be felt as a click. */
+  transform: scale(1.15);
+}
+
+.fchip[aria-pressed='true'] .fchip__n {
+  color: var(--ink-mid);
+}
+
+/* ── returning-only switch ─────────────────────────────────────────────── */
+
+.fswitch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3);
+  border: 1px solid var(--glass-edge);
+  /* --rad-sm, matching .frail__reset — the other bordered control in this
+     column. A live audit of every rendered radius in the rail, top bar and
+     status bar returned 999px x24, 7px x26, 4px x8, 50% x17 and 11px x1, the
+     one being this card. A value with a single user is how a radius scale
+     stops being a scale. */
+  border-radius: var(--rad-sm);
+  background: color-mix(in oklab, var(--bg-raised) 55%, transparent);
+  text-align: left;
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+}
+
+.fswitch:hover {
+  background: var(--bg-hover);
+  border-color: var(--glass-edge-strong);
+}
+
+.fswitch__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* English says this in 24 characters where Korean says it in 10, and the row
+   also has to hold a counter and a 40px track. Two lines is the honest answer
+   in that column; `pretty` stops it breaking one word onto the second. */
+.fswitch__line {
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  text-wrap: pretty;
+}
+
+.fswitch__gloss {
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.fswitch__n {
+  flex: 0 0 auto;
+  font-size: var(--t-sm);
+  color: var(--frail-dim);
+}
+
+.fswitch__track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  background: var(--bg-elevated);
+  transition: background var(--sw-d) var(--ease-out), border-color var(--sw-d) var(--ease-out);
+}
+
+/* The one control in the panel that is a physical metaphor, so it is the one
+   that most wants mass: --ease-spring on the travel, --ease-out on the colour.
+   The overshoot is ~1px past the end stop inside a 40px track, which reads as
+   the thumb hitting the end rather than arriving at it. */
+.fswitch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-low);
+  transition: transform var(--sw-d) var(--ease-spring), background var(--sw-d) var(--ease-out);
+}
+
+.fswitch[aria-checked='true'] .fswitch__track {
+  background: color-mix(in oklab, var(--brass) 46%, var(--bg-elevated));
+  border-color: color-mix(in oklab, var(--brass) 58%, transparent);
+}
+
+.fswitch[aria-checked='true'] .fswitch__thumb {
+  transform: translateX(18px);
+  background: var(--bone);
+}
+
+.fswitch[aria-checked='true'] .fswitch__n {
+  color: var(--ink-mid);
+}
+
+/* ── toggle rows (archetype + relationships) ───────────────────────────── */
+
+.frail__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.frow {
+  width: 100%;
+  padding: 7px var(--sp-2);
+  border-radius: var(--rad-sm);
+  text-align: left;
+  transition: background var(--d-fast) var(--ease-out);
+}
+
+.frow:hover {
+  background: color-mix(in oklab, var(--bg-hover) 72%, transparent);
+}
+
+/* The label is the line the reader is in, plus — in Korean only — the Latin
+   gloss that translates it. In English the line is already Latin and stands
+   alone, so it takes the whole width the gloss used to share. */
+.frow__label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.frow__line {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frow__gloss {
+  min-width: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frow__n {
+  flex: 0 0 auto;
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+}
+
+/* Off = the ink drops and the mark goes hollow. Shape, not only colour. */
+.frow[aria-pressed='false'] .frow__line,
+.frow[aria-pressed='false'] .frow__gloss,
+.frow[aria-pressed='false'] .frow__n,
+.frow[aria-pressed='false'] .fedge__meaning {
+  color: var(--frail-dim);
+}
+
+/* archetype row */
+.fcat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 36px;
+}
+
+.fcat__dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--tint);
+  border-radius: 50%;
+  background: transparent;
+  transition: background var(--d-fast) var(--ease-out), box-shadow var(--d-fast) var(--ease-out);
+}
+
+.fcat[aria-pressed='true'] .fcat__dot {
+  background: var(--tint);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--tint) 55%, transparent);
+}
+
+.fcat .frow__gloss {
+  flex: 1 1 auto;
+}
+
+/* relationship row */
+.fedge {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--sp-3);
+  row-gap: 2px;
+}
+
+.fedge__swatch {
+  grid-column: 1;
+  grid-row: 1;
+  overflow: visible;
+  color: var(--tint);
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+/* ── off is a shape, not a drained hue ─────────────────────────────────────
+   The whole off-state used to be `.fedge[aria-pressed='false'] .fedge__swatch
+   { color: var(--ink-faint) }`. That makes the one property which IDENTIFIES a
+   row — its hue — also the property that carries its state, so switching four
+   types off leaves 동맹 / 배신 / 라이벌 / 바깥 이력 as four visually identical
+   grey rules and the reader can no longer read their own filter panel well
+   enough to switch them back on. It is also invisible to a colour-blind reader
+   and in a greyscale print, which is the exact confusion palette.ts is careful
+   about elsewhere (it moved the host ring off the bone register for this
+   reason).
+
+   So the hue stays in both states and the state moves to two channels that are
+   not colour: the rule drops from 2.2px to 1.1px, and a hairline strike is
+   drawn across it. Same grammar as the archetype rows, which already do this
+   correctly — .fcat__dot keeps its --tint border and only fills when on —
+   translated from a dot to a line. The strike is bone rather than the tint, so
+   it reads as a mark laid ON the swatch and not as part of the encoding. */
+.fedge[aria-pressed='false'] .fedge__swatch {
+  opacity: 0.72;
+}
+
+.fedge[aria-pressed='false'] .fedge__swatch-rule {
+  stroke-width: 1.1;
+}
+
+.fedge__swatch-off {
+  display: none;
+  stroke: var(--ink-mid);
+}
+
+.fedge[aria-pressed='false'] .fedge__swatch-off {
+  display: block;
+}
+
+.fedge__label {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.fedge .frow__n {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+/* `word-break: keep-all` is inherited from the panel-wide rule at the top of
+   this file — this was the one surface that had never been given it, and 배신's
+   gloss shipped as '…등에 칼을 꽂' / '았다' because of it. */
+.fedge__meaning {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+  text-wrap: pretty;
+}
+
+/* ── a reading of the graph ────────────────────────────────────────────── */
+
+.frail__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+.fstat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-sm);
+  background: color-mix(in oklab, var(--bg-raised) 50%, transparent);
+}
+
+/* Face from `.fig`, like every other figure in the column. */
+.fstat__n {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  line-height: 1.1;
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.fstat__l {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+}
+
+.frail__top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ftop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--sp-3);
+  row-gap: 5px;
+  width: 100%;
+  padding: 8px var(--sp-2);
+  border-radius: var(--rad-sm);
+  text-align: left;
+  transition: background var(--d-fast) var(--ease-out);
+}
+
+.ftop:hover {
+  background: color-mix(in oklab, var(--bg-hover) 72%, transparent);
+}
+
+/* Selection reads as a warm bone bar, not as a betrayal. */
+.ftop[aria-current] {
+  background: color-mix(in oklab, var(--bone) 9%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--bone) 80%, transparent);
+}
+
+.ftop__rank {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: var(--t-sm);
+  color: var(--frail-quiet);
+}
+
+.ftop__name {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* Whichever script leads, it keeps its full width and the other one is the
+   subtitle that gives way — a romanisation runs about twice the width of the
+   Hangul it stands for, and this column is 292px. */
+.ftop__line {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ftop__sub {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ftop__n {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+}
+
+.ftop__bar {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  height: 3px;
+  border-radius: var(--rad-full);
+  background: color-mix(in oklab, var(--ink-faint) 45%, transparent);
+  overflow: hidden;
+}
+
+/* scaleX on a full-width element, not an animated `width`. The bar re-runs on
+   every filter change — the same 420ms window in which the canvas is re-easing
+   twenty nodes and thirty-three links — and a width transition relayouts the
+   row on every frame of it instead of running on the compositor. */
+.ftop__bar-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tint, var(--ink-mid));
+  transform: scaleX(var(--pct, 0));
+  transform-origin: 0 50%;
+  will-change: transform;
+  transition: transform var(--d-slow) var(--ease-out);
+}
+
+/* ── quiet / empty states ──────────────────────────────────────────────── */
+
+.frail__quiet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-4) var(--sp-3);
+  border: 1px dashed var(--glass-edge-strong);
+  border-radius: var(--rad-sm);
+  text-align: center;
+}
+
+.frail__quiet-flag {
+  font-size: var(--t-sm);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink-mid);
+}
+
+.frail__quiet-line {
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--frail-dim);
+}
+
+.frail__scope {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: var(--sp-2);
+  font-size: var(--t-xs);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.frail__scope-gloss {
+  color: var(--frail-dim);
+}
+
+/* ── responsive ────────────────────────────────────────────────────────── */
+
+/* The one thing this panel actually removes, and only where the arithmetic
+   does not work otherwise.
+
+   THE BREAKPOINT MOVED FROM 900 TO 1200, because the old one was set against
+   the legend alone and the legend is not the only thing that has to fit. The
+   note it replaces claimed "above 900px of viewport there is room". Measured
+   at 1600×1000 in Korean — eleven of the supplied screenshots — there is not:
+   the port is 624px with a 52px ramp on it, the seven legend rows with their
+   descriptions run 420px (two of the seven wrap to a second line), and what
+   fell off the bottom was the whole lineage block — three of five bloc chips
+   and the franchise switch, 196px below the port.
+
+   Without the descriptions a row is a swatch, a name, a gloss and a count on
+   one line: 40px instead of 56–70, the seven come to 279px, and lineage,
+   the switch and all seven rows clear the fold together. 1200 rather than
+   "always" so a 1440p or 4K reader, who has the height for it, still gets the
+   sentence on the page.
+
+   The description is the only part of the row that is prose rather than key,
+   and it is not lost: it is in the row's `aria-label` and on its `title` (see
+   FilterRail.tsx), so it is still available by hover and still read out in
+   full. */
+@media (max-height: 1200px) {
+  .fedge__meaning {
+    display: none;
+  }
+  .fedge {
+    row-gap: 0;
+  }
+  /* And the rhythm steps down one notch with it — the same step the 900px
+     block below already ships, applied where the arithmetic first needs it.
+     Dropping the descriptions alone left the column 36px long at 1600×1000
+     (measured: 583.8px of lineage + legend against 547.8px of clean port), so
+     the seventh relationship row — 평행 이력, the one type this atlas invented
+     — was the one dissolving in the ramp. The gaps and the row padding are
+     worth 40px between them and nothing in the panel is drawn smaller: the
+     chips keep their 32px height, the rows stay well clear of the 24px target
+     floor, and the last row now ends 20px above the fold. */
+  .frail__body {
+    gap: var(--sp-4);
+    padding-top: var(--sp-4);
+  }
+  .frail__sec {
+    gap: var(--sp-2);
+  }
+  .frow {
+    padding-block: 5px;
+  }
+}
+
+/* Short viewports. The relationships block is the canvas legend and it has to
+   clear the fold; on an 800px-tall laptop the masthead alone was spending
+   ~500px before the first section. The vertical rhythm steps down one notch,
+   which buys about 40px and two more rows. */
+@media (max-height: 900px) {
+  .frail {
+    --frail-pad: var(--sp-3);
+  }
+  .frail__count {
+    margin-top: var(--sp-3);
+  }
+  .frail__count-n {
+    font-size: var(--t-h3);
+  }
+  .frail__reset {
+    margin-top: var(--sp-3);
+    min-height: 32px;
+  }
+  .frail__body {
+    gap: var(--sp-4);
+    /* 8, not 12. At exactly 900px of viewport the seventh relationship row was
+       still 8px into the ramp after the 1200px block's step-down; this and the
+       section gap below are the last 10 of those pixels, and they are the two
+       cheapest in the column — space between blocks, not inside them. */
+    padding-top: var(--sp-2);
+  }
+  .frail__sec {
+    gap: 6px;
+  }
+  .frail__sec-foot {
+    padding-top: 0;
+  }
+  /* 30, not 26. WCAG 2.5.8 is cleared either way, but 26px is a mouse target
+     on a control group that is the fastest route in and out of a filter
+     state, and the four pixels are affordable here. */
+  .fchip {
+    min-height: 30px;
+  }
+  .fswitch {
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .frow {
+    padding-block: 3px;
+  }
+  .fcat {
+    min-height: 32px;
+  }
+}
+
+/* Reset is full-width, so the short axis was the only one ever below target:
+   36px normally and 32px under the block above, which is exactly where a phone
+   in landscape lands. No ::after overlay here — the button already owns its
+   whole row, so the honest fix is to BE 44 rather than to claim 44. It comes
+   after the max-height block deliberately: that block sets 32 and would win on
+   source order otherwise. Same one query as .fmini and .frail__close. */
+@media (pointer: coarse), (max-width: 640px) {
+  .frail__reset {
+    min-height: 44px;
+  }
+}
+
+/* The rail is a persistent column on wide screens; the close button only
+   earns its place once the panel starts covering the graph. */
+@media (min-width: 901px) {
+  .frail__close {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .frail__body {
+    padding-bottom: var(--sp-7);
+  }
+  /* The home-indicator clearance belongs to whatever is actually last against
+     the device edge, and that is not the scroller: the dashed-line key and the
+     "still below" strip are both pinned OUTSIDE it. The inset used to be on
+     `.frail__body`, where it padded the bottom of a box with two more rows
+     under it — so on a notched phone the one line explaining what a dashed
+     edge means sat under the indicator, and the scroller reserved 34px of
+     clearance from a hardware feature it does not touch. */
+  .frail__foot {
+    padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  }
+}

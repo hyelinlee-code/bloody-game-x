@@ -1,0 +1,848 @@
+/* ==========================================================================
+   CommandPalette — ⌘K. A dossier drawer that drops out of the top of frame.
+   Deliberately more opaque than the other panes: this sits over a moving
+   graph and every line inside it has to stay legible.
+   ========================================================================== */
+
+.cp {
+  --cp-in: 180ms;
+  --cp-out: 120ms;
+  --cp-row-d: 240ms;
+  --cp-stagger: 22ms;
+  /* How long the SURFACE takes to knock the canvas down, and therefore when
+     the contents are allowed to start. See the note on .cp__dialog. */
+  --cp-lead: 90ms;
+  --cp-surface: color-mix(in oklab, var(--bg-panel) 82%, var(--bg-void));
+  /* Selection, focus and search-match used to be crimson — the same red as the
+     brand mark, the betrayal edge, season 1 and the spoiler badge. Reserved
+     crimson for brand and betrayal; "the thing you are on" is warm bone. */
+  --cp-sel: var(--bone);
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(var(--sp-5), 11vh, 132px) var(--sp-4) var(--sp-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp {
+    --cp-in: 1ms;
+    --cp-out: 1ms;
+    --cp-row-d: 1ms;
+    --cp-stagger: 0ms;
+    --cp-lead: 0ms;
+  }
+}
+
+.cp--out {
+  pointer-events: none;
+}
+
+/* ── the warm pass ────────────────────────────────────────────────────────
+   Two frames of the real drawer, at idle, so the reader's first Ctrl+K is not
+   the frame that rasterises five plates and measures two typefaces at the
+   row's sizes. The argument and the numbers are in CommandPalette.tsx.
+
+   0.008, not 0: Chromium skips painting an element at exactly zero opacity,
+   and a pass that is not painted warms nothing — which is the whole failure
+   HoverCard.tsx documents having shipped once and had to redo. It is four
+   thousandths of a wash over an unlit graph, well under the threshold of
+   visibility on this backdrop, and it is on screen for ~33ms.
+
+   `pointer-events: none` matters more than it looks: this element is
+   `position: fixed; inset: 0` at --z-modal, and the scrim under it closes the
+   palette on mousedown. Without this a click landing inside those two frames
+   would hit a dismissal for a drawer the reader never opened. `inert` on the
+   root covers focus and the accessibility tree; this covers the mouse. */
+.cp--warm {
+  pointer-events: none;
+  opacity: 0.008;
+}
+
+/* The browser default breaks Hangul between any two syllable blocks, and the
+   no-results copy was splitting 있습니다 as 있 / 습니다 — the equivalent of
+   hyphenating "conne / ction" without the hyphen, on the one surface every
+   keyboard user opens first. Korean is the source of record for this product;
+   the runs that carry long Latin tokens opt back out individually. */
+.cp :where(p, span, li, div) {
+  word-break: keep-all;
+}
+
+/* ── scrim ──────────────────────────────────────────────────────────────── */
+
+/* ── NO backdrop-filter ON THIS SURFACE, and the reason is measured ────────
+   This scrim used to carry `backdrop-filter: blur(9px) saturate(0.72)` over
+   the whole viewport, on top of a live full-screen canvas. It is created by
+   the same React commit that creates the dialog, so the compositor has to
+   take a full-viewport backdrop snapshot BEFORE it can run the first frame of
+   either entrance — the exact trap HoverCard.css documents at the top of its
+   own file, at four times the area.
+
+   Measured on the production build, headed, real GPU, 1600×1000 dpr 1, with
+   the graph at rest and the CPU throttled 6× (Emulation.setCPUThrottlingRate,
+   which is how you reproduce the reader whose machine is not this one), four
+   first-opens each:
+
+     with the blur   dialog mounted → animations have a startTime:  MEDIAN
+                     398ms (runs: 387 / 342 / 1196 / 398), and the 180ms lift
+                     rendered a MEDIAN OF 2 distinct transforms
+     without it      MEDIAN 221ms (221 / 48 / 584 / 87), lift 7 transforms
+
+   The 1196ms run is the defect as filed — 'the animations sit pending for
+   1.13s and then jump to finished'. It is not a slow animation, it is an
+   animation that cannot be committed until a snapshot nobody asked for has
+   been rasterised.
+
+   WHAT THE BLUR WAS BUYING, exactly: this layer sits under a 74% void wash
+   and, in the middle of the screen, under a dialog that is now fully opaque.
+   So it was softening the outer quarter of the frame at 26% strength. The
+   wash is deepened to 86% instead, which is a static composite and free, and
+   reads as the same recession — the graph goes away, it just goes away by
+   value rather than by focus. */
+.cp__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--blood) 9%, transparent), transparent 62%),
+    color-mix(in oklab, var(--bg-void) 86%, transparent);
+  animation: cp-scrim-in var(--cp-in) var(--ease-out) both;
+}
+
+/* The backdrop must never leave before the thing it is backing. A 100ms reverse
+   against the dialog's --cp-out (120ms) — and a reversed curve, which flips the
+   acceleration profile so the opacity collapses early inside its own 100ms —
+   left the fully opaque dialog floating over an unscrimmed, full-brightness app
+   for the last ~40ms of the exit. Same duration, same curve as the dialog. */
+.cp--out .cp__scrim {
+  animation: cp-scrim-in var(--cp-out) var(--ease-in-out) reverse both;
+}
+
+@keyframes cp-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── dialog ─────────────────────────────────────────────────────────────── */
+
+.cp__dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: min(640px, 76vh);
+  border-radius: var(--rad-lg);
+  /* OPAQUE, and no backdrop-filter — see the note on .cp__scrim for the
+     measurement. This surface was 96% opaque with `blur(26px) saturate(1.2)`
+     behind it, i.e. a second full-surface backdrop snapshot, taken every
+     frame the lift scales the element, to tint 4% of the fill. The 4% is
+     bought back by taking the surface to 100%, which is also what the top of
+     this file says this drawer is for ("Deliberately more opaque than the
+     other panes… every line inside it has to stay legible"). */
+  background: var(--cp-surface);
+  border: 1px solid var(--glass-edge-strong);
+  box-shadow: var(--sh-lg), 0 0 0 1px color-mix(in oklab, var(--blood) 7%, transparent);
+  overflow: hidden;
+  /* Now that nothing on this element forces a readback, opacity and transform
+     are genuinely compositable and the promotion is worth its layer. It is
+     scoped to a node that mounts and unmounts with the palette, so there is
+     no standing layer cost between opens. */
+  will-change: transform, opacity;
+  /* ── the surface lands before its contents ────────────────────────────
+     This drawer is glass and it opens over the densest part of the graph.
+     Animating opacity on the whole panel means the midpoint of the fade shows
+     BOTH layers at roughly half strength — two full typographic layers on the
+     same pixels. Captured 277ms into the open: the rows 'Hong Jin-ho' and
+     'Park Ji-min' were printed over the canvas labels 'Shin Seung-yong',
+     'Kang Ji-hoo' and 'Hyun Seong-joo'. It is the first frame of a
+     keyboard-first interaction and it is unreadable.
+
+     So opacity and transform are separated. The panel's own opacity finishes
+     in --cp-lead (90ms), which knocks the canvas down; the lift keeps the full
+     --cp-in. The rows and group headings then start their cascade at the lead
+     rather than at zero, so nothing of this drawer is legible until nothing
+     behind it is. */
+  animation:
+    cp-dialog-fade var(--cp-lead) var(--ease-out) both,
+    cp-dialog-lift var(--cp-in) var(--ease-out) both;
+}
+
+/* The drawer leaves as one object — no row cascade on the way out.
+   Not --ease-out: that curve is an expo-OUT, so on a disappearance it spends
+   90% of the fade in the first 15% of the duration and the exit is over before
+   anyone sees it. A symmetric curve actually shows the drawer leaving. */
+.cp--out .cp__dialog {
+  animation: cp-dialog-out var(--cp-out) var(--ease-in-out) both;
+}
+
+@keyframes cp-dialog-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+/* Hairline of dried blood along the top edge — the app's signature. */
+.cp__dialog::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blood) 32%, var(--blood-hot) 50%, var(--blood) 68%, transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+@keyframes cp-dialog-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cp-dialog-lift {
+  from {
+    transform: scale(0.98);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ── search field ───────────────────────────────────────────────────────── */
+
+.cp__search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+
+/* The magnifier used to be solid --blood, which made it the brightest object in
+   the dialog and taught the highest-traffic surface in the app the opposite of
+   the colour law: crimson is the brand mark and the betrayal edge, nothing
+   else. It reads as a field affordance now, and lifts to the state accent only
+   while the field it belongs to is focused. */
+.cp__lens {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--ink-mid);
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.cp__search:focus-within .cp__lens {
+  color: var(--cp-sel);
+}
+
+.cp__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  font-size: 1.0625rem;
+  font-weight: var(--fw-text);
+  letter-spacing: var(--tr-tight);
+  line-height: 1.4;
+  color: var(--ink-hi);
+}
+
+.cp__input::placeholder {
+  color: var(--ink-mid);
+  font-weight: var(--fw-text);
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+.cp__input:focus-visible {
+  outline-offset: 5px;
+  border-radius: var(--rad-sm);
+}
+
+.cp__clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 10px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-mid);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  letter-spacing: 0.04em;
+  transition: color var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out);
+}
+
+/* Hover is a state; --cp-sel is the same bone the selected row uses, so the
+   two live affordances in this dialog speak one language. */
+.cp__clear:hover {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--cp-sel) 46%, transparent);
+  background: color-mix(in oklab, var(--cp-sel) 13%, transparent);
+}
+
+.cp__x {
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+/* ── meta strip ─────────────────────────────────────────────────────────── */
+
+.cp__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-3);
+}
+
+.cp__meta-l {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+.cp__meta .eyebrow {
+  color: var(--ink-mid);
+}
+
+.cp__count {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+}
+
+/* Stays on the right edge even when the result count on the left is absent —
+   the count only exists once there is a query. */
+.cp__meta-r {
+  margin-left: auto;
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  text-align: right;
+  line-height: 1.35;
+}
+
+.cp__meta-r .mono {
+  color: var(--ink-hi);
+}
+
+.cp__rule {
+  flex: none;
+  opacity: 0.8;
+}
+
+/* ── results ────────────────────────────────────────────────────────────── */
+
+.cp__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* The last row used to be sliced horizontally by the footer bar. It now
+     fades under it, and the extra bottom pad means a row is never bisected.
+     Only the bottom edge is masked: the group headers are sticky, and a top
+     fade would dim the one label that has to stay pinned and legible. */
+  padding: 0 var(--sp-2) var(--sp-6);
+  overscroll-behavior: contain;
+  /* A row is ~50px tall. A 26px fade over it left "시즌별 BY SEASON" sliced
+     through the middle at half opacity against the footer bar — the exact
+     legible-but-wrong shape the fade exists to prevent. One row deep now, plus
+     enough scroll padding that keyboard navigation never parks the active row
+     inside the fade.
+     No scroll-snap: arrow keys drive the selection in this dialog and call
+     scrollIntoView on every keystroke, and snap points fight that. The depth
+     is what stops the half-row. */
+  scroll-padding-block-end: 66px;
+  /* Two stops, not one: a linear 52px ramp still left the top third of a
+     50px row above 50% opacity — you could read "시즌별 BY SEASON" sheared in
+     half against the footer, which is the failure, not the fix. The ramp is
+     already down to 35% one row-third up, so a partial row dissolves instead
+     of being sliced. */
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 64px),
+    rgba(0, 0, 0, 0.35) calc(100% - 38px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 64px),
+    rgba(0, 0, 0, 0.35) calc(100% - 38px),
+    transparent 100%
+  );
+}
+
+.cp__list[data-end='true'] {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.cp__group + .cp__group {
+  margin-top: var(--sp-2);
+}
+
+.cp__ghead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  /* Opaque under the label, fading out so rows slide beneath it rather than
+     hitting a hard band. */
+  background: linear-gradient(180deg, var(--cp-surface) 74%, transparent);
+}
+
+/* Same cascade slot as the group's first row, so the label and the thing it
+   labels arrive together. */
+.cp__ghead--in {
+  animation: cp-row-in var(--cp-row-d) var(--ease-out) both;
+  animation-delay: calc(var(--cp-lead) + var(--i, 0) * var(--cp-stagger));
+}
+
+.cp__ghead-lead {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink);
+}
+
+/* The Latin gloss beside a Korean group name. It is not rendered at all in the
+   English UI, where it would repeat the word next to it. */
+.cp__ghead .cp__ghead-sub {
+  color: var(--ink-mid);
+}
+
+.cp__ghead-note {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  letter-spacing: 0.02em;
+}
+
+.cp__ghead-note::before {
+  content: '· ';
+}
+
+.cp__ghead-n {
+  margin-left: auto;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* ── a row ──────────────────────────────────────────────────────────────── */
+
+.cp__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--rad-sm);
+  text-align: left;
+  color: inherit;
+  transition: background var(--d-fast) var(--ease-out), box-shadow var(--d-fast) var(--ease-out);
+}
+
+.cp__row + .cp__row {
+  margin-top: 1px;
+}
+
+.cp__row[data-active='true'] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--cp-sel) 13%, transparent),
+    color-mix(in oklab, var(--cp-sel) 4%, transparent) 62%,
+    transparent
+  );
+  box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--cp-sel) 78%, transparent);
+}
+
+.cp__row--in {
+  animation: cp-row-in var(--cp-row-d) var(--ease-out) both;
+  animation-delay: calc(var(--cp-lead) + var(--i, 0) * var(--cp-stagger));
+}
+
+@keyframes cp-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* monogram chip */
+/* Holds the real portrait plate, so this is a box and nothing else — no
+   tinted fill, no border, no brass ring.
+
+   All three used to live here, because the row drew its own flat disc: a
+   category-tinted circle with the monogram in it and a gold box-shadow when
+   the person had won. That is a fourth drawing of a person in an app that
+   states in plateGeometry.ts's docblock that there is one. Every property it
+   approximated the plate now draws for real and better — the ring is the
+   archetype hue at the plate's own weight, the halo is the laurel's two
+   concentric hairlines rather than a gaussian glow, and the season arcs and
+   the newcomer's dashed ring have no flat-disc equivalent at all.
+
+   The plate paints its own bounds, so the box only sizes it. `line-height: 0`
+   because an inline-level SVG otherwise sits on a text baseline and leaves a
+   descender's worth of space under it, which knocks the mark off the row's
+   optical centre. */
+.cp__chip {
+  width: 34px;
+  height: 34px;
+  display: block;
+  line-height: 0;
+}
+
+/* action glyph */
+.cp__glyphbox {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--rad-sm);
+  display: grid;
+  place-items: center;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-mid);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-edge);
+}
+
+.cp__row[data-active='true'] .cp__glyphbox {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--cp-sel) 40%, transparent);
+}
+
+.cp__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cp__names {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* The name that leads, in whichever script the UI language puts first. */
+.cp__name {
+  flex: 0 1 auto;
+  font-size: 0.9375rem;
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp__name:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+/* The other script, as a subtitle. Both are allowed to shrink, but the leading
+   name shrinks last — a row that has to choose keeps the name you searched. */
+.cp__name-sub {
+  flex: 0 2 auto;
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp__name-sub--action {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.cp__sub {
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Matched substring. Bone, not crimson — a search hit is not a betrayal — and
+   not brass either, because brass is the winner pip two spans to the right. */
+.cp__row mark {
+  background: color-mix(in oklab, var(--cp-sel) 20%, transparent);
+  color: var(--ink-hi);
+  border-radius: var(--rad-hair);
+  padding: 0 1px;
+  box-shadow: inset 0 -1px 0 0 color-mix(in oklab, var(--cp-sel) 72%, transparent);
+}
+
+.cp__name-sub mark {
+  color: var(--ink);
+}
+
+/* winner / current pips — text, never colour alone */
+.cp__pip {
+  flex: none;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: var(--rad-xs);
+  color: var(--brass);
+  border: 1px solid color-mix(in oklab, var(--brass) 42%, transparent);
+  background: color-mix(in oklab, var(--brass) 10%, transparent);
+}
+
+.cp__pip--now {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--cp-sel) 46%, transparent);
+  background: color-mix(in oklab, var(--cp-sel) 14%, transparent);
+}
+
+.cp__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+/* --tag is set inline from data/lineage TEAM_COLOR so every surface in the app
+   agrees on bloc colour. The label text carries the meaning on its own. */
+/* The bloc chip. It reads the short lineage form in both languages precisely
+   because it is fixed to the right edge: "From other survival shows" set here
+   would eat the row it is annotating. */
+.cp__tag {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  padding: 3px 9px;
+  border-radius: var(--rad-full);
+  color: var(--tag, var(--ink-mid));
+  border: 1px solid color-mix(in oklab, var(--tag, var(--ink-low)) 40%, transparent);
+  background: color-mix(in oklab, var(--tag, var(--ink-low)) 11%, transparent);
+}
+
+.cp__enter {
+  width: 1em;
+  font-size: var(--t-sm);
+  color: var(--cp-sel);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--d-fast) var(--ease-out), transform var(--d-fast) var(--ease-out);
+}
+
+.cp__row[data-active='true'] .cp__enter {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── empty state ────────────────────────────────────────────────────────── */
+
+.cp__empty {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-6) var(--sp-5) var(--sp-6);
+  animation: cp-row-in var(--cp-row-d) var(--ease-out) both;
+}
+
+.cp__empty .cp__empty-eyebrow {
+  color: var(--ink-mid);
+}
+
+/* The echoed query is the user's input, and a 90-character paste used to set
+   the whole string inside the quotation marks at --t-h3, wrapping to three
+   lines and pushing the recovery button 70px down the panel. The echo is
+   clamped to two lines so junk input can never dictate the layout of the one
+   surface whose job is to recover from it. */
+.cp__empty-q {
+  margin-top: var(--sp-3);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  line-height: var(--lh-snug);
+  color: var(--ink-hi);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The echoed string itself is the only run here allowed to break anywhere: it
+   can be a single 90-character Latin token with no break opportunity in it. */
+.cp__empty-q .mono {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.cp__empty-q .mono {
+  color: var(--cp-sel);
+  font-weight: var(--fw-text);
+}
+
+.cp__empty-hint {
+  margin-top: var(--sp-3);
+  max-width: 46ch;
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  line-height: var(--lh-body);
+}
+
+/* A `ch` is the width of a digit, so 46ch of Latin is barely half the line 46ch
+   of Hangul measures — the same number strands the English hint in a column. */
+.cp__empty-hint:lang(en) {
+  max-width: 62ch;
+}
+
+.cp__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  padding: 9px 15px;
+  border-radius: var(--rad-sm);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  border: 1px solid color-mix(in oklab, var(--cp-sel) 38%, transparent);
+  background: color-mix(in oklab, var(--cp-sel) 11%, transparent);
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+}
+
+.cp__btn:hover {
+  background: color-mix(in oklab, var(--cp-sel) 20%, transparent);
+  border-color: color-mix(in oklab, var(--cp-sel) 60%, transparent);
+}
+
+.cp__btn-sub {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+/* ── footer legend ──────────────────────────────────────────────────────── */
+
+.cp__foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--glass-edge);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.cp__keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cp__foot kbd {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  line-height: 1.5;
+  min-width: 20px;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: var(--rad-xs);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.cp__foot-note {
+  margin-left: auto;
+  color: var(--ink-mid);
+  letter-spacing: 0.02em;
+}
+
+/* ── narrow ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .cp {
+    padding: var(--sp-4) var(--sp-3) var(--sp-3);
+  }
+
+  .cp__dialog {
+    max-height: 86vh;
+  }
+
+  .cp__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-1);
+  }
+
+  .cp__meta-r {
+    text-align: left;
+  }
+
+  .cp__names {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .cp__foot-note {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  /* Keep the lineage tag — it is real information. Drop the ⏎ affordance,
+     which only matters to keyboard users on a pointer-first width. */
+  .cp__right .cp__enter {
+    display: none;
+  }
+
+  .cp__row {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+  }
+
+  .cp__chip,
+  .cp__glyphbox {
+    width: 30px;
+    height: 30px;
+  }
+}

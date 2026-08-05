@@ -1,0 +1,472 @@
+/* HoverCard — a cursor-tethered preview of a node.
+   Position is applied to transform and never transitioned: the card must feel
+   welded to the pointer. Only opacity eases.
+
+   ── why this element is never unmounted, and why that was not enough ─────
+   Round 3 measured 542ms from pointermove to full opacity and blamed element
+   creation: every hover was building a fresh element carrying
+   `backdrop-filter: blur(20px)` over a canvas that repaints every frame, and
+   a brand-new backdrop layer forces a full-page backdrop snapshot before the
+   first animated frame can run. The component was made permanent — and round
+   4 measured 589ms on the first hover of a session against 3ms on every one
+   after it. Staying mounted bought nothing on its own, because an element at
+   `visibility: hidden` and opacity 0 is never PAINTED: no backdrop snapshot,
+   no font metrics, no composited layer. The whole cost was simply deferred to
+   first paint.
+
+   So HoverCard.tsx now warms the card for real — two frames of visible paint
+   at 0.008 opacity on mount, carrying live type — and `.is-warming` below is
+   that state. Non-zero opacity because Chromium skips painting at exactly 0,
+   which is the trap the previous cut fell into.
+
+   For the same reason the entrance is opacity ONLY. It used to also tween
+   `transform: scale(0.975) translateY(2px)`, which re-snapshots the backdrop
+   on every frame of the fade — the one thing this surface cannot afford. */
+
+.hovercard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-panel);
+  pointer-events: none;
+  width: max-content;
+  /* Wide enough that a Korean name and an edge headline can share a line
+     without either being elided. */
+  max-width: 336px;
+  will-change: transform, opacity;
+  contain: layout style;
+
+  /* Explicit, and deliberately not --d-fast (140ms).
+
+     One gesture has to read as one event. The canvas eases its hover focus on
+     `settle(dt, 150)`, so the dim/highlight is essentially complete at 150ms;
+     the card was arriving a quarter of a second later, which made a single
+     pointer move read as two separate responses. Matching the canvas constant
+     puts the card at full opacity 60ms behind the highlight (the dwell) rather
+     than 250ms behind it. The reduced-motion block below still collapses it. */
+  --hover-d: 150ms;
+
+  /* The dwell — how long the cursor must rest on a node before the card
+     commits — used to be a 60ms setTimeout in the component, which meant the
+     dwell could not even START until React had finished a full re-render of
+     the app (measured: a median 78ms for one pointermove to reach this
+     element). It is a transition-delay now, so it runs on the same clock as
+     the fade it delays. Only the SHOW direction carries it: a transition reads
+     its timing from the destination state, so the base rule below is the exit
+     and starts immediately, and .is-shown is the entrance and waits. That is
+     also what stops a cursor flicked across the mesh from strobing — leave
+     inside 60ms and the fade never started. */
+  --hover-dwell: 60ms;
+
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--hover-d) var(--ease-out),
+    visibility 0s linear var(--hover-d);
+}
+
+.hovercard.is-shown {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--hover-d) var(--ease-out) var(--hover-dwell),
+    visibility 0s linear var(--hover-dwell);
+}
+
+/* Warm-up: painted, therefore real, and invisible. */
+.hovercard.is-warming {
+  opacity: 0.008;
+  visibility: visible;
+  transition: none;
+}
+
+/* Type at the card's own sizes, so the metrics measured are the metrics used.
+   It only ever exists during the two warm frames. */
+.hovercard__warm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* The dwell survives reduced motion: it is not an animation, it is the
+   anti-strobe rule, and a card that appears on every node the cursor crosses
+   is exactly what a reader who asked for less motion did not ask for. */
+@media (prefers-reduced-motion: reduce) {
+  .hovercard {
+    --hover-d: 1ms;
+  }
+}
+
+/* ── surface ─────────────────────────────────────────────────────────────
+   This card does NOT get the rail's glass.
+
+   --glass-1/--glass-2 (0.72 / 0.82 alpha) are tuned for a panel sitting over
+   the static vignette. This one lands, by definition, on the densest part of
+   the graph — over #f4efe9 node labels and saturated 3px edges — and at 0.82
+   roughly a fifth of a near-white glyph survives underneath it. Measured on
+   the hover capture: '이상민' and '김경훈' were legible THROUGH the card and
+   collided with its own payload line, and a blue dashed link ran clean across
+   "서출구 — 콩과 계산기, 두 시즌 파트너", the single most important sentence
+   on the most frequently seen surface in the app.
+
+   So it takes the plate the dossier takes, for the reason the dossier takes
+   it: opaque --bg-panel. 0.94 was tried first — the reviewer's own suggested
+   value — and captured at DPR2 it still showed 경훈 / 김경훈 / 상민 / 이상민
+   through the card, because 6% of a 24px bold bone glyph is a 14-unit lift on
+   a near-black plate and the eye is at its most sensitive exactly there. Blur
+   does not rescue it: an 18px blur barely touches the centre of a glyph that
+   size, which is what "blur is not a substitute for opacity" means in
+   practice.
+
+   Going fully opaque also deletes the `backdrop-filter` — and with it the
+   full-page backdrop snapshot that made this surface expensive to show in the
+   first place, on every frame of every fade, forever. The legibility fix and
+   the latency fix are the same line. */
+.hovercard__card {
+  position: relative;
+  overflow: hidden;
+  padding: var(--sp-3);
+  border-radius: var(--rad-md);
+  border: 1px solid var(--glass-edge-strong);
+  background: var(--bg-panel);
+  box-shadow: var(--sh-md);
+}
+
+/* ── anchor ─────────────────────────────────────────────────────────────────
+   An unanchored panel floating over a graph is ambiguous about which disc it
+   belongs to. The caret sits on the edge that faces the node, level with the
+   cursor, and is a sibling of the card rather than a child because the card
+   clips its own rounded corners. */
+.hovercard__caret {
+  position: absolute;
+  top: calc(var(--caret-y, 24px) - 5px);
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  /* Same value as the card, or the anchor reads as a lighter patch on it. */
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-edge-strong);
+  /* Under the card, so only the two outward faces of the square show. */
+  z-index: -1;
+}
+
+.hovercard--right .hovercard__caret {
+  left: -5px;
+}
+
+.hovercard--left .hovercard__caret {
+  right: -5px;
+}
+
+/* A sliver of the person's category hue along the top edge. */
+.hovercard__accent {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  opacity: 0.85;
+}
+
+/* Micro-labels in this card sit on glass — lift them off --ink-low so every
+   string clears 4.5:1 against the actual backdrop. */
+.hovercard .eyebrow {
+  color: var(--ink-mid);
+}
+
+/* ── head ─────────────────────────────────────────────────────────────────── */
+
+.hovercard__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* The generated plate, at the same scale the graph draws its nodes. */
+.hovercard__mark {
+  flex: 0 0 auto;
+  display: block;
+  width: 40px;
+}
+
+.hovercard__names {
+  min-width: 0;
+}
+
+/* Hangul carries its own sidebearings; the negative tracking that flatters a
+   Latin display line crowds it. */
+.hovercard__ko {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--ink-hi);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hovercard__en {
+  margin-top: 1px;
+  font-size: var(--t-sm);
+  line-height: 1.25;
+  color: var(--ink-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* An occupation is a phrase, and in English it is a long one — "Broadcaster ·
+   former producer and leader of Roo'Ra" is not a string that survives being
+   cut at 336px. It gets two lines rather than an ellipsis after one word. */
+.hovercard__occ {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── tags ─────────────────────────────────────────────────────────────────── */
+
+.hovercard__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) 6px;
+  margin-top: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.hovercard__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--ink-mid);
+  background: color-mix(in srgb, var(--ink-hi) 5%, transparent);
+}
+
+.hovercard__tag--brass {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 38%, transparent);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+}
+
+.hovercard__tag-mark {
+  /* Ornament, sized off its own line rather than off the size ramp. */
+  font-size: 0.62em;
+  line-height: 1;
+}
+
+.hovercard__rule {
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+
+/* ── relations ────────────────────────────────────────────────────────────── */
+
+.hovercard__relhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.hovercard__total {
+  font-size: var(--t-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.hovercard__pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 5px;
+  margin-top: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.hovercard__pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 4px;
+  border-radius: var(--rad-full);
+  background: color-mix(in srgb, var(--ink-hi) 8%, transparent);
+}
+
+.hovercard__pipdot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rad-full);
+  flex: 0 0 auto;
+}
+
+.hovercard__pipn {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.5;
+  color: var(--ink-hi);
+}
+
+.hovercard__empty {
+  margin-top: 6px;
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  color: var(--ink-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── strongest tie ────────────────────────────────────────────────────────
+   The key sits on its own eyebrow line, so the payload line only has to hold
+   a name and a headline. The NAME never shrinks — Korean names are two to
+   four syllables and elidng one of three answers nothing; the description is
+   the only thing allowed to yield. */
+
+.hovercard__strongest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--sp-2);
+  min-width: 0;
+}
+
+.hovercard__strongkey {
+  color: var(--ink-mid);
+}
+
+/* The name and the dash hold the first line; an English headline that cannot
+   fit beside them drops to the next one instead of being cut mid-word. */
+.hovercard__strongline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 5px;
+  min-width: 0;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+}
+
+.hovercard__strongdot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rad-full);
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.hovercard__strongdash {
+  flex: 0 0 auto;
+  color: var(--ink-low);
+}
+
+.hovercard__strongname {
+  flex: 0 0 auto;
+  min-width: max-content;
+  font-weight: var(--fw-bold);
+  color: var(--ink-hi);
+}
+
+.hovercard__strongval {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-mid);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── the plate key ────────────────────────────────────────────────────────
+   Rows of "mark = meaning", drawn in the plate's own ink, for the marks the
+   plate beside them is carrying. It is content, so it takes the reading ink
+   and not the chrome ink — but it is set a rank below the payload line above
+   it, because a reader who already knows the grammar should be able to skip
+   it in one saccade. Two rows is the common case (arcs + ticks) and three the
+   ceiling; the component caps it, not this file. */
+.hovercard__key {
+  list-style: none;
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-2) 0 0;
+  border-top: 1px solid var(--glass-edge);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hovercard__key .platekey__row {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+}
+
+.hovercard__key .platekey__mark {
+  width: 15px;
+  /* Optically on the first line of the label, not on the middle of a box that
+     may be two lines tall. */
+  margin-top: 1px;
+}
+
+.hovercard__key .platekey__what {
+  font-size: var(--t-micro);
+  line-height: 1.4;
+  color: var(--ink-mid);
+  /* Korean must not break between syllable blocks; the browser default will. */
+  word-break: keep-all;
+}
+
+/* ── hint ─────────────────────────────────────────────────────────────────── */
+
+/* One language at a time: the card is a tooltip, and a bilingual pair here was
+   costing a whole line to say the same thing twice. */
+.hovercard__hint {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.4;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ── language ─────────────────────────────────────────────────────────────
+   The name line is set at 0 tracking because Hangul is drawn on a full em
+   square. When the leading name is the romanisation instead, it is Latin and
+   wants the tight display fit; the subtitle underneath is then the Hangul and
+   is marked as such. */
+.hovercard__ko:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.hovercard [lang='ko'] {
+  letter-spacing: var(--tr-tight-ko);
+}
+
+@media (max-width: 640px) {
+  .hovercard {
+    max-width: 288px;
+  }
+}
+
+/* Devices that cannot hover would only get a card stuck under a finger.
+   The dossier is the way in on touch. */
+@media (hover: none) {
+  .hovercard {
+    display: none;
+  }
+}

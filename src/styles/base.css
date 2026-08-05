@@ -1,0 +1,336 @@
+/* Reset + base typography. Kept small on purpose; component styles live
+   next to their components. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  font-weight: var(--fw-text);
+  line-height: var(--lh-body);
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+/* Focus: never remove it, just make it belong to the art direction.
+   Warm bone, not crimson — a red ring around a whole input reads as an
+   error state, and crimson is spoken for by the brand mark and betrayal. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--rad-xs);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg-void);
+}
+
+/* Scrollbars inside panels. The thumb was --ink-faint (2.1:1) which is
+   invisible on dark glass, so a panel with 1,400px below the fold looked
+   like it had simply stopped painting. */
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-low) transparent;
+  scrollbar-gutter: stable;
+}
+.scroll::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--ink-low);
+  border-radius: var(--rad-full);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-mid);
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Shared fade for scroll regions, so content dissolves at the boundary
+   instead of being sliced through the middle of a Hangul syllable block.
+   (Half a square syllable still reads as a legible-but-wrong shape, which
+   is why the hard cut looks like a rendering fault rather than an overflow.)
+
+   Usage:  <div class="scroll scroll--faded" data-scrolled={top > 4}>
+   The top edge stays crisp at scrollTop 0 and only fades once you have
+   scrolled, so nothing looks blurred before it has moved.
+
+   DEPTH. The default bottom fade was 28px against a --t-body line box of
+   16 × 1.62 = 26px, so a whole line sat inside the ramp and was cut at
+   roughly 55% alpha — legible-but-sheared, i.e. exactly the failure the
+   fade exists to prevent. It is now 52px (two line boxes) with a weighted
+   ramp: alpha is already down to 0.42 one line box in, so the topmost line
+   inside the ramp is unambiguously dissolving rather than half-painted.
+
+   MODIFIERS
+     .scroll--footer   deeper ramp (72px) for a surface with a sticky footer
+                       bar — the dossier, the command palette. Without it
+                       the fade is measured to the container floor, which is
+                       *behind* the footer, so the fade lands where nothing
+                       can see it and the footer does the cutting.
+     .scroll--tail     adds a real block of scrollable whitespace equal to
+                       the fade depth, so the last line of content can always
+                       reach full opacity. Opt-in because it inserts an
+                       ::after child: safe on block and flex-column scrollers,
+                       not on a container that is itself a grid.
+     .scroll--snap     see below.
+
+   WHEN THE CONTENT IS NOT A LINE BOX — and why deepening a ramp is never the
+   answer twice. The depths above are all derived from a line of text, because
+   a ramp's job is to dissolve the last legible line rather than shear it. The
+   cast wall is not a text column: its unit is a 118px portrait plate with a
+   27-unit medallion at the top of it, and there is no ramp depth that clears
+   a plate — the mask is alpha, not occlusion, so whatever sits inside it is
+   painted at 0–100% however deep it is. Two rounds went 0 → 40 → 72px chasing
+   that and each one moved the cut to a different part of the same disc;
+   measured at 1600×1000, the 72px ramp still had 57% of a plate inside it at
+   scrollTop 500 and 78% of one at 760 on a phone.
+
+   The fix is to stop the scroller RESTING with a plate inside the ramp, not
+   to make the ramp bigger. `.scroll--snap` turns on proximity snapping; the
+   surface then marks its own units with `scroll-snap-align: start` and gives
+   them a `scroll-margin-top` equal to the ramp, so a rest position always
+   puts a whole unit's top edge at the ramp's END and the band itself lands in
+   the gap between units. With that in place the ramp can go back to being a
+   signal — ~20px, which is what "there is more above" costs.
+
+   Per-surface overrides go through --scroll-fade-b. Do not reimplement the
+   mask locally — four private copies with four different numbers is what
+   this utility was written to replace. */
+.scroll--faded {
+  --scroll-fade-t: 0px;
+  --scroll-fade-b: 52px;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 var(--scroll-fade-t),
+    #000 calc(100% - var(--scroll-fade-b)),
+    rgba(0, 0, 0, 0.42) calc(100% - var(--scroll-fade-b) * 0.5),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 var(--scroll-fade-t),
+    #000 calc(100% - var(--scroll-fade-b)),
+    rgba(0, 0, 0, 0.42) calc(100% - var(--scroll-fade-b) * 0.5),
+    transparent 100%
+  );
+  scroll-padding-block: 18px var(--scroll-fade-b);
+}
+.scroll--faded[data-scrolled='true'] {
+  --scroll-fade-t: 18px;
+}
+.scroll--faded.scroll--footer {
+  --scroll-fade-b: 72px;
+}
+.scroll--faded.scroll--tail::after {
+  content: '';
+  display: block;
+  flex: 0 0 auto;
+  height: var(--scroll-fade-b);
+  pointer-events: none;
+}
+
+/* `proximity`, never `mandatory`: mandatory would refuse to stop anywhere
+   between two plate rows, which on a wall three screens tall turns a flick
+   into a slot machine. Proximity only pulls when the release is already close
+   to a unit edge, which is exactly the case the ramp was cutting. */
+.scroll--snap {
+  scroll-snap-type: y proximity;
+}
+
+/* ---- shared utility primitives ---- */
+
+.eyebrow {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--ink-low);
+}
+
+/* Hangul eyebrows. --tr-caps (0.16em) is a Latin small-caps device; across
+   syllable blocks, which already carry their own sidebearings on a full em
+   square, it reads as a ransom note (tokens.css says so in as many words) and
+   text-transform has nothing to uppercase. This used to be opt-in as .caps-ko
+   below and had zero adopters, so every non-dossier surface shipped the
+   failure the token file forbids: 출·연·진 on the cast wall, 가·장 강·한 인·연
+   on the hover card, 스·포·일·러 없·음 on the about sheet. Making it automatic
+   is the only version that cannot be forgotten by the next component.
+
+   Root :lang(ko) already flips with the language switch, so the selector needs
+   no JS: `:lang(ko)` catches an eyebrow that inherits Korean from <html>, and
+   `[lang='ko']` catches a Korean run tagged inside a Latin one. */
+.eyebrow:lang(ko),
+.eyebrow [lang='ko'] {
+  letter-spacing: var(--tr-caps-ko);
+  text-transform: none;
+}
+
+/* …and the mirror, because the rule above is inherited by children. The house
+   pattern for a bilingual eyebrow is a Korean run with the Latin gloss tagged
+   `lang="en"` beside it (FilterRail, StatusBar, PathCard, the cast wall); that
+   gloss is Latin caps and has to stay Latin caps rather than inherit the
+   Hangul step-down from its parent. An `.eyebrow[lang='en']` — the gloss as
+   its own element — never matched :lang(ko) in the first place. */
+.eyebrow [lang='en'] {
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+}
+
+/* The opt-in form, kept for a Hangul run that has to sit at caps rank without
+   being inside an .eyebrow. Identical values; the automatic rule above is what
+   components should be relying on. */
+.caps-ko {
+  letter-spacing: var(--tr-caps-ko);
+  text-transform: none;
+}
+
+/* ---- figures ----------------------------------------------------------
+   THE RULE: a figure the reader is asked to compare is set in .fig. A figure
+   that is an identifier — a key cap, a timestamp — is set in .mono.
+
+   This used to be a size rule ("big numbers sans, small numbers mono, at 13px
+   the dot doesn't register") and it was wrong on its own premise. JetBrains
+   Mono draws a slashed zero and there is no OpenType switch that removes it:
+   'zero' 0, 'zero' 1 and font-variant-numeric: slashed-zero all render the
+   same glyph, which is why the rail's masthead was moved to the sans in the
+   first place. The status bar's ledger stayed mono and, at the same 13px the
+   rule called safe, shipped `인물 2Ø / 2Ø · 관계 4Ø` — the app's data-integrity
+   signature, on screen 100% of the time, drawn in a different voice from the
+   identical "20" 300px above it. The dot doesn't register at 13px only when
+   the number happens to contain no zero, which was true of every rail counter
+   and of nothing else.
+
+   So the axis is what the number IS, not how big it is. `20 / 20 · 40` is a
+   count and takes .fig; `⌘K`, `1`, `2026.07.30` are identifiers and take
+   .mono, where a slashed zero reads as the machine voice it is meant to be. */
+.fig {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Identifiers. `'zero' 0` used to sit here as well, and it was dead code
+   documenting an intention the render contradicted — the face ignores it. It
+   is gone; the sans above is the actual fix. */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tracking. Hangul syllable blocks are drawn on a full em square and carry
+   their own sidebearings, so the negative tracking that tightens BLOODY GAME
+   crowds 피의 게임 — visibly, at 88px on the title card. tokens.css therefore
+   makes Hangul metrics the default for --tr-display / --tr-tight.
+
+   These two put the tight Latin fit back on the specific run that is Latin:
+   wrap the wordmark's X, a Latin gloss, a mono key badge. They set
+   letter-spacing directly because a child inherits its parent's *computed*
+   letter-spacing, so redefining the token on the child would do nothing. */
+.latin {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.latin-display {
+  letter-spacing: var(--tr-display-latin);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Hairline that fades at both ends — used everywhere as a section divider. */
+.rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-edge-strong) 18%,
+    var(--glass-edge-strong) 82%,
+    transparent
+  );
+}

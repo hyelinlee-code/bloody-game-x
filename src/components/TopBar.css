@@ -1,0 +1,1032 @@
+/* ==========================================================================
+   TopBar — floating chrome over the graph. The canvas bleeds under it, so the
+   bar is a scrim + a hairline, never a solid slab.
+
+   Crimson budget: the brand seal, the wordmark X and the drop bleeding along
+   the hairline beneath them. That is the mark, and it is the whole allowance.
+   Selection, focus and match states are bone; they read as "active" without
+   competing with a betrayal edge on the canvas.
+   ========================================================================== */
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topbar-h);
+  z-index: var(--z-chrome);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+  /* the bar itself never eats a drag; only its controls do */
+  pointer-events: none;
+  transition: opacity var(--d-base) var(--ease-out);
+}
+
+/* The bar mounts underneath the cold open, and `.is-ready` used to gate only
+   the eight staggered control groups — the scrim, the hairline and the blood
+   drop under the wordmark painted from mount regardless. The frame at 1137ms
+   after ENTER was therefore a fully drawn bar containing nothing but two
+   hairline dividers, which reads as a region that failed to load rather than
+   as an entrance. The pane is held with its contents and fades as one object;
+   the per-control stagger runs inside that fade. */
+.topbar:not(.is-ready) {
+  opacity: 0;
+}
+
+/* Top-down darkening so bone-white type stays legible over a busy graph. */
+.tb-scrim {
+  position: absolute;
+  inset: 0 0 -22px 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-void) 94%, transparent) 0%,
+    color-mix(in srgb, var(--bg-void) 78%, transparent) 38%,
+    color-mix(in srgb, var(--bg-void) 40%, transparent) 72%,
+    transparent 100%
+  );
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 54%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 54%, transparent 100%);
+  /* backdrop-filter + mask-image on one element gets promoted to its own
+     compositing layer in Chromium, which then blurs the bar's own contents
+     instead of only the canvas behind it. Pinning the paint order fixes it. */
+  z-index: 0;
+}
+
+/* Everything that is actual content sits above the scrim, explicitly. */
+.tb-brand,
+.tb-modes,
+.tb-actions {
+  position: relative;
+  z-index: 2;
+}
+
+/* hairline */
+.topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-edge-strong) 9%,
+    var(--glass-edge-strong) 91%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* a single drop of blood bleeding along the hairline, under the wordmark */
+.topbar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(240px, 28vw);
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--blood) 78%, transparent), transparent);
+  /* sits on top of the neutral hairline drawn by ::after */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── left: wordmark ─────────────────────────────────────────────────────── */
+
+.tb-brand {
+  justify-self: start;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  /* the lockup is pure decoration now that the spoiler pill has moved out */
+  pointer-events: none;
+}
+
+.tb-glyph {
+  display: grid;
+  place-items: center;
+  color: var(--blood);
+  filter: drop-shadow(0 0 9px var(--blood-glow));
+}
+
+.tb-lockup {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tb-title {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  white-space: nowrap;
+}
+
+.tb-title .tb-x {
+  color: var(--blood);
+  font-weight: var(--fw-bold);
+  margin-left: 0.06em;
+  letter-spacing: 0;
+}
+
+.tb-eyebrow {
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink-mid);
+}
+
+/* ── centre: layout mode switcher ───────────────────────────────────────── */
+
+.tb-modes {
+  position: relative;
+  justify-self: center;
+  min-width: 0;
+}
+
+.tb-seg {
+  --seg-pad: 3px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--seg-pad);
+  border-radius: var(--rad-full);
+  background: var(--glass-1);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--sh-sm);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  pointer-events: auto;
+}
+
+.tb-seg-btn {
+  position: relative;
+  /* Above the sliding indicator, always. The indicator is a sibling now, so
+     one z-index on each side is the whole fix. */
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--rad-full);
+  color: var(--ink-mid);
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out),
+    /* Picking a layout is the most consequential click in the chrome — the
+       whole graph re-seats behind it — and it used to feel like nothing at all
+       under the finger. --ease-spring on the release, transform only. The
+       sliding indicator underneath stays on --ease-out for a reason recorded
+       in TopBar.tsx: it animates inset lengths and an overshoot escapes the
+       strip. This transform cannot. */
+      transform var(--d-fast) var(--ease-spring);
+}
+
+.tb-seg-btn:active:not(.is-locked) {
+  transform: scale(0.94);
+}
+
+/* The glyph belongs to the two-row form of this control; above 900 the bar is
+   one line and the names are the control on their own. */
+.tb-seg-glyph {
+  display: none;
+  flex: none;
+}
+
+.tb-seg-btn:hover:not(.is-locked) {
+  color: var(--ink-hi);
+  background: color-mix(in srgb, var(--ink-hi) 6%, transparent);
+}
+
+.tb-seg-btn.is-active {
+  color: var(--ink-hi);
+  background: none;
+}
+
+.tb-seg-btn.is-locked {
+  color: var(--ink-low);
+  cursor: not-allowed;
+}
+
+/* The sliding indicator.
+
+   It is a direct child of .tb-seg, not of the active button. Inside the button
+   it inherited that button's place in the stack, so a flight from tab 1 to
+   tab 3 painted an opaque pill straight over tab 2's label for the whole
+   280ms — the label came back reading "…son". Out here it slides underneath
+   every label instead. Position is driven from a measured rect (see
+   TopBar.tsx) rather than from `layoutId`, which is what made it a child. */
+.tb-seg-ind {
+  position: absolute;
+  z-index: 0;
+  /* The containing block is the strip's padding box; the buttons sit inside
+     its content box, so the indicator is inset by exactly the strip padding.
+     Left and right are set — and animated independently — from TopBar.tsx;
+     no width is declared here, because a width plus an x is what made the
+     pill mis-centre mid-flight. */
+  top: var(--seg-pad);
+  bottom: var(--seg-pad);
+  border-radius: var(--rad-full);
+  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-panel));
+  border: 1px solid var(--glass-edge-strong);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ink-hi) 8%, transparent),
+    var(--sh-sm);
+  pointer-events: none;
+}
+
+/* The bone underline is the one mark on this control that says, flatly, "this
+   is the mode you are in". It used to be a ::after on the sliding pill, pinned
+   to the pill's OWN centre — so for the whole 280ms flight it pointed at
+   whatever the pill's midpoint happened to be over. Captured 207ms into a
+   Web → By archetype switch it was centred dead under 'By season', a mode
+   that was neither the source nor the destination, while 'By archetype' was
+   already lit. A segmented control cannot be allowed to name the wrong state,
+   not even for a quarter of a second.
+
+   So the marker belongs to the button, not to the pill: it appears under the
+   destination the instant the destination becomes active and never travels.
+   The pill is then unambiguously an arrival animation. ::before, because
+   ::after on this element is the 44px touch overlay (see the foot of this
+   file). */
+.tb-seg-btn.is-active::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: var(--rad-full);
+  background: var(--bone);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--bone) 35%, transparent);
+  animation: tb-mark-in var(--d-fast) var(--ease-out) both;
+}
+
+@keyframes tb-mark-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-seg-btn.is-active::before {
+    animation: none;
+  }
+}
+
+.tb-seg-label {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The line is whichever language the reader is in; the gloss is the Latin
+   translation that only appears next to a Korean line. */
+.tb-seg-line {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+}
+
+.tb-seg-btn.is-active .tb-seg-line {
+  font-weight: var(--fw-bold);
+}
+
+.tb-seg-gloss {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-text);
+  letter-spacing: 0.02em;
+  color: var(--ink-mid);
+}
+
+.tb-seg-btn.is-active .tb-seg-gloss {
+  color: var(--ink);
+}
+
+.tb-seg-btn.is-locked .tb-seg-gloss {
+  color: var(--ink-low);
+}
+
+/* The trailing slot is one fixed box whatever it holds. The padlock and the
+   key badge used to be different widths, so the whole centred nav jumped 2px
+   left and grew 4px on every selection — on the only landmark that is meant
+   to hold still while the canvas moves. */
+.tb-seg-slot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  align-self: center;
+}
+
+/* A keycap, not a count.
+
+   This was a filled rounded rect holding a digit — the identical object the
+   filter rail uses twelve inches away to mean "how many people are in this
+   group". Same shape, same size, same treatment, two incompatible meanings on
+   one screen, and 'By season 2' read as "two seasons" before it read as
+   "press 2". Keyboard hints now take the outlined mono keycap the command
+   palette footer already uses, and the filled pill is left to counts. */
+.tb-seg-key {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--rad-xs);
+  border: 1px solid var(--glass-edge);
+  font-size: var(--t-micro);
+  color: var(--ink-low);
+  background: transparent;
+}
+
+.tb-seg-btn.is-active .tb-seg-key {
+  color: var(--ink-mid);
+  border-color: var(--glass-edge-strong);
+}
+
+/* Unavailable, not forbidden. The digit stays — it is still the key that
+   selects this view — and the rule around it goes dashed and steps back, which
+   is the same "nothing here yet" mark the canvas draws around a node with no
+   franchise history. */
+.tb-seg-btn.is-locked .tb-seg-key {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--ink-low) 70%, transparent);
+  color: var(--ink-low);
+}
+
+/* Why Orbit refuses. `title` reaches neither keyboard focus nor touch, so the
+   requirement is stated in the bar and in a live region instead. */
+.tb-lock-note {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 4px 10px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge-strong);
+  background: var(--glass-2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: var(--sh-sm);
+  font-size: var(--t-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--ink-hi);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-out),
+    visibility 0s linear var(--d-fast);
+}
+
+.tb-lock-note.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+
+.tb-lock-note-gloss {
+  color: var(--ink-mid);
+}
+
+/* ── language switch ────────────────────────────────────────────────────────
+   Two named states, both visible, neither behind a menu. It is the only text
+   control in a row of icons, which is what makes it findable without reading
+   the interface it is there to change. */
+
+.tb-lang-wrap {
+  display: flex;
+  flex: none;
+}
+
+.tb-lang {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 3px 6px 3px 8px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge-strong);
+  background: var(--glass-1);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.tb-lang-globe {
+  flex: none;
+  margin-right: 3px;
+  color: var(--ink-mid);
+}
+
+.tb-lang-btn {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: var(--rad-full);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1;
+  white-space: nowrap;
+  /* Set on the button itself, because the button carries `lang` and a child
+     would inherit an already-computed value from the bar instead. */
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-mid);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out);
+}
+
+.tb-lang-btn:hover:not(.is-active) {
+  color: var(--ink-hi);
+  background: color-mix(in srgb, var(--ink-hi) 8%, transparent);
+}
+
+/* Selected reads as bone — the same "active" ink as the mode indicator, and
+   nowhere near the crimson the brand and the betrayal edge own. */
+.tb-lang-btn.is-active {
+  color: var(--bg-void);
+  background: color-mix(in srgb, var(--bone) 88%, transparent);
+}
+
+/* ── right: search + view controls ──────────────────────────────────────── */
+
+.tb-actions {
+  justify-self: end;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.tb-icon {
+  flex: none;
+}
+
+.tb-search {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 34px;
+  max-width: 264px;
+  min-width: 0;
+  padding: 0 5px 0 var(--sp-3);
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-1);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  color: var(--ink-mid);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out);
+}
+
+.tb-search:hover {
+  color: var(--ink-hi);
+  border-color: var(--glass-edge-strong);
+  background: var(--glass-2);
+}
+
+/* "there is a live query" — bone, not blood. A crimson ring around a text
+   field reads as an error, and crimson belongs to betrayal. */
+.tb-search.is-active {
+  color: var(--ink-hi);
+  border-color: color-mix(in srgb, var(--bone) 38%, transparent);
+}
+
+.tb-search-text {
+  font-size: var(--t-sm);
+  letter-spacing: var(--tr-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-search.is-active .tb-search-text {
+  color: var(--ink-hi);
+}
+
+.tb-search-count {
+  flex: none;
+  font-size: var(--t-micro);
+  padding: 2px 6px;
+  border-radius: var(--rad-full);
+  color: var(--bg-void);
+  background: color-mix(in srgb, var(--bone) 82%, transparent);
+}
+
+.tb-kbd {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--rad-xs);
+  border: 1px solid var(--glass-edge);
+  background: color-mix(in srgb, var(--ink-hi) 6%, transparent);
+  color: var(--ink-mid);
+  font-size: var(--t-micro);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tb-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--glass-edge-strong);
+  flex: none;
+}
+
+.tb-btn {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--rad-sm);
+  border: 1px solid transparent;
+  color: var(--ink-mid);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out);
+}
+
+.tb-btn:hover {
+  color: var(--ink-hi);
+  background: var(--glass-2);
+  border-color: var(--glass-edge);
+}
+
+.tb-btn[aria-pressed='true'] {
+  color: var(--ink-hi);
+  background: var(--glass-2);
+  border-color: var(--glass-edge-strong);
+}
+
+/* ── responsive ─────────────────────────────────────────────────────────── */
+
+/* The three groups are wildly unequal — a 112px wordmark on the left against a
+   search field, a language switch and four buttons on the right — so centring
+   the mode strip on the *viewport* only works while the right-hand group fits
+   inside its half. Below that the strip would slide under the search field
+   (it did, at 1280, the moment the language switch arrived). From here down
+   the strip is centred in the space that is actually left over instead: it
+   moves off the exact centre of the window and never collides. */
+@media (max-width: 1540px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 1180px) {
+  .tb-search {
+    max-width: 196px;
+  }
+}
+
+/* Under about 1080 the three groups no longer fit side by side in either
+   language, so the two pieces of pure gloss go first: the Latin translation
+   under each Korean mode name, and the keyboard hint on the search field.
+   Both are redundant — the shortcut is in the field guide, and the language
+   switch is now three centimetres to the right of the mode strip. */
+@media (max-width: 1200px) {
+  .tb-eyebrow {
+    display: none;
+  }
+  .tb-seg-gloss {
+    display: none;
+  }
+  .tb-kbd {
+    display: none;
+  }
+  .tb-search {
+    padding-right: var(--sp-3);
+  }
+}
+
+/* Narrow: the mode names only. The key slot stays — it is what keeps the
+   padlock and the digit the same size, and dropping it reintroduces the jump.
+
+   1080, not 900. Measured in English — the longer of the two, because 'By
+   archetype' and 'By season' are wider than 직업별 and 시즌별 — the three
+   groups want 147.7 (wordmark) + 382.5 (mode strip) + 455.4 (actions) + 32 of
+   gap + 32 of padding = 1049.6px of one line. Below that the grid overflows
+   and `.tb-actions`, which is `justify-self: end`, lands on top of the mode
+   strip: at 1000px and at 901px, Orbit's rect and the search field's rect
+   intersect and elementFromPoint on Orbit returns the search. Same failure as
+   the phone blocker, one breakpoint up, and it was sitting between two blocks
+   that each thought the other had it. The threshold is now above the
+   measurement rather than under it. */
+@media (max-width: 1080px) {
+  .topbar {
+    gap: var(--sp-3);
+    padding: 0 var(--sp-3);
+  }
+  .tb-lang-globe {
+    display: none;
+  }
+  .tb-lang {
+    padding: 3px 4px;
+  }
+  .tb-lang-btn {
+    padding: 0 7px;
+  }
+  .tb-seg-btn {
+    padding: 0 10px;
+  }
+  /* Collapsed to its lens, the field keeps the pill.
+
+     It used to drop to --rad-sm here, which put a third container shape into
+     an eight-item row: a 999px pill holding the four mode marks, a ~7px
+     rounded square holding only the magnifier, a 999px pill for 한국어/EN,
+     then four bare icons. On desktop the row reads as one system precisely
+     because the search is a wide pill matching its neighbours; collapsed to an
+     icon it was the only object in the bar that matched nothing. */
+  .tb-search {
+    width: 34px;
+    max-width: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--rad-full);
+    border-color: var(--glass-edge-strong);
+  }
+  .tb-search-text,
+  .tb-search-count {
+    display: none;
+  }
+}
+
+/* ── phone: two rows ─────────────────────────────────────────────────────
+   This bar has been rebuilt for the phone three times and each version was a
+   single row that had run out of arithmetic.
+
+   Round 1 kept four bilingual pills and let the row scroll; at 390px the strip
+   wanted 255px and got about 210, so the second pill was sheared through a
+   Hangul syllable block by the search button. Round 2 took the names off, made
+   the four modes four 30px marks and gave the active one its name back — and
+   the note that shipped with it conceded that the fourth mark then "moves
+   behind the strip's own 26px edge fade and is reached by swiping", which is a
+   description of losing it. Measured live at 390×844 with getBoundingClientRect
+   plus elementFromPoint, in both languages, that is what had happened:
+
+     .tb-seg-scroll   clientWidth 129   scrollWidth 166   (ko)
+     Orbit button     x 139.9 → 169.9   .tb-search  x 145.1 → 175.1
+     rect intersection 24.8 × 30.0 px   (en: 19.6 × 30.0)
+     document.elementFromPoint(center of Orbit) → .tb-search
+
+   One of the app's four view modes was painted outside its own clip box,
+   underneath an opaque control, and a tap in a 25px band opened search instead.
+   That is not a squeeze; that is a control sitting on top of another one.
+
+   WHY IT CANNOT BE FIXED IN ONE ROW. The bar holds eleven controls: four
+   modes, search, two language halves and four icon buttons. WCAG 2.5.5 and the
+   Apple HIG both want 44px, and eleven non-overlapping 44px targets need
+   11 × 44 + gaps + two dividers + the bar's own padding = 527px of content,
+   i.e. a 543px viewport. Every phone in portrait is narrower than that. No
+   amount of shaving pixels off a 390px row reaches eleven 44px targets, and
+   the previous two rounds were both spending their effort trying.
+
+   WHY 900 AND NOT 640. The collision is not a phone problem; 640 was simply
+   where the last round happened to be looking. Re-measured across the range,
+   the same two rects intersect at every width from about 780 down: at 700px in
+   Korean the seg spans 330.8px into a cell that has ~250, and elementFromPoint
+   still lands on .tb-search for Orbit; in English at 700 both 'By archetype'
+   AND Orbit intersect search, and Orbit also intersects 한국어. At 900 it
+   clears. So the layout has to change above 640, and 900 is the width the app
+   already treats as structural — it is where the rail stops being a persistent
+   column (app.css) — rather than a fifth number invented for this file.
+   It is also the width above which the mode names fit on one line, so this is
+   the whole range in which they would otherwise have to come off; below 900
+   there is now no width at which the app's primary navigation is four
+   anonymous glyphs.
+
+   So the bar wraps. Row 1 is the identity and the action group; row 2 is the
+   four views, spread across the full width as a proper tab strip — 90px each
+   at 390px, which is finally enough to carry the glyph AND the name, so the
+   round-2 regret ("on a phone they were unlabelled … 'bar chart' meaning
+   'group by season' is not guessable") is answered at the same time. Nothing
+   scrolls, nothing is masked, nothing overlaps: measured after, all eleven
+   control rects are pairwise disjoint at 360 / 390 / 430 in both languages and
+   every one of them is ≥ 44 × 44.
+
+   THE COST is 32px of bar. --topbar-h is redefined here rather than in
+   tokens.css because app.css computes the camera's --inset-top and the rail's
+   `top` from it: if the bar grows and the token does not, the graph is drawn
+   under the bar and the fit has no idea. One token, one number, everything
+   that measures the bar follows. 92 = 44 (row 1) + 2 (gap) + 44 (the strip:
+   40px buttons inside 2px of strip padding and its 1px rule) + 2 of slack. */
+@media (max-width: 900px) {
+  :root {
+    --topbar-h: 92px;
+  }
+
+  .topbar {
+    /* Two explicit rows. `align-content: center` rather than stretch so the
+       pair sits optically centred in the bar and the scrim's gradient still
+       reads as top-down darkening rather than as a band behind row 2. */
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 44px auto;
+    align-content: center;
+    align-items: center;
+    gap: 2px var(--sp-2);
+    padding: 0 var(--sp-2);
+  }
+  .tb-brand {
+    grid-column: 1;
+    grid-row: 1;
+    gap: var(--sp-2);
+  }
+  .tb-actions {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 2px;
+  }
+  /* Full bleed on its own line — this is the app's primary navigation and on
+     this form factor it is the only thing on its row, so it takes the width. */
+  .tb-modes {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: stretch;
+    min-width: 0;
+  }
+  .tb-glyph svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* The scroller is inert here: everything fits, so it must not clip, must not
+     mask and must not snap. It stays in the tree because the lock note hangs
+     off .tb-modes and would be clipped by an overflow box if it were removed
+     conditionally in the markup instead. */
+  .tb-seg-scroll {
+    max-width: 100%;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
+    scroll-snap-type: none;
+    padding-block: 0;
+  }
+  .tb-seg {
+    --seg-pad: 2px;
+    width: 100%;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  /* Four equal columns. `flex: 1 1 0` with `min-width: 0` is what makes them
+     equal rather than content-sized — 인물 중심 is five syllable blocks against
+     관계망's three, and a nav whose tabs are different widths in one language
+     and different widths again in the other reads as four unrelated buttons. */
+  .tb-seg-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    height: 40px;
+    padding: 0 4px;
+    gap: 1px;
+  }
+  .tb-seg-glyph {
+    display: block;
+  }
+
+  /* The name is back on all four, under the mark rather than beside it.
+     Stacked, because inline it does not fit: 'By archetype' at --t-xs is ~64px
+     and a 360px phone gives each button 84px of content box, so a 17px glyph
+     plus a 5px gap plus the name would clip on the narrowest device this app
+     claims to support. Stacked, the name has the whole 84px. */
+  .tb-seg-label {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    clip-path: none;
+    text-align: center;
+  }
+  .tb-seg-line {
+    display: block;
+    font-size: var(--t-xs);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* One name, in the reader's language. The Latin gloss under a Korean mode
+     name is a third line on a 40px button. */
+  .tb-seg-gloss {
+    display: none;
+  }
+  /* The underline marker sits on the button's own bottom edge, which is now
+     the bottom of a two-line stack rather than of a 32px square. */
+  .tb-seg-btn.is-active::before {
+    bottom: -2px;
+  }
+  /* No keyboard on a phone, so the digit earns nothing. The "not yet" mark
+     still does — it becomes a dashed corner ring on the Orbit tab, with the
+     digit itself set to zero so only the rule survives. */
+  .tb-seg-btn .tb-seg-slot {
+    display: none;
+  }
+  /* Inset far enough to clear the strip's own 999px corner: at 3px the ring
+     sat on the curve of the outermost tab and read as a stray dot floating
+     outside the control rather than as a mark belonging to Orbit. */
+  .tb-seg-btn.is-locked .tb-seg-slot {
+    display: grid;
+    position: absolute;
+    right: 9px;
+    top: 6px;
+    width: 9px;
+    height: 9px;
+  }
+  .tb-seg-btn.is-locked .tb-seg-key {
+    font-size: 0;
+    border-radius: var(--rad-full);
+  }
+  /* The note is anchored to the strip, which is now full width, so it can
+     simply be measured by its own sentence again. */
+  .tb-lock-note {
+    left: var(--sp-2);
+    transform: translate(0, -4px);
+    white-space: normal;
+    width: max-content;
+    max-width: 78vw;
+  }
+  .tb-lock-note.is-on {
+    transform: translate(0, 0);
+  }
+
+  /* ── row 1: real 44s, not overlays ─────────────────────────────────────
+     Every control on this row is drawn at the size it is tapped at. The 44px
+     ::after overlays below stay for coarse pointers on wider screens, where
+     the drawn control is still 34px; here they are no-ops on the icon buttons
+     and only supply the four missing pixels on the 40px mode tabs. */
+  .tb-divider {
+    height: 18px;
+    margin: 0;
+  }
+  /* The second rule (switch → icon group) gives way; the icons are already a
+     visually distinct group and the row is tighter than it is on desktop. */
+  .tb-lang-wrap + .tb-divider {
+    display: none;
+  }
+  .tb-btn {
+    width: 44px;
+    height: 44px;
+  }
+  /* Collapsed to its lens, the field keeps the pill — see the note in the
+     900px block: an icon in a rounded square would be the only container shape
+     in the row that matches nothing else. */
+  .tb-search {
+    width: 44px;
+    max-width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--rad-full);
+    border-color: var(--glass-edge-strong);
+  }
+  .tb-search-text,
+  .tb-search-count {
+    display: none;
+  }
+  .tb-lang {
+    height: 44px;
+    gap: var(--sp-2);
+    padding: 2px 3px;
+  }
+  .tb-lang-globe {
+    display: none;
+  }
+  /* 44 wide, and the 8px between the halves stays genuinely dead: a mis-tap
+     here silently rewrites every string on the page and there is no undo
+     affordance for that. Measured before this change the EN half was 24×28 —
+     the smallest target in the whole chrome, sitting next to the Korean half
+     at 36×28, i.e. the two most consequential toggles in the app were also the
+     two easiest to hit by accident. */
+  .tb-lang-btn {
+    height: 38px;
+    flex: none;
+    min-width: 44px;
+    padding-inline: 6px;
+    font-size: var(--t-micro);
+  }
+}
+
+/* ── touch targets ───────────────────────────────────────────────────────
+   Above 640 the bar is still one row of 34px controls, and a coarse pointer
+   there — a tablet, a touchscreen laptop — still wants 44. Every control
+   carries a 44px-tall hit overlay; the bar has 26px of unused height at those
+   widths, so the vertical bleed is free and cannot overlap a neighbour.
+   Horizontal bleed is held to half the gap so two adjacent controls never
+   fight over the same pixel.
+
+   ── why this is its own block ────────────────────────────────────────────
+   It used to live inside the 640px layout block above, while FilterRail did
+   the same job under `(pointer: coarse)`. Two strategies on disjoint
+   conditions: a coarse tablet at 1024px got the rail's raised targets and not
+   the bar's, and a narrow desktop window got the bar's and not the rail's.
+   `(pointer: coarse), (max-width: 900px)` is now the one query every raised
+   target in the app fires on — here, in FilterRail, in Gallery and in
+   PathCard — and it is deliberately NOT the query the layout above uses,
+   because a coarse 1024px tablet wants big targets and does not want the
+   phone's two-row bar. Below 640 these overlays are mostly no-ops now that the
+   controls are drawn at 44; the one that still does work is .tb-seg-btn, whose
+   tab is 40px tall inside a 44px strip. */
+@media (pointer: coarse), (max-width: 900px) {
+  .tb-seg-btn::after,
+  .tb-btn::after,
+  .tb-search::after,
+  .tb-lang-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+  /* Each overlay must be measured by its own button, not by .tb-actions —
+     otherwise every ::after covers the whole control group and the last one
+     in the DOM eats every tap in the row. */
+  .tb-btn,
+  .tb-search,
+  .tb-lang-btn {
+    position: relative;
+  }
+  .tb-btn::after,
+  .tb-search::after {
+    left: -1px;
+    right: -1px;
+  }
+  /* No horizontal bleed on the language halves: the 8px between them stays
+     genuinely dead, for the reason given above. */
+  .tb-lang-btn::after {
+    left: 0;
+    right: 0;
+  }
+}
+
+/* Phone, tight. Row 1 is the wordmark against six controls. The wordmark is
+   the one thing on the bar that does not do anything, so below this width the
+   seal stands for it on its own. */
+@media (max-width: 560px) {
+  .tb-lockup {
+    display: none;
+  }
+}
+
+/* Narrowest phones (iPhone SE/12 mini through 13 mini, 360–414px). The seal is
+   the last purely decorative object left on the bar and row 1 is the last
+   place a decorative object can be afforded; measured at 390 the action group
+   is 337px against 374px of usable width, so the seal fits — but at 360 it
+   does not, and a mark that has to be dropped at one phone width and kept at
+   another is worse than a mark that is dropped at all of them. */
+@media (max-width: 430px) {
+  .tb-brand {
+    display: none;
+  }
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .tb-lang {
+    padding: 2px;
+  }
+}

@@ -1,0 +1,438 @@
+/* StatusBar — a 34px ledger pinned to the bottom edge. The canvas bleeds
+   under it through a bottom-up scrim; only the controls take the pointer.
+
+   This is also the one place the spoiler-free promise is stated. It used to
+   be stated twice — a filled crimson pill in the masthead as well — and the
+   two of them were the loudest objects in a frame whose subject is a graph.
+   The quiet one survived; the masthead pill is gone. */
+
+.statusbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* The height two files have to agree on. app.css offsets the floating
+     panels by the same number; the fallback keeps this correct until the
+     token lands in tokens.css. */
+  height: var(--statusbar-h, 34px);
+  z-index: var(--z-chrome);
+  pointer-events: none;
+  user-select: none;
+  transition: opacity var(--d-base) var(--ease-out), visibility 0s linear 0s;
+}
+
+/* ── the ledger waits for the curtain, and comes last ──────────────────────
+   This bar used to be the only chrome with no gate at all, so it was the
+   FIRST thing on screen: sampled every frame after ENTER on the production
+   build, `.statusbar` was opacity 1.000 at t = 8ms and never animated, while
+   `.topbar` and `.rail` were 0.000 until t = 725ms. The reader met a fully
+   populated ledger under an empty top region — the exact frame FilterRail.css
+   describes and claims to have killed.
+
+   The gate is on the PANE, not on its contents, for the same reason the rail's
+   is: the scrim, the hairline rule and the counts are one object, and half of
+   them arriving is a region that failed to load rather than an entrance.
+
+   ── and why it is 60ms behind the top bar ────────────────────────────────
+   Chrome that arrives all at once is a flash; chrome that arrives bottom-up
+   reads backwards. One --d-base fade, one slot late, puts the masthead first
+   and the footnote last, which is the order the page is read in. 60ms is a
+   quarter of that fade — long enough to be an order, short enough not to be a
+   queue, and it is the same figure FilterRail.css settled on for its own
+   section stagger. Under prefers-reduced-motion --d-base collapses to 1ms, so
+   the delay is expressed in those units and collapses with it. */
+.statusbar:not(.is-ready) {
+  opacity: 0;
+}
+
+.statusbar.is-ready {
+  transition-delay: calc(var(--d-base) * 0.25), 0s;
+}
+
+.statusbar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 92px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--bg-void) 95%, transparent) 0%,
+    color-mix(in srgb, var(--bg-void) 72%, transparent) 36%,
+    transparent 100%
+  );
+}
+
+.statusbar__rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0.55;
+}
+
+.statusbar__inner {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+}
+
+/* ── left: counts ─────────────────────────────────────────────────────────── */
+
+.sb__left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  justify-self: start;
+}
+
+.sb__counts-vis {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Micro-labels over the scrim need to clear 4.5:1, so they sit at --ink-mid
+   rather than the utility's default --ink-low. Scoped, and specific enough to
+   win the tie against .eyebrow whatever order the CSS lands in. */
+.statusbar .eyebrow {
+  color: var(--ink-mid);
+}
+
+/* Korean set in caps tracking reads loose at --tr-caps; pull it in a little. */
+.statusbar .sb__k {
+  letter-spacing: 0.1em;
+}
+
+/* The ledger's figures. Set in the sans through `.fig` (base.css) rather than
+   the mono, because "20 / 20 · 40" is the app's data-integrity signature and
+   the mono's slashed zero drew it as "2Ø / 2Ø · 4Ø" — a different voice from
+   the identical figure in the rail's masthead one panel away. The date on the
+   right stays mono: a timestamp is an identifier, not a count. */
+.sb__v {
+  font-size: var(--t-sm);
+  line-height: 1;
+  font-weight: var(--fw-text);
+  color: var(--ink-mid);
+}
+
+.sb__n {
+  color: var(--ink-hi);
+  font-weight: var(--fw-med);
+  transition: color var(--d-base) var(--ease-out);
+}
+
+.sb__slash {
+  padding: 0 1px;
+  color: var(--ink-mid);
+}
+
+.sb__mid {
+  color: var(--ink-low);
+  font-size: var(--t-sm);
+}
+
+/* ── why nothing on this strip is brass any more ─────────────────────────
+   tokens.css: "--brass is equally reserved: a title was actually won. It is
+   not a second accent." This file was spending it on three chrome objects —
+   the filtered-count numeral, the clear-filters pill and the permanently lit
+   SPOILER-FREE badge — and the badge is on screen in every single frame the
+   app has ever been captured in. The default view therefore held three gold
+   objects: 진형's laurel, 태균's laurel, and a status chip. Sharing a hue with
+   the laurel halves the signal of the single most meaningful mark a node can
+   carry, and buys nothing, because all three of these are STATE.
+
+   State is --accent, the warm bone channel, which is what tokens.css says and
+   what the rest of the app already does. Crimson was never an option here: it
+   is the brand and the betrayal edge, and a red numeral read as an error. */
+.sb__counts.is-filtered .sb__n {
+  color: var(--accent);
+}
+
+/* The only control on this strip, and the one the canvas's empty state tells
+   you to press. At 3px of padding it was a ~22px chip; it now fills the bar's
+   height so it can be hit without aiming. */
+.sb__clear {
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--accent-line-strong);
+  background: var(--accent-tint);
+  color: var(--ink-hi);
+  white-space: nowrap;
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+  animation: sb-pop var(--d-base) var(--ease-out) both;
+}
+
+.sb__clear:hover {
+  background: var(--accent-tint-strong);
+  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+}
+
+/* The strip is 34px tall and the chip is 26px, so the hit area can take the
+   whole height for free — a 26px-tall target in the very corner of the
+   viewport is a miss waiting to happen on a trackpad and a certainty on a
+   thumb. */
+.sb__clear::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 50%;
+  height: 34px;
+  transform: translateY(-50%);
+}
+
+.sb__clear-x {
+  /* An ornament, not a type rank: sized against the line it sits on rather
+     than against the size ramp, which is why it is an em and not a token. */
+  font-size: 0.72em;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.sb__clear-line {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  line-height: 1.2;
+  letter-spacing: var(--tr-tight);
+}
+
+.sb__clear-gloss {
+  font-size: var(--t-xs);
+  line-height: 1.2;
+  color: var(--ink-mid);
+}
+
+@keyframes sb-pop {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── centre: contextual hint (cross-fades on change) ──────────────────────── */
+
+.sb__centre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-self: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sb__hint {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--ink-mid);
+}
+
+/* ── the swap is a sequence, not a cross-fade ────────────────────────────
+   Both layers occupy `grid-area: 1/1` and both used to run for --d-fast at
+   the same time, so for 140ms two unrelated sentences were printed glyph over
+   glyph at the centre of the bar — captured 269ms after a click, 'Hong Jin-ho
+   selected · Shift-click a second node…' double-printed through 'Click a node
+   for the dossier · click a line to read the tie · drag to pan · scroll to
+   zoom'. This is the one line of running commentary the app gives and it
+   turned to mush every time the selection changed.
+
+   Two overlapping fades on the same baseline can only ever be mush, so the
+   outgoing line leaves first — 90ms on ease-in, which accelerates away — and
+   the incoming one starts where it finishes. Total 230ms against 140, and the
+   bar is legible at every frame of it. */
+.sb__hint.is-in {
+  animation: sb-hint-in var(--d-fast) var(--ease-out) 90ms both;
+}
+
+.sb__hint.is-out {
+  animation: sb-hint-out 90ms var(--ease-in-out) both;
+}
+
+@keyframes sb-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sb-hint-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+.sb__hint-name {
+  flex: 0 1 auto;
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.sb__hint-body {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* English runs about 1.4× the Korean here — the tail is a 70-character
+   sentence — so it is allowed to give way rather than push the badge off the
+   right edge. It is a hint, not a fact; the same instruction is in the field
+   guide under Shortcuts. */
+.sb__hint-tail {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 1px 7px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── right: scope badge ───────────────────────────────────────────────────── */
+
+.sb__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  justify-self: end;
+  min-width: 0;
+}
+
+.sb__badge {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-tint-faint);
+  white-space: nowrap;
+  cursor: help;
+}
+
+.sb__shield {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.statusbar .sb__badge-flag {
+  color: var(--accent);
+}
+
+.sb__badge-mid {
+  color: var(--ink-faint);
+  font-size: var(--t-xs);
+}
+
+.sb__badge-line {
+  font-size: var(--t-sm);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.sb__updated {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.sb__date {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .sb__clear-gloss,
+  .sb__updated {
+    display: none;
+  }
+}
+
+/* The English hint and its tail are both longer than the Korean — 70
+   characters against 30 — so English has to shed the tail earlier than Korean
+   does. Measured: it is the last width at which the pill still clears both the
+   counts and the scope badge with a long romanised name selected. */
+@media (max-width: 1060px) {
+  :lang(en) .sb__hint-tail {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .sb__hint-tail {
+    display: none;
+  }
+}
+
+/* Below 640 only the counts and the scope badge survive. */
+@media (max-width: 640px) {
+  /* A bottom sheet (the filter rail, or a dossier) covers this strip at phone
+     widths, and the sheet's glass is translucent — so `인물 20/20 · 관계 52`
+     and the scope badge used to ghost through it and collide with the filter
+     rows underneath. Stand down while a sheet is up; both facts are on the
+     sheet itself, and the strip returns the moment it closes. */
+  .app:not(.app--rail-closed) .statusbar,
+  .app--dossier .statusbar {
+    opacity: 0;
+    visibility: hidden;
+    transition-delay: 0s, var(--d-base);
+  }
+  .statusbar__inner {
+    grid-template-columns: 1fr auto;
+    gap: var(--sp-3);
+    padding: 0 var(--sp-3);
+  }
+  .sb__centre {
+    display: none;
+  }
+  .sb__badge-flag,
+  .sb__badge-mid {
+    display: none;
+  }
+  .sb__clear-line {
+    font-size: var(--t-xs);
+  }
+}

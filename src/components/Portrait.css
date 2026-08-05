@@ -1,0 +1,35 @@
+/* Generated portrait plates. Sized by their container, never by intrinsic px. */
+
+.portrait {
+  display: block;
+  overflow: visible;
+}
+
+/* The medallion mark. NOT DRAWN ANYWHERE RIGHT NOW: every one of the twenty has
+   a photograph in public/portraits/, and a plate carrying a photograph draws no
+   mark — a name set across someone's face is neither a name nor a portrait. The
+   rule stays because the folder is a drop-in: take one file away and that
+   person's mark comes straight back on this element, on the card, the crest, the
+   chip and the graph node at once. If you are wondering why the app has no
+   monogram in it, that is the reason, and it is not this rule being broken. */
+.portrait__glyph {
+  fill: var(--ink-hi);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.portrait--card {
+  width: 100%;
+  height: auto;
+}
+
+.portrait--mark {
+  width: 100%;
+  height: auto;
+}
+
+.portrait--chip {
+  width: 100%;
+  height: auto;
+}

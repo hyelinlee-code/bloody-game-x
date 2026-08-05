@@ -1,0 +1,605 @@
+/* ==========================================================================
+   Intro — the cold open.
+   One crimson line, a title card, three numbers, a way out. Everything
+   overlaps; nothing waits its turn. Total ≈ 2.6s.
+   ========================================================================== */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bg-void);
+  opacity: 1;
+  transition-property: opacity;
+  transition-timing-function: var(--ease-out);
+  /* transition-duration is set inline so JS and CSS always agree */
+}
+
+.intro:focus {
+  outline: none;
+}
+
+/* ── the handover ───────────────────────────────────────────────────────────
+   This block said it held the curtain opaque for the first half of the exit
+   and then implemented that with --ease-in-out, which is cubic-bezier(0.65, 0,
+   0.35, 1) — a SYMMETRIC curve, at exactly 0.5 progress at 50% of the window.
+   It does not hold anything. Sampled live during the handoff: intro 0.805
+   against a graph reveal of 0.772, then intro 0.500 against 0.821 — and in a
+   frame captured ~519ms after ENTER you could read four cast captions and the
+   cold band's label printing straight through the thesis line and the 20/47/3
+   stat rules. Two typographic layers on the same pixels is the failure this
+   codebase re-sequenced StatusBar and the Dossier specifically to avoid.
+
+   IT IS TWO MOVES, NOT ONE CURVE, because the curtain has two jobs — carry the
+   type, and hide the graph — and they have to end at different times.
+
+     the STAGE (the type) leaves first, on --ease-out. It is 28% at a fifth of
+     the window and 7% at two fifths, so the words are gone while the black is
+     still black. Expo-out is the wrong curve for a panel that has to be SEEN
+     leaving, which is why CommandPalette and AboutSheet moved off it; it is
+     the right curve for a layer whose whole job is to be out of the way.
+
+     the CURTAIN (the black) leaves second, on ease-in-quint. Measured on the
+     curve: opacity 1.00 at 35% of the window, 0.97 at 50%, 0.83 at 70%, 0.56
+     at 85%. The graph's own 700ms cubic reveal is at 0.88 by then, so what
+     comes up behind the falling black is a scene that is already composed —
+     which is what the reveal was designed for — and the crossover now happens
+     with nothing of the intro's own type left on screen.
+
+   Both durations are the ONE duration: `transition-duration: inherit` on the
+   stage takes the computed value off `.intro`, which Intro.tsx sets inline
+   from EXIT_MS. A second number here is how the JS and the CSS drift apart,
+   and this file already carries that warning above. */
+.intro--out {
+  opacity: 0;
+  pointer-events: none;
+  transition-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+}
+
+.intro__stage {
+  transition-property: opacity, transform;
+  transition-duration: inherit;
+  transition-timing-function: var(--ease-out);
+}
+
+.intro--out .intro__stage {
+  opacity: 0;
+  /* Four pixels, up. Enough that the card reads as leaving rather than
+     dimming; not enough to be a move of its own. */
+  transform: translateY(-4px);
+}
+
+/* ---- backdrop: crimson bloom + vignette, same language as the canvas ---- */
+
+.intro__bloom {
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 38% at 50% 46%, color-mix(in oklab, var(--blood) 20%, transparent), transparent 70%),
+    radial-gradient(32% 28% at 80% 14%, color-mix(in oklab, var(--blood-deep) 24%, transparent), transparent 74%),
+    radial-gradient(38% 34% at 14% 86%, color-mix(in oklab, var(--brass) 8%, transparent), transparent 74%),
+    radial-gradient(112% 84% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.78) 100%);
+  animation: intro-bloom 2200ms var(--ease-out) both;
+}
+
+/* ── the grain, and why it no longer blends ────────────────────────────────
+   It carried `mix-blend-mode: overlay`, and on this ground that bought exactly
+   nothing while costing the whole cold open its fast composite path.
+
+   Both halves of that are measured. Overlay on a dark backdrop is 2·base·blend,
+   so a 0.014 effective alpha of white over a ~0.03 base lands at 0.0304 against
+   the 0.03 it started from: screenshotting a 40×40 patch of the cold open at
+   dpr 1, the shipped grain gives row luma min 12.100 / max 13.591 / span 1.491
+   — byte-identical to the same patch with `.intro__grain { display: none }`.
+   The stripes were not faint, they were absent, and the 1.491 span is the
+   bloom's own gradient underneath them.
+
+   The cost was not absent. A blended full-viewport layer over two live canvases
+   is the one composite in this app that cannot be handed to the GPU as-is, and
+   the reveal is the one moment all three surfaces are live at once — see the
+   `renderBackdrop` gate in GraphCanvas's render loop for the other half of the
+   same bill.
+
+   So: normal compositing, and the alpha comes down to pay for it. At 0.18 the
+   same patch measures span 2.334 / mean 13.138 against the ground's own 1.491 /
+   12.813 — a +0.84 modulation on top of the gradient, which is the first time
+   this element has put a mark on screen at all. */
+.intro__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.028) 0px,
+    rgba(255, 255, 255, 0.028) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.intro__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* ---- stage ---- */
+
+.intro__stage {
+  position: relative;
+  z-index: 3;
+  /* Takes its own pointer events so hovering can pause the auto-advance; the
+     click handler forwards to the same dismissal the scrim runs. */
+  cursor: pointer;
+  /* Wide enough that the 30-character thesis line never has to wrap on a
+     laptop — the break it used to take inverted the sentence. */
+  width: min(860px, 90vw);
+  padding: var(--sp-6) 0;
+  text-align: center;
+}
+
+.intro__line {
+  display: block;
+  width: 100%;
+  height: 1px;
+  transform-origin: 50% 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--blood-deep) 14%,
+    var(--blood) 38%,
+    var(--blood-hot) 50%,
+    var(--blood) 62%,
+    var(--blood-deep) 86%,
+    transparent
+  );
+  box-shadow: 0 0 16px var(--blood-glow);
+  animation: intro-line 820ms var(--ease-out) 40ms backwards;
+}
+
+.intro__title {
+  margin-top: var(--sp-5);
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  /* Latin default; the Hangul run opts out below. */
+  letter-spacing: var(--tr-display);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+/* Hangul syllable blocks are drawn on a full em square with their own
+   sidebearings — −0.035em at 88px crowds them by ~3px a glyph. Zero is the
+   right display tracking for Korean; the crimson X keeps its tight Latin fit.
+   The wordmark switches script with the UI language (피의 게임X / Bloody Game X),
+   so the tracking has to switch with it: BLOODY GAME set on Hangul metrics
+   reads loose and unset at display size. */
+.intro__wordmark {
+  letter-spacing: var(--tr-display-ko, 0em);
+}
+
+.intro__wordmark:lang(en) {
+  letter-spacing: var(--tr-display-latin);
+}
+
+.intro__mask {
+  display: block;
+  overflow: hidden;
+  padding-block: 0.08em;
+}
+
+.intro__title-in {
+  display: block;
+  animation: intro-rise 700ms var(--ease-out) 180ms backwards;
+}
+
+.intro__x {
+  color: var(--blood-hot);
+  text-shadow: 0 0 28px var(--blood-glow);
+  padding-left: 0.02em;
+}
+
+.intro__kicker-row {
+  margin-top: var(--sp-3);
+  line-height: 1;
+}
+
+/* The tracking is final from the first frame and never animates.
+   It used to tween letter-spacing 0.02em → 0.44em and margin-right −0.02em →
+   −0.44em over 900ms, from 620ms to 1520ms — i.e. a full re-layout of the row
+   on every frame, landing precisely on top of the graph's force pre-settle, the
+   count-up loop and the canvas's first full-viewport paints. The reveal is a
+   compositor-only wipe now: clip-path and opacity, no layout, same 900ms read.
+   The wipe direction matches the crimson rule above it, which also opens from
+   the left. */
+.intro__kicker {
+  display: inline-block;
+  font-size: clamp(0.75rem, 1.5vw, 0.9375rem);
+  font-weight: var(--fw-med);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  letter-spacing: 0.44em;
+  /* balance the trailing letter-space so the block stays optically centred */
+  margin-right: -0.44em;
+  animation: intro-kicker 900ms var(--ease-out) 620ms backwards;
+  will-change: clip-path, opacity;
+}
+
+.intro__thesis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  margin-inline: auto;
+  /* 44ch measured ~435px against a ~540px Korean line, so the sentence broke
+     on a 1600px frame. Sized in em so it tracks the Korean, not the digit. */
+  max-width: min(40em, 100%);
+}
+
+/* -lead is whichever language the UI is in; -sub is the Latin gloss that only
+   appears under a Korean line. */
+.intro__thesis-lead {
+  font-size: clamp(0.9375rem, 1.9vw, 1.125rem);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight-ko, -0.005em);
+  color: var(--ink-hi);
+  word-break: keep-all;
+  text-wrap: balance;
+  animation: intro-fade-up 480ms var(--ease-out) 1000ms backwards;
+}
+
+.intro__thesis-lead:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.intro__thesis-sub {
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight-latin);
+  color: var(--ink-mid);
+  animation: intro-fade-up 480ms var(--ease-out) 1150ms backwards;
+}
+
+.intro__rule {
+  width: min(560px, 92%);
+  margin: var(--sp-6) auto var(--sp-1);
+  animation: intro-fade 420ms var(--ease-out) 1180ms backwards;
+}
+
+/* ---- stats ---- */
+
+.intro__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(560px, 92%);
+  margin-inline: auto;
+}
+
+.intro__stat {
+  padding: var(--sp-4) var(--sp-2) var(--sp-3);
+  border-left: 1px solid var(--glass-edge);
+  animation: intro-fade-up 420ms var(--ease-out) 1240ms backwards;
+}
+
+.intro__stat:first-child {
+  border-left: 0;
+}
+
+.intro__stat:nth-child(2) {
+  animation-delay: 1266ms;
+}
+
+.intro__stat:nth-child(3) {
+  animation-delay: 1292ms;
+}
+
+.intro__stat-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.intro__stat-lead {
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  letter-spacing: var(--tr-tight-ko, -0.005em);
+  /* "Prior seasons" is 13 characters against 이전 시즌's five: at three columns
+     inside 560px the English label has to be allowed a second line rather than
+     forcing the rule between the columns to move. */
+  overflow-wrap: break-word;
+}
+
+.intro__stat-lead:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.intro__stat-sub {
+  color: var(--ink-mid);
+  opacity: 0.82;
+}
+
+.intro__stat-value {
+  margin-top: var(--sp-2);
+  font-size: clamp(1.5rem, 3.4vw, 2.125rem);
+  font-weight: var(--fw-text);
+  line-height: 1;
+  color: var(--ink-hi);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ---- actions ---- */
+
+/* The CTA used to land at 2.55s against a 4.5s auto-dismiss, so the primary
+   action existed for under two seconds. It now arrives with the stats. */
+.intro__actions {
+  margin-top: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  animation: intro-fade-up 400ms var(--ease-out) 1400ms backwards;
+}
+
+.intro__enter-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+}
+
+/* The auto-advance, made visible: a hairline that fills over the remaining
+   time. Pausing it (pointer over the stage) pauses the dismissal too, so the
+   bar is a truthful readout and not decoration.
+   The delay and the duration are set inline from the same two constants the
+   CTA's own entrance uses, so the bar is at 0 on its first visible frame — it
+   used to start filling at mount and appear already ~31% full. `backwards`
+   fill holds scaleX(0) through the delay. */
+.intro__countdown {
+  height: 1px;
+  border-radius: var(--rad-full);
+  background: linear-gradient(90deg, transparent, var(--blood-deep), var(--blood-hot));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  animation-name: intro-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes intro-countdown {
+  from {
+    transform: scaleX(0);
+    opacity: 0.5;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.intro__enter {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-6);
+  border: 1px solid color-mix(in oklab, var(--blood) 46%, transparent);
+  border-radius: var(--rad-full);
+  background:
+    radial-gradient(120% 180% at 50% 120%, color-mix(in oklab, var(--blood) 22%, transparent), transparent 70%),
+    var(--bg-raised);
+  box-shadow: var(--sh-blood);
+  color: var(--ink-hi);
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    /* The one gesture on this screen: --ease-spring so the pill releases with
+       a little mass rather than easing back like everything else in the app.
+       Transform only — the glow and the border stay on --ease-out, because an
+       overshoot on a colour is clamped and reads as a stutter. */
+      transform var(--d-fast) var(--ease-spring),
+    box-shadow var(--d-fast) var(--ease-out);
+}
+
+.intro__enter:hover {
+  border-color: var(--blood-hot);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--blood) 40%, transparent),
+    0 10px 40px color-mix(in oklab, var(--blood) 26%, transparent);
+}
+
+/* It used to be `translateY(0)`, i.e. the resting value — so on a pointer that
+   never hovered (every touch) the primary action of the product had no press
+   state at all. A real depression, released on --ease-spring. */
+.intro__enter:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* Keep the button legible if someone tabs to it mid-animation. */
+.intro__actions:focus-within {
+  animation: none;
+  opacity: 1;
+}
+
+.intro__enter-lead {
+  font-size: 1.0625rem;
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight-ko, -0.005em);
+}
+
+.intro__enter-lead:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.intro__enter-sub {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--blood-hot);
+}
+
+.intro__hint {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-mid);
+}
+
+.intro__hint-sub {
+  color: var(--ink-mid);
+  opacity: 0.7;
+}
+
+/* ---- keyframes ---- */
+
+@keyframes intro-bloom {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes intro-line {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  14% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes intro-rise {
+  from {
+    transform: translateY(108%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes intro-kicker {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes intro-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- reduced motion: jump to the final composed frame ---- */
+
+.intro--static *,
+.intro--static *::before,
+.intro--static *::after {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro *,
+  .intro *::before,
+  .intro *::after {
+    animation: none !important;
+  }
+  .intro__enter {
+    transition: none;
+  }
+  .intro__enter:hover {
+    transform: none;
+  }
+  /* The two-beat handover is a beat, and a beat is motion. Under reduced
+     motion `exitMs` is 1ms anyway, so the stage has nothing to stage. */
+  .intro__stage {
+    transition: none;
+  }
+  .intro--out .intro__stage {
+    transform: none;
+  }
+}
+
+/* ---- small screens ---- */
+
+@media (max-width: 560px) {
+  .intro__stage {
+    width: 90vw;
+  }
+  .intro__stats {
+    width: 100%;
+  }
+  .intro__stat {
+    padding-inline: var(--sp-1);
+  }
+  /* The keyframes no longer carry tracking, so the narrow build only has to
+     restate the static value — it used to need a whole second copy of the
+     animation, which is how the two drifted apart in the first place. */
+  .intro__kicker {
+    letter-spacing: 0.3em;
+    margin-right: -0.3em;
+  }
+}
+
+/* Short viewports: compress the rhythm, never drop the information. */
+@media (max-height: 640px) {
+  .intro__stage {
+    padding: var(--sp-4) 0;
+  }
+  .intro__title {
+    margin-top: var(--sp-4);
+  }
+  .intro__thesis {
+    margin-top: var(--sp-4);
+  }
+  .intro__rule {
+    margin: var(--sp-4) auto var(--sp-1);
+  }
+  .intro__stat {
+    padding-block: var(--sp-2);
+  }
+  .intro__actions {
+    margin-top: var(--sp-4);
+  }
+}

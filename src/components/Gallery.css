@@ -1,0 +1,692 @@
+/* The cast wall. A full-bleed sheet over the graph, grouped by lineup bloc. */
+
+/* Korean is the source of record for this product and the browser default
+   breaks Hangul between any two syllable blocks — the lede that explains how to
+   read the plates was splitting 확인된 across lines as 확인 / 된, which is the
+   equivalent of hyphenating "conne / ction" without the hyphen. Every run of
+   prose on this surface opts out; the two places that carry long Latin tokens
+   keep their own overflow-wrap. */
+.gallery :where(p, h2, h3, span, li) {
+  word-break: keep-all;
+}
+
+.gallery {
+  /* One gutter for the whole sheet. The group header bleeds to the sheet edge
+     by negating exactly this value, so the two can never drift — the header
+     used to stop 32px short on both sides and read as a mis-sized bar floating
+     inside the panel. */
+  --gal-pad: var(--sp-5);
+  /* The wall's gutter — the gap between two card rows. Published here because
+     the top scroll ramp is set to exactly this value: see the ramp note below.
+     If the two ever disagree the ramp starts cutting cards again. */
+  --gal-gutter: var(--sp-4);
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+}
+
+.gallery__scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(6, 5, 9, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0;
+  cursor: default;
+  animation: gal-scrim var(--d-base) var(--ease-out) both;
+}
+
+@keyframes gal-scrim {
+  from {
+    opacity: 0;
+  }
+}
+
+/* `.pane` is matched explicitly so this cannot depend on which stylesheet the
+   bundler happens to emit last — both are single-class selectors. */
+.gallery__sheet.pane {
+  /* Programmatically focused for the focus trap; it is not a control. */
+  outline: none;
+  position: relative;
+  width: min(1240px, 100%);
+  height: min(880px, 100%);
+  border-radius: var(--rad-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: gal-in var(--d-slow) var(--ease-out) both;
+
+  /* Opaque, overriding the .pane glass.
+
+     --glass-1 is 0.72 alpha and is tuned for a rail standing on the static
+     vignette. This sheet is 1240×880 of a 1600×1000 viewport and lands on the
+     graph itself: composited over the scrim it still leaves roughly 8% of a
+     #f4efe9 canvas label showing, and at DPR2 '강지후', '현성주', '박지민' and
+     '이진형' are legible in the gutters BETWEEN the portrait plates — a second
+     set of names in a grid of names, and the wrong set. A modal that replaces
+     the graph has no reason to show it; the scrim behind still carries the
+     blur, so the edge of the sheet keeps its depth. */
+  background: var(--bg-panel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@keyframes gal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+/* ── the exit ───────────────────────────────────────────────────────────────
+   The wall glides in over 420ms and used to be removed between two frames:
+   Gallery.tsx's `if (!open) return null` unmounts the whole full-viewport
+   sheet on the same frame Escape lands. Verified by polling — the sheet was
+   present, Escape was pressed, and it was already absent on the first 30ms
+   poll — and this stylesheet had no exit keyframe of any kind. Dossier.tsx:140
+   states the house rule it breaks: an entrance with no exit is the loudest
+   craft tell there is, and this is the largest surface in the product doing
+   it.
+
+   The shape is AboutSheet's, deliberately, because a reader who dismisses the
+   field guide and then dismisses the cast wall should be dismissing the same
+   kind of object: sink 8px, shed the last 0.6% of scale, 200ms.
+
+   --ease-in-out and not --ease-out, for the reason CommandPalette.css:119
+   already gives — an expo-out spends 90% of a disappearance nearly invisible,
+   which is a cut with a long tail rather than a dismissal you can watch.
+
+   THIS IS HALF THE FIX. It fires on `.gallery--out`, which nothing sets yet;
+   Gallery.tsx has to grow the same `alive` latch AboutSheet.tsx:725–814
+   carries. See the HANDOFF. Until then these rules are inert rather than
+   wrong — the sheet keeps unmounting instantly and no frame changes. */
+.gallery--out {
+  pointer-events: none;
+}
+
+.gallery--out .gallery__sheet.pane {
+  animation: gal-out var(--d-base) var(--ease-in-out) both;
+}
+
+/* `reverse` on the entrance rather than a second keyframe: one description of
+   the scrim's fade, played backwards, so the two can never disagree. Shorter
+   than the sheet so the blur is gone before the sheet has finished leaving,
+   which is the order the eye reads as "this closed" rather than "this
+   dissolved". */
+.gallery--out .gallery__scrim {
+  animation: gal-scrim 160ms var(--ease-in-out) reverse both;
+}
+
+@keyframes gal-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.994);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery--out .gallery__sheet.pane,
+  .gallery--out .gallery__scrim {
+    animation-duration: 1ms;
+  }
+}
+
+/* ── the masthead, and why it is one line ───────────────────────────────────
+   BUDGET: this bar is the only thing in the sheet that a reader cannot scroll
+   away, so its height is a permanent tax on the wall. It was 105px, with a
+   117px note under it, both outside the scroller: 223px of pinned chrome in
+   an 880px sheet at 1600×1000, and 256px of an 844px sheet at 390×844.
+
+   The eyebrow now sits on the count's baseline instead of above it, which is
+   the whole of the height saving — 출연진 · THE CAST and 20명 are one phrase
+   read left to right, not a label stacked on a number. Measured after: 69px
+   desktop, 66px mobile, and the note is inside the scroller where it belongs.
+
+   `align-items: baseline` and not `center`: the close button is a 32px box
+   with no text in it, so it is excluded from the baseline group by being
+   `align-self: center`. Left to align on a baseline it would hang low by the
+   difference between the cap height and the box. */
+.gallery__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--gal-pad) var(--sp-3);
+}
+
+/* The eyebrow and the count, on one baseline. `flex-wrap` because the English
+   pair is '20 players' after 'THE CAST' and at 390px the two together are
+   within a few px of the available width — a wrap is a two-line masthead,
+   which is still shorter than the stacked version it replaces, and a clip
+   would be a lost word. */
+.gallery__head-l {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--sp-3);
+  min-width: 0;
+}
+
+/* "20명" closes up in Korean and opens out in English ("20 players"); the unit
+   is a separate span so the gap can be a typographic decision rather than a
+   space baked into the string table. */
+.gallery__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.06em;
+  font-size: var(--t-h2);
+  letter-spacing: var(--tr-tight);
+}
+
+.gallery__title:lang(en) {
+  gap: 0.24em;
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.gallery__title-unit {
+  font-weight: inherit;
+}
+
+.gallery__close {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  /* Out of the baseline group — see the masthead note. */
+  align-self: center;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  color: var(--ink-mid);
+  transition: color var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+}
+.gallery__close:hover {
+  color: var(--ink-hi);
+  border-color: var(--glass-edge-strong);
+}
+
+/* On a phone this is the primary dismissal — there is no Esc key — and it
+   shipped at 32px against the 44 the header controls already hit-test. The
+   drawn control stays 32; only the hit box grows.
+
+   One query, `(pointer: coarse), (max-width: 640px)`, matching PathCard. The
+   app used to raise targets under two disjoint conditions — TopBar on width,
+   FilterRail on pointer — so a coarse tablet at 1024px got one fix and a
+   narrow desktop window got the other. */
+@media (pointer: coarse), (max-width: 640px) {
+  .gallery__close::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* The lede, INSIDE the scroller. It used to be a pinned block between the
+   masthead and the scrollport — seven lines of explainer that a reader reads
+   once and then cannot get rid of, holding 117px (desktop) / 157px (mobile) of
+   a modal whose only job is faces. In the flow it is the first thing read and
+   the first thing gone.
+
+   It carries no horizontal padding of its own now: the scroller already has
+   --gal-pad, and doubling it here was what made the note's measure narrower
+   than the grid it introduces.
+
+   IT IS A SNAP UNIT, and it has to be. Without one at offset 0 the nearest
+   snap position to the top of the wall is the first group's, 73px down —
+   measured — so any scroll back to the top parks 73 of the lede's 81px off
+   screen and the legend for the whole surface becomes unreachable after the
+   first flick. With it, "scroll to the top" is a rest and the lede is
+   re-readable. The margin clamps to 0 at the top of the range, so this snap
+   position is the scroll origin rather than a negative one. */
+.gallery__note {
+  margin: 0 0 var(--sp-5);
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  line-height: 1.55;
+  max-width: 78ch;
+  scroll-snap-align: start;
+  scroll-margin-top: var(--gal-ramp);
+}
+.gallery__note-sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-low);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-tight-latin);
+}
+
+/* The shared .scroll--faded utility rather than a fourth local reimplementation
+   of the same gesture.
+
+   TOP RAMP — third attempt, and the first one that is not a depth.
+   0 → 40 → 72px were all the same move: make the mask deep enough to swallow
+   whatever it was cutting. It cannot work, and base.css now records why in
+   full. The mask is alpha, not occlusion, so a plate inside it is painted at
+   partial opacity at ANY depth; a 118px illustration with a 27-unit medallion
+   at its top has no depth that clears it and every increase just moved the cut
+   to a different part of the same disc. Measured at 1600×1000 with the 72px
+   ramp in place: at scrollTop 500, 57% of a plate (67.4 of 118px) sat inside
+   the ramp — the disc and the mark erased with the name and the stat line
+   underneath at full ink, i.e. the decapitated row the last two rounds both
+   filed. At 390×844, scrollTop 760 put 78% of a plate inside it.
+
+   So the ramp stops being the thing that hides content, and the SCROLLER stops
+   coming to rest with a plate inside it. `.scroll--snap` (base.css) turns on
+   proximity snapping; the snap units carry `scroll-snap-align: start` with a
+   `scroll-margin-top` of exactly --gal-ramp, so a rest puts a whole unit's top
+   edge at the ramp's end.
+
+   THE RAMP IS THE GUTTER, and that is the whole trick. Set it to anything else
+   and the band still lands on something: solve it against a card row's
+   neighbours and the answer is that the band is empty only when its depth
+   equals the gap above the row (16px) — deeper and it starts eating the
+   previous card's stat line from the bottom up, shallower and it wastes half
+   of its own signal on nothing. So --gal-ramp reads --gal-gutter, the grid
+   reads --gal-gutter, and at every snapped rest the mask is over a gap and
+   there is nothing inside it to shear. That is why this is not a third
+   deepening: the number went 72 → 16 and the guarantee got stronger.
+
+   One number for all of it — the mask depth, the scroll padding and the scroll
+   margins — because the whole failure was those numbers being allowed to
+   disagree with each other and with the thing they were masking.
+
+   BOTTOM RAMP is the utility's own 52px. It was 56 — a fifth hand-tuned depth
+   for a mask whose whole reason for existing is that there were four, and the
+   one with no stated reason for the odd number. The ramp depth is a function
+   of the line box, the line box is one value, and this surface has no line box
+   the others do not. */
+.scroll--faded.gallery__scroll {
+  --gal-ramp: var(--gal-gutter);
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--gal-pad) var(--sp-7);
+  scroll-padding-block-start: var(--gal-ramp);
+  scroll-padding-block-end: 64px;
+}
+
+/* Specificity is deliberate: the utility's own [data-scrolled='true'] rule is
+   (0,2,0) and lifts the ramp to 18px, so a plain .gallery__scroll[…] would tie
+   with it and the winner would depend on stylesheet order. */
+.scroll--faded.gallery__scroll[data-scrolled='true'] {
+  --scroll-fade-t: var(--gal-ramp);
+}
+
+/* The snap units. A grid row is not an element, but every cell in a row shares
+   its top edge — so aligning any one of them aligns the row, and marking all
+   of them is what makes that true for the row the reader actually stopped on.
+   The group is a unit too: stopping on a bloc heading is a legitimate rest.
+
+   The margin is what does the work. `scroll-snap-align: start` alone would put
+   a card's top edge flush with the scrollport top, i.e. under the ramp;
+   pushing the snap area up by exactly the ramp depth lands the card's first
+   painted pixel at the ramp's end. */
+.gallery__scroll .gallery__group,
+.gallery__scroll .gallery__cell {
+  scroll-snap-align: start;
+  scroll-margin-top: var(--gal-ramp);
+}
+
+/* …except the FIRST row of a group, which must not be a rest of its own.
+   Its snap position sits exactly one heading block (a 25.6px line, 12px of
+   pad, the 1px rule and a 12px margin — 49.6px, measured) below the group's
+   own, so stopping there parks '시즌2 팀 · SEASON 2 TEAM' inside the ramp and
+   hard-clips its cap heights against the scrollport edge. That is the same
+   shear one storey up from the one this whole block exists to remove, and the
+   group's own snap already covers the position properly, header and all.
+
+   Split by column count because "first row" is a different set of cells in
+   each: four across above 900px — where a group is four people, so the group
+   has exactly one card row and no cell ever needs to snap — and two across
+   below it, where cells 3 and 4 are a genuine second row and do. */
+@media (min-width: 900px) {
+  .gallery__scroll .gallery__grid > .gallery__cell:nth-child(-n + 4) {
+    scroll-snap-align: none;
+  }
+}
+@media (max-width: 899px) {
+  .gallery__scroll .gallery__grid > .gallery__cell:nth-child(-n + 2) {
+    scroll-snap-align: none;
+  }
+}
+
+.gallery__group + .gallery__group {
+  margin-top: var(--sp-6);
+}
+
+/* The bloc header.
+   It used to be `position: sticky`, which on a wall of 330px cards and a 44px
+   bar left a long stretch of scroll where a group's plates, names and roles
+   were hidden behind the pinned heading while their archetype rules and stat
+   lines were still painted below it — a heading followed by four headless rows
+   of numbers, which is a card split so that the record survives and the subject
+   does not. There are five groups in a 90vh modal; the heading has no work to
+   do that costs a card. It scrolls with its own group now.
+   The bar still bleeds to the sheet edge on both sides — see --gal-pad. */
+.gallery__group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-inline: calc(var(--gal-pad) * -1);
+  margin-bottom: var(--sp-3);
+  padding: 0 var(--gal-pad) var(--sp-3);
+  box-shadow: inset 0 -1px 0 0 var(--glass-edge);
+  font-size: var(--t-h3);
+  font-weight: var(--fw-med);
+}
+
+/* Keyboard and hash navigation land a group under its own heading rather than
+   with the heading scrolled off the top. The snap block above restates this
+   margin as --gal-ramp for both groups and cards, and wins on specificity —
+   the two have to be the same number or a keyboard scroll and a snap would
+   come to rest one ramp apart on the same target. */
+.gallery__group {
+  scroll-margin-top: var(--sp-3);
+}
+
+/* ── THE LAST REST HAS TO BE A REST TOO ─────────────────────────────────────
+   Every snap position in this scroller lands a whole unit's top edge at the
+   ramp — except the last one, which is not a snap position at all. The end of
+   the scroll range is wherever `scrollHeight - clientHeight` happens to fall,
+   and whatever row straddles the scrollport's top edge there is sheared: its
+   plate is clipped away and its name, role, archetype rule and stat line are
+   all still painted underneath. That is the decapitated row, and it is the
+   one the last two rounds keep re-filing. Measured at 1440×780 before this
+   rule: at the end of the range, 4 of the 20 cards showed a name with no
+   plate. (At 1600×1000 it happened to land clean — luck, not a property.)
+
+   The fix is arithmetic, not a mask. Let H be the scrollport, P its bottom
+   padding and R the ramp. The last group can reach the ramp iff
+   scrollHeight − H ≥ lastTop − R, which reduces to lastHeight ≥ H − P − R.
+   A percentage min-height on a child of the scroller resolves against exactly
+   H − P, so `100% − R` IS that inequality, written once.
+
+   The cost is trailing space below the final bloc on short walls — the same
+   space every snapping list gives its last item so the last item can be
+   brought to the top, which is also the only way a reader can currently get
+   루키 팀 out from under the fold. It is a minimum, so a wall long enough not
+   to need it pays nothing.
+
+   Do NOT solve this with mask depth. base.css and the ramp note above record
+   three attempts at that (0 → 40 → 72px) and why an alpha ramp cannot hide a
+   118px plate at any depth. */
+.gallery__scroll > .gallery__group:last-child {
+  min-block-size: calc(100% - var(--gal-ramp));
+}
+
+.gallery__group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--rad-full);
+  flex: none;
+}
+
+.gallery__group-sub {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-text);
+  color: var(--ink-low);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+}
+
+/* "From other survival shows" is three times the width of 챌린저 팀; the count
+   at the end of the row keeps its place and the label truncates instead. */
+.gallery__group-lead {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery__group-n {
+  margin-left: auto;
+  padding-right: 2px;
+  font-size: var(--t-sm);
+  color: var(--ink-low);
+}
+
+/* Every group is exactly four people, so the wall has a known cardinality and
+   auto-fit was not being told about it: at a tablet-width sheet it resolved to
+   three columns and orphaned the fourth member of all five teams on a row of
+   its own, five times in a row. Four across, or two — 2 × 2 keeps a team square
+   at every width and never leaves one person alone. */
+.gallery__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Shared with the top scroll ramp — see the ramp note above. */
+  gap: var(--gal-gutter);
+}
+
+@media (min-width: 900px) {
+  .gallery__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.gallery__cell button {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--sp-3);
+  border-radius: var(--rad-md);
+  border: 1px solid transparent;
+  text-align: left;
+  transition:
+    background var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-out);
+}
+
+.gallery__cell button:hover {
+  background: color-mix(in srgb, var(--ink-hi) 5%, transparent);
+  border-color: var(--glass-edge);
+  transform: translateY(-2px);
+}
+
+/* Filtered-out people stay on the wall as context and stay clickable — the
+   filters are about what the graph draws, not about who exists. 0.36 put
+   --ink-mid at roughly 1.9:1, i.e. a card a keyboard user could still tab to
+   and could not read. Lifted to a legible floor; the reason is carried in
+   text (a title and an sr-only line), not by the dimming alone. */
+.gallery__cell.is-dim button {
+  opacity: 0.55;
+}
+
+.gallery__cell.is-dim button:hover,
+.gallery__cell.is-dim button:focus-visible {
+  opacity: 0.9;
+}
+
+/* Two alignment axes on one card — a plate optically centred in a 300px column
+   above a flush-left name — is why nothing on the wall lined up vertically.
+   The plate is now set on the same left axis as the name, and at a width where
+   the season arcs and rim ticks are the dominant marks rather than a 60px
+   monogram printed three times the size of the name it abbreviates. */
+.gallery__plate {
+  display: block;
+  width: 118px;
+  max-width: 68%;
+  margin-bottom: var(--sp-3);
+}
+
+.gallery__name {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  color: var(--ink-hi);
+  letter-spacing: -0.005em;
+}
+
+/* Whichever script is not leading. It carries its own lang attribute so the
+   font stack and tracking follow the run, not the surrounding UI. */
+.gallery__name-sub {
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  margin-top: 1px;
+}
+
+.gallery__name:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.gallery__occ {
+  margin-top: 5px;
+  /* Two lines of Korean; English occupations run about 1.4× longer, so the
+     floor is set in lines and the box is allowed to grow past it rather than
+     clipping "Professional poker player and StarCraft legend". */
+  min-height: calc(var(--t-sm) * 1.4 * 2);
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+.gallery__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.gallery__cat {
+  min-width: 0;
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gallery__cat-sub {
+  color: var(--ink-low);
+  font-weight: var(--fw-text);
+}
+
+.gallery__seasons {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.gallery__season-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rad-full);
+}
+
+/* Two columns, not a baseline flex row.
+   As a flex row with align-items: baseline the count aligned to the *first*
+   baseline of the record block, so on a card whose run list wraps — 박지민 at
+   390px is 'S1 4위 S2 13위' / 'S3 진행' — the '6 건' sat beside the S1/S2 line
+   and read as belonging to that run rather than to the person, while the
+   single-line card beside it put its count on its only line. Two cards in one
+   row disagreeing about what the count is attached to. A grid with the count in
+   a full-height right cell aligned to the end puts it on the block's last line
+   at any wrap count. */
+.gallery__line {
+  /* Pushed to the bottom so the rule lines up across a row of uneven cards. */
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  line-height: 1.4;
+}
+
+/* "First time in the house" is 22 characters against 피의 게임 첫 출연's nine, and
+   the connection count on the right must never be pushed off the card. */
+.gallery__line-what {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* The whole franchise record, not just the best run: 박지민 is S1 4위 · S2 13위 ·
+   S3 진행, and printing only "S1 · 4위" hid two thirds of the reason she is
+   interesting. One chip per season, in season order, so a reader scanning the
+   wall can see who has been here most without opening twelve dossiers. */
+.gallery__runs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px var(--sp-2);
+  min-width: 0;
+}
+
+.gallery__run {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.gallery__run-s {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-wide);
+  color: var(--run, var(--ink-low));
+}
+
+.gallery__run-p {
+  color: var(--ink-sub);
+}
+
+.gallery__run--win .gallery__run-p {
+  color: var(--brass);
+  font-weight: var(--fw-med);
+}
+
+.gallery__line-n {
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+/* --ink-faint is 2.11:1 and tokens.css states outright that it is not a text
+   colour under any circumstance — it is a hairline, a disabled dot, a dashed
+   ring. It was carrying the '건' / 'ties' suffix at 11px, measured 1.96:1: the
+   unit on the one quantitative figure the whole atlas is built from, set as the
+   least legible thing on the card. --ink-low is 5.3:1 on the base. */
+.gallery__line-n-l {
+  margin-left: 3px;
+  font-family: var(--font-sans);
+  color: var(--ink-low);
+}
+
+@media (max-width: 640px) {
+  .gallery {
+    /* One value: the head, the note, the scroll region and the sticky header's
+       negative bleed all read it, so they cannot disagree at this width. */
+    --gal-pad: var(--sp-4);
+    /* The ramp follows it down: the mask has to be the gutter at every width
+       or it starts landing on a card again. */
+    --gal-gutter: var(--sp-3);
+    padding: 0;
+  }
+  .gallery__sheet {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  .gallery__plate {
+    width: 92px;
+  }
+}

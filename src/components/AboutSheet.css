@@ -1,0 +1,1385 @@
+/* ==========================================================================
+   AboutSheet — the manual and the colophon.
+   A dossier folder laid open over the graph: tabbed, dense, hairline-ruled.
+
+   NAMING NOTE — the `__ko` / `__en` suffixes predate the language switch and
+   now mean "the line, in whichever language the reader is in" and "the Latin
+   gloss set beside it". The gloss is only rendered in the Korean UI, where it
+   is a second script; in the English UI it would be the same words twice, so
+   the element is absent, not hidden. Any rule that depends on the gloss being
+   present needs a :lang(en) counterpart — see .abt-legend__row.
+   ========================================================================== */
+
+.about {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+/* --blood-ink at 62% over the panel read as a distinctly violet cast on the
+   sheet's top-left corner — a hue that appears on no other surface in the app
+   and reads as stock glassmorphism rather than as the mansion-and-basement
+   direction the tokens describe. Mixed down into --bg-void so the ambient tint
+   matches the canvas bloom: a light source, not a purple panel. */
+.about__backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    80% 60% at 50% 40%,
+    color-mix(in oklab, var(--blood-ink) 22%, color-mix(in oklab, var(--bg-void) 86%, transparent)),
+    color-mix(in oklab, var(--bg-void) 90%, transparent)
+  );
+  backdrop-filter: blur(6px) saturate(0.9);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+  animation: about-fade var(--d-base) var(--ease-out) both;
+}
+
+.about--out {
+  pointer-events: none;
+}
+
+.about__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* 1060 left a ~160px dead column beside every paragraph and an orphan gap
+     after the tab row. Sized to the prose measure plus a real right margin. */
+  width: min(940px, 100%);
+  height: min(860px, calc(100dvh - 2 * var(--sp-4)));
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-lg);
+  background:
+    radial-gradient(120% 70% at 50% -10%, color-mix(in oklab, var(--blood-deep) 7%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--bg-elevated), var(--bg-panel) 42%, var(--bg-raised));
+  box-shadow: var(--sh-lg);
+  overflow: hidden;
+  animation: about-rise var(--d-slow) var(--ease-out) both;
+}
+
+.about__panel:focus {
+  outline: none;
+}
+
+/* Content fades out at the scroll boundaries instead of being sliced
+   horizontally through the middle of a syllable block — a square Hangul glyph
+   cut in half stays legible-but-wrong, which reads as a paint bug rather than
+   as "there is more below".
+   Painted as overlays on a wrapper rather than as a mask on the scroll region
+   itself: a mask would also fade the tabpanel's own focus ring, and a scroll
+   affordance is not worth eating a focus indicator. */
+.about__scroller {
+  /* Published once, read three times: the overlay's height, the tail the inner
+     column reserves, and the scroll padding a keyboard jump lands against. Four
+     private copies of one ramp depth is how a fade ends up biting content it
+     was supposed to clear — the shared utility says so in as many words, and
+     this surface paints its own ramp for the focus-ring reason below, so it
+     owes the same discipline. */
+  --abt-fade-b: 72px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.about__scroller::before,
+.about__scroller::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Deep enough that a paragraph dissolves in it rather than being sliced.
+
+   58px over a 26px body line box (16 × 1.62) left the WHAT THIS IS tab, at
+   rest, ending on '프랜차이즈 사상 처음으로 팀전으로 돌아온 시즌…' with the
+   last line half-painted. A list or a card grid has a seam for a fade to land
+   on; running prose has none, so a partial line reads as a paint fault rather
+   than as an affordance — which is the one thing this ramp exists to avoid, on
+   the first tab of the sheet a confused reader opens.
+
+   72px is that same line box twice over plus a foot, weighted so the topmost
+   line inside the ramp is unambiguously going rather than sitting at 60%: the
+   overlay is 58% opaque one line box up from the floor, and the line above
+   that is only just touched. The tail below then guarantees the LAST line of a
+   tab somewhere to be — measured at full scroll, the closing block now sits
+   121.6px above the floor against a 72px ramp (49.6px clear) where it used to
+   sit 71.6px above a 58px ramp, i.e. 13.6px, which is half a line box and one
+   copy edit away from being permanently half-painted. */
+.about__scroller::after {
+  bottom: 0;
+  height: var(--abt-fade-b);
+  background: linear-gradient(
+    to top,
+    var(--bg-raised),
+    color-mix(in oklab, var(--bg-raised) 58%, transparent) 36%,
+    transparent
+  );
+}
+
+/* Top edge only once there is something above it — the first line stays crisp
+   at scrollTop 0.
+
+   Held at its full height and faded on opacity rather than grown from 0:
+   `height` is a layout property, so the old rule ran a 160ms relayout of the
+   panel on the first scroll of every tab, off the compositor, while the body
+   underneath it was still scrolling. Opacity is the same picture on the GPU. */
+.about__scroller::before {
+  top: 0;
+  height: 24px;
+  opacity: 0;
+  background: linear-gradient(to bottom, var(--bg-panel), transparent);
+  transition: opacity var(--d-fast) var(--ease-out);
+}
+
+.about__scroller:has(.about__body[data-scrolled='true'])::before {
+  opacity: 1;
+}
+
+/* eyebrows carry real information here — keep them readable on this ground */
+.about .eyebrow {
+  color: var(--ink-mid);
+}
+
+/* ---- header ---- */
+
+.about__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+}
+
+.about__head-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.about__title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-size: var(--t-h2);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.about__title-en {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-text);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.about__close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-full);
+  color: var(--ink-mid);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background-color var(--d-fast) var(--ease-out);
+}
+
+.about__close svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* State, not brand: hover is --accent. tokens.css reserves --blood for the
+   brand mark and the betrayal relationship, and a crimson close button on the
+   same screen as the crimson betrayal legend spends the meaning the legend
+   just bought. */
+.about__close:hover {
+  color: var(--ink-hi);
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+}
+
+/* ---- tabs ---- */
+
+/* Held to the same measure as the prose column below it. The seven-tab row used
+   to run ~65px past the body's right edge, giving the modal two different right
+   margins on the one screen whose job is to teach the visual language. */
+.about__tabs {
+  /* `overflow-x: auto` makes overflow-y `auto` too, and as a shrinkable flex
+     item the row was being squeezed by a tall panel until the second line —
+     the Latin gloss under every tab — was scrolled out of its own box. It
+     silently lost a whole rank of type on the "how to read" tab. Never
+     shrinks now. */
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  /* The pill's own 9px inset is subtracted from the row's gutter so the tab
+     LABELS sit on the prose column's left edge rather than 9px inside it —
+     the pill tint is allowed to bleed past the text, the way a selected row's
+     does. The max-width is the guard that keeps the row from ever running
+     past the measure again. */
+  padding: 0 calc(var(--sp-5) - 9px) var(--sp-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Keyboard focus scrolls a tab clear of the right edge rather than parking it
+     under the panel border. */
+  scroll-padding-inline: var(--sp-5);
+}
+
+.about__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.about__tab {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* 12px of side padding × 7 tabs plus the old 4px gaps put the row ~52px past
+     the prose measure. The tabs are the same measure now without anything
+     having to scroll. */
+  padding: var(--sp-2) 9px;
+  border-radius: var(--rad-sm);
+  border: 1px solid transparent;
+  text-align: left;
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    color var(--d-fast) var(--ease-out);
+}
+
+.about__tab-ko {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.about__tab-en {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  /* 0.16em of caps tracking on seven tabs is 40px of the measure; the wide
+     step still reads as small caps and buys the row back. */
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.about__tab:hover {
+  background: var(--bg-hover);
+}
+
+.about__tab:hover .about__tab-ko {
+  color: var(--ink-hi);
+}
+
+/* "The tab you are on" is a state, and state is --accent. This used to be a
+   crimson-outlined box with crimson caps sitting four pixels from the TopBar's
+   bone-underlined active view tab: two incompatible active-tab languages in one
+   product. Both are bone now. */
+.about__tab--on {
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+}
+
+.about__tab--on .about__tab-ko {
+  color: var(--ink-hi);
+}
+
+.about__tab--on .about__tab-en {
+  color: var(--accent);
+}
+
+.about__rule {
+  flex: 0 0 auto;
+}
+
+/* ---- body ---- */
+
+.about__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--sp-5);
+  /* Keyboard scrolling stops clear of the two fades. */
+  scroll-padding-block: 24px var(--abt-fade-b);
+}
+
+.about__body:focus-visible {
+  outline-offset: -3px;
+}
+
+/* One measure for running text, the panel's own width for everything else.
+   Capping the whole inner column at a prose measure stopped every hairline rule,
+   every definition row and every season card ~280px short of the panel edge on
+   every tab — a row rule that terminates mid-panel does not read as composed
+   negative space, it reads as a measure nobody reconciled with the container,
+   and the eye keeps hunting for the second column the rules imply. Structure
+   spans the panel; only the paragraphs are held to a line length. */
+.about__inner {
+  /* The tail. `.scroll--tail` does exactly this for the surfaces on the shared
+     mask; this one paints its own ramp, so it reserves its own block — one
+     ramp plus a line box, so the closing sentence of a tab reaches full ink at
+     the bottom of the scroll instead of stopping inside the fade. It was
+     --sp-7 (48px) against a 58px ramp, i.e. ten pixels short of ever being
+     readable. */
+  padding-bottom: calc(var(--abt-fade-b) + 26px);
+  animation: about-panel var(--d-base) var(--ease-out) both;
+}
+
+/* The reading measure. Set in em so it tracks the type size and means the same
+   thing in both scripts — `ch` is the width of a digit, so one number gives
+   Hangul roughly half the line it gives Latin. */
+.abt-prose,
+.abt-note,
+.abt-spoiler__ko,
+.abt-spoiler__policy,
+.abt-season__hook,
+.abt-season__moment-text,
+.abt-season__format,
+.abt-gloss__meaning,
+.abt-keys__ko {
+  max-width: 40em;
+}
+
+/* ---- section furniture ---- */
+
+.abt-sec__h {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-size: var(--t-h3);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+/* The Latin gloss beside a section heading is a second script, not a state and
+   not the brand mark. It was the fourth crimson object on this screen; it now
+   matches the sub-heading gloss directly below it. */
+.abt-sec__h-en {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--ink-sub);
+}
+
+.abt-sec__sub {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  font-size: var(--t-body);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.abt-sec__sub-en {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.abt-sec__rule {
+  margin: var(--sp-6) 0 var(--sp-2);
+}
+
+.abt-block + .abt-block {
+  margin-top: var(--sp-2);
+}
+
+.abt-prose {
+  margin-top: var(--sp-3);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+.abt-prose strong {
+  color: var(--ink-hi);
+  font-weight: var(--fw-med);
+}
+
+.abt-note {
+  margin-top: var(--sp-3);
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ---- spoiler callout ---- */
+
+/* This box is the reassurance, not the alarm.
+   A crimson border and a crimson tint around the words "NO SPOILERS" reads as
+   a danger alert — the exact opposite of what the copy says — and it spent the
+   betrayal colour on chrome three scrolls above the legend that teaches it.
+   The whole callout is on the state channel now: warm bone, which is what the
+   token file built --accent for. */
+.abt-spoiler {
+  margin-top: var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid var(--accent-line);
+  border-left-width: 3px;
+  border-left-color: var(--accent);
+  border-radius: var(--rad-sm);
+  background: linear-gradient(
+    90deg,
+    var(--accent-tint),
+    color-mix(in oklab, var(--accent) 3%, transparent) 62%,
+    transparent
+  );
+}
+
+/* Specificity matched to `.about .eyebrow`, which otherwise wins and drops the
+   flag back to --ink-mid. */
+.about .abt-spoiler__flag {
+  color: var(--accent);
+}
+
+.abt-spoiler__ko {
+  margin-top: var(--sp-2);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-spoiler__en {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink-mid);
+}
+
+.abt-spoiler__policy {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+/* ---- fact lists ---- */
+
+.abt-facts {
+  margin-top: var(--sp-4);
+  display: grid;
+  gap: 0;
+}
+
+.abt-fact {
+  display: grid;
+  grid-template-columns: minmax(96px, 148px) 1fr;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--glass-edge);
+}
+
+.abt-facts--tight .abt-fact {
+  padding: var(--sp-2) 0;
+}
+
+.abt-fact__key {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+
+.abt-fact__key-ko {
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+}
+
+.abt-fact__val {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-fact__val-en {
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+/* These three subtitles are set as Latin small caps, which is right while they
+   hold the Latin half of a pair. In the English UI they hold the Korean half
+   instead — 이태균 under "Lee Tae-gyun" — where uppercase does nothing and wide
+   Latin tracking prises the syllable blocks apart. Keyed off the run's own lang
+   attribute, so it follows the script rather than the interface. */
+.abt-fact__val-en:lang(ko),
+.abt-gloss__en:lang(ko),
+.abt-season__title-en:lang(ko) {
+  letter-spacing: var(--tr-tight-ko);
+  text-transform: none;
+}
+
+/* Winners are brass everywhere else in this app; the season card agrees. */
+.abt-fact__val--brass .abt-fact__val-ko {
+  font-weight: var(--fw-med);
+  color: var(--brass);
+}
+
+.abt-fact__val-pip {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--rad-xs);
+  color: var(--brass);
+  border: 1px solid color-mix(in oklab, var(--brass) 40%, transparent);
+  background: color-mix(in oklab, var(--brass) 10%, transparent);
+}
+
+/* ---- how-to-read tiles ---- */
+
+.abt-tiles {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: var(--sp-3);
+}
+
+.abt-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-sm);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.abt-tile__art {
+  width: 100%;
+  height: auto;
+  border-radius: var(--rad-xs);
+  background: radial-gradient(60% 60% at 50% 50%, rgba(255, 255, 255, 0.035), transparent 72%);
+}
+
+.abt-tile__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.abt-tile__ko {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-tile__en {
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: var(--ink-mid);
+}
+
+/* ---- relationship legend ---- */
+
+.abt-legend {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-3);
+}
+
+.abt-legend__row {
+  display: grid;
+  grid-template-columns: 46px minmax(84px, auto) minmax(96px, auto) 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--glass-edge);
+}
+
+/* No Latin gloss column in the English UI — and the label column has to widen,
+   because "Collaboration" and "Same agency" are set where 합방 and 같은 소속 were. */
+.abt-legend__row:lang(en) {
+  grid-template-columns: 46px minmax(116px, auto) 1fr;
+}
+
+.abt-legend__art {
+  width: 44px;
+  height: 12px;
+}
+
+.abt-legend__ko {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+  white-space: nowrap;
+}
+
+.abt-legend__en {
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.abt-legend__gloss {
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+}
+
+/* ---- swatch rows ---- */
+
+.abt-swatches {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.abt-swatches--tight {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.abt-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.abt-swatch__art {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.abt-swatch__ko {
+  font-size: var(--t-sm);
+  color: var(--ink-hi);
+  white-space: nowrap;
+}
+
+.abt-swatch__en {
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- seasons ---- */
+
+.abt-seasons {
+  margin-top: var(--sp-4);
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.abt-season {
+  position: relative;
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-sm);
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--tint) 9%, transparent),
+    transparent 46%
+  );
+  overflow: hidden;
+}
+
+.abt-season::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--tint);
+}
+
+.abt-season__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.abt-season__num {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+  color: var(--tint);
+}
+
+.abt-season__title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--t-h3);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.abt-season__title-en {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-text);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.abt-season__hook {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+/* The signature moment is the best line on each season card. It gets the
+   weight of a pull quote rather than another row of metadata.
+
+   It used to take the card's own --tint, which meant that on the season 1 card
+   a crimson rail, a crimson eyebrow and a crimson fill sat three pixels inside
+   a crimson --s1 rail: two reds of the same hue family, adjacent, one meaning
+   "season 1" and the other meaning "notable quote". Colour in this app names
+   one thing each, so the callout moved to the channel the token file built for
+   exactly this object — the same one the NO SPOILERS box uses. The season is
+   still named, by the card's rail and by its S-number, which is where the
+   season identity belongs. */
+.abt-season__moment {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 2px solid var(--callout-ink);
+  border-radius: 0 var(--rad-sm) var(--rad-sm) 0;
+  background: linear-gradient(
+    90deg,
+    var(--callout-bg),
+    color-mix(in oklab, var(--callout-line) 30%, transparent) 46%,
+    transparent 82%
+  );
+}
+
+/* Same specificity trap as the spoiler flag: `.about .eyebrow` was winning and
+   the callout tint never reached the "signature moment" label. */
+.about .abt-season__moment-flag {
+  color: var(--callout-ink);
+}
+
+.abt-season__moment-text {
+  margin-top: var(--sp-2);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-text);
+  letter-spacing: var(--tr-tight-ko, -0.005em);
+  color: var(--ink-hi);
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+.abt-season__format {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ---- the track record ---- */
+
+/* The chronological spine. Four steps, 2021 to now, so "who was where, when"
+   has somewhere to be answered — the by-season layout is a grouping, not a
+   timeline, and nothing else in the app is ordered by date at all. */
+.abt-spine {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+  counter-reset: none;
+}
+
+.abt-spine__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-sm);
+  background: linear-gradient(100deg, color-mix(in oklab, var(--tint) 8%, transparent), transparent 60%);
+}
+
+.abt-spine__step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: var(--rad-full) 0 0 var(--rad-full);
+  background: var(--tint);
+}
+
+/* The season the app is about is the one it holds no results for, so its step
+   is drawn open — the spine ends on an unfinished line rather than pretending
+   season X has a record. */
+.abt-spine__step--now {
+  border-style: dashed;
+}
+
+.abt-spine__num {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+  color: var(--tint);
+}
+
+.abt-spine__dates {
+  font-size: var(--t-xs);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+/* Korean binds its counter straight onto the numeral (4명) and English does
+   not, so the gap lives between the count and the phrase, never inside it. */
+.abt-spine__n {
+  display: flex;
+  align-items: baseline;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.abt-spine__n-l {
+  margin-left: 5px;
+  font-size: var(--t-micro);
+}
+
+/* Caps tracking follows caps, not language: 0.16em across syllable blocks
+   prises a Hangul phrase into a ransom note, which is the failure tokens.css
+   argues against at length for the other script. Only the Latin run is set as
+   tracked small caps. */
+.abt-spine__n-l:lang(en) {
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+}
+
+/* Seven columns is wider than a 390px phone; the table keeps its shape and the
+   wrapper scrolls, rather than the table reflowing into something that is no
+   longer a comparison. */
+.abt-rec__wrap {
+  margin-top: var(--sp-5);
+  overflow-x: auto;
+}
+
+.abt-rec {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.abt-rec__h {
+  padding: 0 var(--sp-3) var(--sp-2) 0;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--glass-edge-strong);
+  font-weight: var(--fw-text);
+}
+
+.abt-rec__h--n,
+.abt-rec__h--s {
+  text-align: right;
+}
+
+.abt-rec__h--s {
+  width: 1%;
+  padding-right: var(--sp-3);
+}
+
+.abt-rec__s {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+}
+
+/* A sort control, not a heading that happens to be clickable: it carries the
+   state in a caret as well as in colour. */
+.abt-rec__sort {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 4px;
+  margin-inline: -4px;
+  border-radius: var(--rad-xs);
+  color: inherit;
+  transition: color var(--d-fast) var(--ease-out), background-color var(--d-fast) var(--ease-out);
+}
+
+/* Only the caret crosses to the other side on a right-aligned column. Reversing
+   the whole row also swapped the Korean label and its Latin gloss, so the
+   heading read "BEST FINISH 최고 성적" — gloss first, which is the one thing the
+   bilingual pairing must never do. */
+.abt-rec__h--n .abt-rec__caret {
+  order: -1;
+}
+
+.abt-rec__sort:hover {
+  background: var(--bg-hover);
+}
+
+.abt-rec__h-lead {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.abt-rec__h-en {
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-low);
+  white-space: nowrap;
+}
+
+.abt-rec__caret {
+  width: 0.8em;
+  text-align: center;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.abt-rec__sort:hover .abt-rec__caret {
+  color: var(--ink-mid);
+}
+
+.abt-rec__sort.is-on .abt-rec__h-lead {
+  color: var(--ink-hi);
+}
+
+.abt-rec__sort.is-on .abt-rec__caret {
+  color: var(--accent);
+}
+
+.abt-rec tbody tr {
+  border-top: 1px solid var(--glass-edge);
+}
+
+.abt-rec tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.abt-rec__who {
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) 0;
+  font-weight: var(--fw-text);
+  vertical-align: baseline;
+}
+
+.abt-rec__name {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-rec__name-sub {
+  display: block;
+  font-size: var(--t-micro);
+  color: var(--ink-low);
+}
+
+.abt-rec__cell {
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.abt-rec__run {
+  font-size: var(--t-xs);
+  color: var(--ink);
+  border-bottom: 2px solid var(--run);
+  padding-bottom: 1px;
+}
+
+.abt-rec__run--win {
+  color: var(--brass);
+  font-weight: var(--fw-med);
+}
+
+/* The field the rank came from. It has to be on the cell — a rank without a
+   denominator is a number, and this table's whole job is to set fourteen runs
+   against each other — but it must not compete with the ordinal, which is what
+   the eye is scanning down the column. One rank quieter, and it wraps with the
+   ordinal rather than pushing the column wider. */
+.abt-rec__of {
+  margin-left: 3px;
+  font-size: var(--t-micro);
+  color: var(--ink-low);
+}
+
+/* A presiding run has no placing. It is set as a role, in a quieter weight,
+   with the same season rule under it — present that year, not ranked in it. */
+.abt-rec__run--role {
+  color: var(--ink-mid);
+  border-bottom-style: dotted;
+}
+
+.abt-rec__none {
+  color: var(--ink-low);
+}
+
+.abt-rec__n {
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) 0;
+  text-align: right;
+  font-size: var(--t-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.abt-rec__n--win {
+  color: var(--brass);
+  font-weight: var(--fw-med);
+}
+
+/* ---- glossary ---- */
+
+.abt-glossary {
+  margin-top: var(--sp-4);
+}
+
+.abt-gloss {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) 1fr;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--glass-edge);
+}
+
+.abt-gloss__term {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.abt-gloss__ko {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-gloss__en {
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.abt-gloss__meaning {
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+/* ---- shortcuts ---- */
+
+.abt-keys {
+  width: 100%;
+  margin-top: var(--sp-3);
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.abt-keys th {
+  padding-bottom: var(--sp-2);
+  font-weight: var(--fw-med);
+  border-bottom: 1px solid var(--glass-edge-strong);
+}
+
+.abt-keys td {
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) 0;
+  border-top: 1px solid var(--glass-edge);
+  vertical-align: top;
+}
+
+.abt-keys tbody tr:first-child td {
+  border-top: 0;
+}
+
+/* Stays a real table cell — layout comes from margins, not flex. */
+.abt-keys__combo {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.abt-kbd + .abt-kbd {
+  margin-left: var(--sp-2);
+}
+
+.abt-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 8px;
+  border: 1px solid var(--glass-edge-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--rad-xs);
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: 1.7;
+  color: var(--ink-hi);
+}
+
+.abt-kbd--soft {
+  border-bottom-width: 1px;
+  border-style: dashed;
+  background: transparent;
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+.abt-keys__ko {
+  display: block;
+  font-size: var(--t-sm);
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.abt-keys__en {
+  display: block;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* ---- sources ---- */
+
+.abt-sources {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-4);
+}
+
+.abt-source {
+  border-top: 1px solid var(--glass-edge);
+}
+
+.abt-source__link {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) 0;
+  text-decoration: none;
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.abt-source__host {
+  grid-column: 1;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+}
+
+.abt-source__url {
+  grid-column: 1;
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  overflow-wrap: anywhere;
+}
+
+.abt-source__out {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--ink-mid);
+}
+
+/* Hover is a state. --accent, like every other interactive affordance. */
+.abt-source__link:hover .abt-source__host,
+.abt-source__link:hover .abt-source__out {
+  color: var(--accent-hot);
+}
+
+.abt-source__plain {
+  display: block;
+  padding: var(--sp-3) 0;
+  font-size: var(--t-sm);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.abt-updated {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--glass-edge);
+}
+
+.abt-updated__date {
+  font-size: var(--t-sm);
+  color: var(--ink-hi);
+}
+
+/* ---- motion ---- */
+
+@keyframes about-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes about-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes about-panel {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Exit: ~half the entrance, and the panel leaves as one object — no section
+   stagger on the way out. The curve is --ease-in-out rather than --ease-out:
+   --ease-out is an expo-out, which on a disappearance spends 90% of the fade
+   in the first 15% of the duration, so the exit is over before it is seen. */
+.about--out .about__panel {
+  animation: about-sink 200ms var(--ease-in-out) both;
+}
+
+.about--out .about__backdrop {
+  animation: about-fade 160ms var(--ease-in-out) reverse both;
+}
+
+.about--out .about__inner {
+  animation: none;
+}
+
+@keyframes about-sink {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.992);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about__backdrop,
+  .about__panel,
+  .about__inner,
+  .about--out .about__panel,
+  .about--out .about__backdrop {
+    animation-duration: 1ms;
+  }
+  /* The scroll shadow is a state change, not an entrance: it still appears,
+     it just stops crossfading. */
+  .about__scroller::before {
+    transition-duration: 1ms;
+  }
+}
+
+/* ---- narrow ---- */
+
+@media (max-width: 720px) {
+  .about {
+    padding: 0;
+  }
+  .about__panel {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: 0;
+  }
+  .about__head,
+  .about__body {
+    padding-inline: var(--sp-4);
+  }
+  .about__tabs {
+    padding-inline: calc(var(--sp-4) - 9px);
+    scroll-padding-inline: var(--sp-4);
+  }
+  .abt-fact,
+  .abt-gloss {
+    grid-template-columns: 1fr;
+    gap: var(--sp-1);
+  }
+  .abt-legend__row {
+    grid-template-columns: 46px 1fr;
+    row-gap: var(--sp-1);
+  }
+  .abt-legend__ko,
+  .abt-legend__en,
+  .abt-legend__gloss {
+    grid-column: 2;
+  }
+  .abt-keys__combo {
+    width: auto;
+    white-space: normal;
+  }
+}

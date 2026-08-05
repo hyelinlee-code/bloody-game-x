@@ -1,0 +1,469 @@
+/* ==========================================================================
+   Bloody Game Atlas — design tokens
+   A deliberately single-look, dark art direction: the show is shot in a
+   half-lit mansion and a concrete basement. Everything here descends from
+   that: bone-white type, dried-blood accent, brass for winners.
+
+   COLOUR IS SPLIT INTO FOUR CHANNELS, and a channel is what a hue means:
+
+     1. RELATIONSHIPS  saturated, high chroma. Lines. The story.
+     2. ARCHETYPES     the same hue families at ~half chroma. Rings.
+     3. LINEAGE        deep, rich, low-key. Season arcs and chips.
+     4. STATE (--accent-*) warm bone. Focus, selection, search match,
+                       active tab, active chip, selected row. NOT crimson:
+                       --blood is reserved for exactly two jobs — the brand
+                       mark and betrayal.
+
+   ONLY CHANNEL 4 LIVES IN THIS FILE. Channels 1–3 live in
+   src/graph/palette.ts as CATEGORY_COLOR / CATEGORY_RING / EDGE_COLOR /
+   SEASON_COLOR / SEASON_INK, and every coloured surface in the DOM reads
+   them from there as an inline style, because the values are per-person and
+   per-edge data rather than per-element design.
+
+   THEY USED TO BE MIRRORED HERE AS --c-* / --r-* / --s1|2|3, and the mirror
+   is deleted rather than repaired. Measured before deleting:
+   `grep -rn "var(--c-\|var(--r-alliance…\|var(--s1)" src/ index.html` returned
+   ZERO consumers for all twenty-four, so nothing in the product was reading
+   them — and two of them had gone stale in the one way that costs something.
+   --c-esports #6f87cf and --c-poker #c8a85b were the exact values palette.ts
+   retired (ΔE 2.9 from --s2, i.e. an esports player's archetype ring and his
+   season-2 arc as one colour on one plate; ΔE 10.3 from --brass, i.e. five
+   gold discs where there are two champions). A duplicated ramp that nothing
+   reads cannot be caught by looking at the picture, so it drifts silently and
+   then hands the next person a fatal value through autocomplete.
+
+   IF YOU NEED AN ARCHETYPE, RELATIONSHIP OR SEASON HUE IN CSS: import it from
+   palette.ts and set it as a custom property on the element (`style={{ '--run':
+   SEASON_INK[n] }}`, as .gallery__run-s and .cp__tag already do). One source,
+   one value, no second copy to fall out of step.
+
+   assert-visual.mjs `tokens.retiredHexInCss` scans every stylesheet the built
+   page loads for those two retired hexes and fails if either comes back.
+
+   --------------------------------------------------------------------------
+   STATE CHANNEL LOOKUP — this is a table, not a principle.
+
+   Round 1 asked component owners to derive "use --accent for state" from a
+   sentence and ~50 crimson state declarations shipped anyway, because the
+   sentence named a ramp and the components needed a value for a specific
+   element. So every job now has its own token. Look your element up here and
+   paste the token; do not re-derive it, and do not reach for --blood.
+
+     element                                   token
+     -------------------------------------     -----------------------------
+     active tab / segmented-control pill       --tab-on-bg  --tab-on-line
+       its label                               --tab-on-ink
+       its caps gloss / English subtitle       --tab-on-gloss
+     on-state filter chip                      --chip-on-bg --chip-on-line
+       its label                               --chip-on-ink
+     selected row in a list (⌘K, gallery)      --row-on-bg  --row-on-line
+       the 2px marker rail on that row         --row-on-rail
+     search lens, clear ✕, close ✕ (resting)   --icon-ink
+       the same icons hovered / field focused  --icon-ink-on
+     informational callout box (NO SPOILERS)   --callout-line --callout-bg
+       its eyebrow                             --callout-ink
+     editorial pull-quote (SIGNATURE MOMENT)   --callout-line --callout-bg
+       its eyebrow                             --callout-ink
+       …if it sits inside a season card        that season's --s1/2/3-ink
+     search-match highlight                    --match-bg --match-ink
+     keyboard focus ring                       --focus-ring  (or --sh-accent)
+     a raised active surface needing a halo    --sh-accent
+
+   --blood / --blood-hot / --blood-glow / --sh-blood stay legal on exactly
+   three things: the TopBar wordmark X, the intro title card, and anything
+   that IS a betrayal (the --r-betrayal edge, the betrayal legend swatch, the
+   betrayal count in a dossier). Nothing else. A crimson border around a
+   reassuring box reads as an error alert, which is the opposite of the copy.
+
+   --brass is equally reserved: a title was actually won. It is not a second
+   state colour — "filters are on" and "this row is selected" are state, so
+   they belong in --accent-*, not in brass.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- surfaces (warm-shifted blacks, never pure #000) ----
+     This line used to be a claim the values contradicted. Every step had blue
+     as its dominant channel — #07060a, #0b0a0f, #16131c, #1d1926 measure at
+     hues of 252–260°, i.e. cool violet — so a file that says "warm" shipped
+     the default dark-dashboard palette, and the About sheet read as a mauve
+     panel with a lilac bloom in a product otherwise built from crimson, brass
+     and bone. Violet-black plus crimson is every analytics tool; warm-black
+     plus crimson is the tungsten half of a blood/tungsten reference, and it
+     is what the show actually looks like.
+
+     Rotated to 12–30°, i.e. amber-neutral. The rotation is HUE ONLY: each new
+     value was solved to hold its predecessor's relative luminance (all six
+     land within 2.3%, four within 1.3%), and the chroma span — how far the
+     extreme channels sit apart — is carried over unchanged, mirrored. That is
+     why every contrast figure in the ink block below still holds to two
+     decimal places: measured against the new --bg-base the ramp reads 17.26 /
+     13.74 / 8.85 / 6.56 / 5.28 / 2.11, which is the same set it read against
+     the old one. Nothing downstream needed editing.
+
+     The hues jitter between 12° and 30° rather than sitting on one number,
+     and cannot be made to agree: at these luminances a whole step of chroma is
+     3–10 units of 255, so the hue angle is quantised into 12° buckets. Holding
+     one hue exactly would have cost up to 4% of luminance per step, which is
+     the thing that actually shows. Luminance parity won.
+
+     THE CANVAS HAS NOT BEEN ROTATED YET, and until it is the two halves of
+     the frame disagree: src/graph/render.ts still paints paintBackdrop's three
+     stops as #0a0810 / #08070c / #060509 and the node body as #221d29 →
+     #100d16, all of them 255–265°. The warm equivalents were solved the same
+     way and are within 0.7% of the same luminances — #0d0807 / #0a0706 /
+     #070504, and #231e1c → #110e0b. That is the whole edit; it belongs to
+     render.ts's owner, and these two files have to end up on the same side of
+     neutral or the panels float warm over a violet field. */
+  --bg-void: #080605;
+  --bg-base: #0d0a09;
+  --bg-raised: #14100f;
+  --bg-panel: #171411;
+  --bg-elevated: #1f1a16;
+  --bg-hover: #27201d;
+
+  /* translucent layers for glass panels over the graph — the same two
+     surfaces as --bg-panel / --bg-elevated, carried through the rotation */
+  --glass-1: rgba(23, 20, 17, 0.72);
+  --glass-2: rgba(31, 26, 22, 0.82);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-edge-strong: rgba(255, 255, 255, 0.14);
+
+  /* ---- ink ----
+     Contrast on --bg-base: hi 17.3, ink 13.7, sub 8.9, mid 6.6, low 5.3.
+     On --bg-panel (the glass surfaces): hi 16.1, ink 12.8, sub 8.2, mid 6.1,
+     low 4.9 — so every one of the five clears AA on both surfaces.
+     --ink-low used to be #6d6570 (3.52:1) and was carrying real controls
+     — the bulk-select row in the rail, the Reset gloss — below AA. Lifted
+     so every component that already reads the token passes without edits.
+
+     --ink-faint is 2.11:1 and is NOT a text colour under any circumstance:
+     it is a hairline, a disabled dot, a dashed ring. If it is under a
+     glyph the glyph is wrong, not the token. */
+  --ink-hi: #f4efe9;
+  --ink: #ded6cf;
+  --ink-sub: #b5aca7;
+  --ink-mid: #9c938f;
+  --ink-low: #8a8190;
+  --ink-faint: #4a4453;
+
+  /* ---- brand ----
+     --blood is the brand mark and the betrayal relationship. Nothing else.
+     Focus, selection, search matches and active states use --accent-*;
+     see the STATE CHANNEL LOOKUP at the top of this file for the token
+     that belongs to each element. */
+  --blood: #ff2f43;
+  --blood-hot: #ff5566;
+  --blood-deep: #b00f22;
+  --blood-ink: #4a0710;
+  --blood-glow: rgba(255, 47, 67, 0.42);
+
+  /* Winners only. 11.5:1 on the base — safe as text, but only ever on the
+     fact of having won something. */
+  --brass: #e6c07a;
+  --brass-deep: #a8823c;
+  --brass-glow: rgba(230, 192, 122, 0.35);
+
+  --bone: #efe6da;
+
+  /* ---- state accent (warm bone) — channel 4 ----
+     Reads as "active" without shouting, and is 26 ΔE off --brass so a focus
+     ring never impersonates a winner halo. 12.9:1 on the base, 12.0:1 on
+     --bg-panel, so it is safe as small caps type as well as as a border. */
+  --accent: #dcd0b6;
+  --accent-hot: #f0e7d4;
+  --accent-deep: #8c7f61;
+  --accent-ink: #2a2418;
+  --accent-glow: rgba(220, 208, 182, 0.3);
+  /* --accent-line composites to 2.4:1 on --bg-panel: correct for a quiet
+     hairline, too quiet for the border that says "this tab is the one you
+     are on". --accent-line-strong composites to 4.4:1, which clears the
+     3:1 non-text floor with room for the vignette. */
+  --accent-line: rgba(220, 208, 182, 0.34);
+  --accent-line-strong: rgba(220, 208, 182, 0.55);
+  --accent-tint: rgba(220, 208, 182, 0.12);
+  --accent-tint-strong: rgba(220, 208, 182, 0.2);
+  --accent-tint-faint: rgba(220, 208, 182, 0.055);
+
+  /* ---- the state channel, by job ----
+     Same ramp, one alias per element, so a component owner never has to
+     decide which alpha of which token is "active". See the lookup table. */
+
+  /* focus + selection + search */
+  --focus-ring: var(--accent-hot);
+  --select-bg: var(--accent-tint);
+  --select-line: var(--accent-line);
+  --match-bg: rgba(220, 208, 182, 0.24);
+  --match-ink: #f7f1e6;
+
+  /* active tab / segmented-control pill */
+  --tab-on-ink: var(--accent-hot);
+  --tab-on-bg: var(--accent-tint-strong);
+  --tab-on-line: var(--accent-line-strong);
+  --tab-on-gloss: var(--accent);
+
+  /* on-state filter chip */
+  --chip-on-ink: var(--accent-hot);
+  --chip-on-bg: var(--accent-tint);
+  --chip-on-line: var(--accent-line-strong);
+
+  /* selected row in a list */
+  --row-on-bg: var(--accent-tint);
+  --row-on-line: var(--accent-line-strong);
+  --row-on-rail: var(--accent);
+
+  /* icons inside a control: a lens or a ✕ is chrome at rest and state on
+     hover. Neither of those is a brand mark, so neither is crimson. */
+  --icon-ink: var(--ink-mid);
+  --icon-ink-on: var(--accent-hot);
+
+  /* informational callout — a bordered aside that is reassurance, not an
+     error. Crimson here reads as a danger alert; this is the same warm bone
+     the rest of the state channel uses, at aside strength. */
+  --callout-line: var(--accent-line);
+  --callout-bg: var(--accent-tint-faint);
+  --callout-ink: var(--accent);
+
+  /* ---- channels 1, 2 and 3 are NOT here ----
+     Archetype rings, relationship lines and season arcs are per-datum colour,
+     not per-element design, and they are declared once in src/graph/palette.ts
+     — CATEGORY_COLOR, CATEGORY_RING, EDGE_COLOR, SEASON_COLOR, SEASON_INK.
+     The DOM reads them from there. See the note at the top of this file for
+     why the twenty-four-variable mirror that used to sit at this line was
+     deleted rather than corrected, and for how to use one of those hues from
+     CSS if you need it. */
+
+  /* ---- type ---- */
+  --font-sans: 'Pretendard Variable', Pretendard, 'Inter Variable', Inter,
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', system-ui,
+    sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace,
+    'SF Mono', 'Cascadia Mono', Menlo, monospace;
+
+  /* Ramp. The old scale went 10/11/13/15/17/24/34/64 — ratios of 1.10, 1.18,
+     1.15, 1.13 and then three enormous jumps, so --t-sm, --t-body and --t-h3
+     were three sizes doing one job and the dossier flattened into a 13px
+     wall. Rebuilt on ~1.25 from --t-sm up:
+       11 · 13 · 16 · 20 · 25–31 · 32–49 · 44–88
+     --t-sm stays at 13 on purpose: it is the workhorse (56 declarations
+     across the dossier and the rail) and inflating it would only make the
+     wall taller. The hierarchy comes from body and h3 pulling away from it,
+     which is where the dossier's section headings and connection titles
+     already live.
+
+     --t-lg (17px) is the one deliberate off-ramp step and it exists because
+     two controls kept reinventing it as a literal 1.0625rem: the command
+     palette's input and the intro's primary CTA. In a 56px control 16px
+     reads small and 20px reads like a heading. Anything that is not a
+     large control belongs on the ramp proper.
+
+     --t-nano (9px) is the floor. It is for a count pip or a key cap, never
+     for a sentence, and nothing should ever be smaller — a 7px glyph is not
+     a small label, it is an unreadable one. */
+  --t-display: clamp(2.75rem, 7.2vw, 5.5rem);
+  --t-h1: clamp(2rem, 3.8vw, 3.0625rem);
+  --t-h2: clamp(1.5625rem, 2.4vw, 1.9375rem);
+  --t-h3: 1.25rem;
+  --t-lg: 1.0625rem;
+  --t-body: 1rem;
+  --t-sm: 0.8125rem;
+  --t-xs: 0.6875rem;
+  --t-micro: 0.625rem;
+  --t-nano: 0.5625rem;
+
+  /* ---- weight ----
+     Three weights, not seven. With a real size ramp you never need 620 and
+     640 to be different things: at the 11–13px sizes where they are used
+     the stem-width difference is about 3%, which is below the threshold of
+     perception and above the threshold of drift. Worse, body sets
+     font-synthesis-weight: none, so a reader without Pretendard Variable
+     (Windows falls through to Malgun Gothic) snaps every one of them to 400
+     or 700 and the whole intended hierarchy collapses to two steps. Author
+     against the two steps that survive, and let the size ramp carry rank.
+
+     MAPPING — replace the literal on the left with the token on the right:
+       400, 450, 500, 520, 560            → var(--fw-text)
+       600, 620, 640, 650, 660, 680       → var(--fw-med)
+       700                                → var(--fw-bold)
+       760, 800   (wordmark / title card) → var(--fw-display)
+     --fw-display is the only fourth step and it is display-only: it is
+     legible as a decision at 28px and above, and nowhere else. If you are
+     about to type a number into font-weight below 28px, the answer is one
+     of the three above. */
+  --fw-text: 450;
+  --fw-med: 600;
+  --fw-bold: 700;
+  --fw-display: 800;
+
+  --lh-tight: 1.06;
+  --lh-snug: 1.28;
+  --lh-body: 1.62;
+
+  /* ---- tracking ----
+     Negative tracking is a Latin display convention. Hangul syllable blocks
+     are drawn on a full em square and carry their own sidebearings, so the
+     same −0.035em that tightens BLOODY GAME crowds 피의 게임. The two live
+     in separate tokens.
+
+     Hangul metrics are the DEFAULT, not the exception: this atlas is a
+     Korean cast list whose headings are Hangul on every surface regardless
+     of which language the chrome is currently in (the app rewrites
+     document.lang when the UI language changes, and the names underneath do
+     not change with it). Tight Latin tracking is therefore opt-in, applied
+     to the specific run that is actually Latin — see .latin / .latin-display
+     in base.css, and the .latin-run container override below.
+
+     The same asymmetry applies to caps tracking. --tr-caps (0.16em) is a
+     Latin small-caps device and it stays the default, because in practice
+     almost every eyebrow in this app is a Latin gloss (FIELD GUIDE, NETWORK,
+     WHAT THIS IS) sitting under a Hangul heading — tracking those is right
+     even when document.lang is ko. What is NOT right is applying it to a
+     Hangul run: across syllable blocks 0.16em reads as a ransom note. Hangul
+     that has to sit at caps rank takes --tr-caps-ko (the wide value), via
+     the .caps-ko utility in base.css.
+
+     THE RULE IS "CAPS TRACKING FOLLOWS CAPS, NOT LANGUAGE." It was written
+     here as "branch on s.lang" and the canvas implemented exactly that, which
+     put 0.18em on the caption TITLES — 'No prior tie on record', 'One step
+     away', 'Direct ties' — which are sentence case in English, and left the
+     0.06em on the SUBTITLES, which are the lines that are actually all-caps
+     ('NOBODY HERE HAS MET ANYONE ELSE · 4'). On lowercase Latin letterforms
+     0.18em makes the letter gap equal the word gap and the phrase stops being
+     words. So: a run set in caps takes --tr-caps if it is Latin and
+     --tr-caps-ko if it is Hangul; a run in sentence case takes 0.02–0.04em in
+     either script. In render.ts that means the wide value belongs on the
+     sub, not on the title. */
+  --tr-display-latin: -0.035em;
+  --tr-tight-latin: -0.018em;
+  --tr-display-ko: 0em;
+  --tr-tight-ko: -0.002em;
+
+  --tr-display: var(--tr-display-ko);
+  --tr-tight: var(--tr-tight-ko);
+  --tr-wide: 0.08em;
+  --tr-caps: 0.16em;
+  --tr-caps-ko: 0.08em;
+
+  /* ---- space (4px base) ---- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sp-9: 6rem;
+
+  /* ---- radii ----
+     Named --rad-* because --r-* used to be the relationship-hue prefix, and
+     autocomplete on `--r-` returned seventeen tokens from two incompatible
+     domains — which is how `border-radius: var(--r-family)` eventually gets
+     committed. Both halves of that collision are now gone: the relationship
+     hues moved to palette.ts (see the top of this file) and the six
+     deprecated `--r-xs|sm|md|lg|xl|full` aliases are deleted here. The grep
+     the previous paragraph asked for,
+
+         grep -rn "var(--r-\(xs\|sm\|md\|lg\|xl\|full\))" src/ index.html
+
+     returned nothing, which was its own instruction to delete them.
+
+     --rad-hair is the floor and it exists because two surfaces had already
+     invented it as a literal below --rad-xs (a search-match underline, a 1px
+     trace rule). A 2px corner on a 14px inline mark is a real value; it is
+     just not a fourth guess each time it is needed. */
+  --rad-hair: 2px;
+  --rad-xs: 4px;
+  --rad-sm: 7px;
+  --rad-md: 11px;
+  --rad-lg: 16px;
+  --rad-xl: 22px;
+  --rad-full: 999px;
+
+  /* ---- elevation ---- */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.32);
+  --sh-md: 0 4px 12px rgba(0, 0, 0, 0.48), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --sh-lg: 0 8px 24px rgba(0, 0, 0, 0.55), 0 32px 72px rgba(0, 0, 0, 0.52);
+  /* brand only — the intro CTA and the wordmark. Not a selection ring. */
+  --sh-blood: 0 0 0 1px rgba(255, 47, 67, 0.28), 0 8px 32px rgba(255, 47, 67, 0.18);
+  /* the same ring in the state channel — for focus/selection, where
+     --sh-blood was previously doing duty and reading as an error state */
+  --sh-accent: 0 0 0 1px rgba(220, 208, 182, 0.26),
+    0 8px 32px rgba(220, 208, 182, 0.14);
+
+  /* ---- motion ----
+     Two curves carry almost everything: --ease-out (an expo-out) for arrivals
+     and --ease-in-out for the two exits that have to hold opaque through the
+     first half of their own fade.
+
+     --ease-spring is the third, and it has one job: ACTUATION. It overshoots
+     by 1.56, so it belongs on a mark that snapped into a new position because
+     the reader pressed something — and on nothing else. Its current users are
+     the whole list:
+
+       .fswitch__thumb transform          (FilterRail.css) — the switch throws
+       .fchip[aria-pressed] .fchip__dot   (FilterRail.css) — the bloc lights up
+       .intro__enter transform            (Intro.css)      — the CTA presses
+       the mode indicator's leading edge  (TopBar.tsx)     — the pill lands
+
+     It was declared for two rounds and referenced by nothing, so every motion
+     in the app was the same expo-out and nothing in it had any mass. The rules
+     that keep it honest: only ever on `transform` (an overshoot on a colour or
+     an opacity is clamped at the ends and just reads as a stutter), only at
+     --d-fast or the switch's own 180ms — a long spring is a bounce, and this
+     product does not bounce — and only where a discrete state actually flipped.
+     A hover is not an actuation. If a fourth kind of movement wants it, it
+     probably wants --ease-out. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --d-fast: 140ms;
+  --d-base: 240ms;
+  --d-slow: 420ms;
+  --d-cine: 720ms;
+
+  /* ---- layout ---- */
+  --rail-w: 292px;
+  --dossier-w: 428px;
+  --topbar-h: 60px;
+  /* the status bar's height was a magic 34 duplicated in StatusBar.css and
+     app.css; the one dimension two files must agree on is now shared */
+  --statusbar-h: 34px;
+
+  --z-graph: 1;
+  --z-chrome: 20;
+  --z-panel: 40;
+  --z-modal: 60;
+  --z-toast: 80;
+}
+
+/* ---- container-level tracking overrides --------------------------------
+   Every component that already reads var(--tr-display) / var(--tr-tight)
+   inherits Hangul-safe metrics with no edit. These two exist for subtrees
+   that are entirely one script: .ko is a no-op reassertion (useful inside a
+   .latin-run block), .latin-run turns a wholly-Latin panel back to the tight
+   display fit. For a Latin *run inside* a Hangul heading, the var override
+   is not enough — the child inherits the parent's already-computed
+   letter-spacing — so use the .latin / .latin-display utilities in base.css.
+   Rules are equal specificity to :root, so source order decides; keep them
+   after the :root block.                                                  */
+:lang(ko),
+.ko {
+  --tr-display: var(--tr-display-ko);
+  --tr-tight: var(--tr-tight-ko);
+}
+
+.latin-run {
+  --tr-display: var(--tr-display-latin);
+  --tr-tight: var(--tr-tight-latin);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-fast: 1ms;
+    --d-base: 1ms;
+    --d-slow: 1ms;
+    --d-cine: 1ms;
+  }
+}

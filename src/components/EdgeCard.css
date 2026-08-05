@@ -1,0 +1,351 @@
+/* EdgeCard — the readout for a relationship line.
+
+   Same physics as HoverCard: position goes straight to transform and is never
+   transitioned, so the card is welded to the cursor; only opacity and a hair of
+   scale ease. The one difference is the hue — this card is coloured by the
+   relationship it describes, which is channel 1 of the palette (the saturated
+   ramp lines are drawn in), carried by `--e` from the component. */
+
+.edgecard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-panel);
+  pointer-events: none;
+  width: max-content;
+  /* Wide enough for a Korean headline plus an English description without
+     either being cut, narrow enough not to become a second dossier. */
+  max-width: 340px;
+  will-change: transform;
+  contain: layout style;
+}
+
+/* Pinned, it is a held-open object rather than a tooltip, so its own control
+   has to be clickable. */
+.edgecard.is-pinned {
+  pointer-events: auto;
+}
+
+/* ── surface ─────────────────────────────────────────────────────────────
+   Opaque, for the reason the hover card is opaque: --glass-2 is 0.82 alpha and
+   is tuned for a panel over the static vignette, while this card lands by
+   definition on the densest part of the graph, over #f4efe9 node labels and
+   3px saturated edges. At 0.82 roughly a fifth of a near-white glyph survives
+   underneath — two competing sets of names in one rectangle, one of them a
+   200-word description that is the whole reason the card exists.
+
+   Going opaque also deletes the backdrop-filter, and with it a full-page
+   backdrop snapshot on every frame of every fade of a surface that follows the
+   cursor. The legibility fix and the cost fix are the same line, exactly as
+   they were on HoverCard. */
+.edgecard__card {
+  position: relative;
+  overflow: hidden;
+  padding: var(--sp-3);
+  border-radius: var(--rad-md);
+  border: 1px solid var(--glass-edge-strong);
+  background: var(--bg-panel);
+  box-shadow: var(--sh-md);
+
+  opacity: 0;
+  transform: scale(0.975) translateY(2px);
+  transform-origin: top left;
+  transition: opacity var(--d-fast) var(--ease-out), transform var(--d-fast) var(--ease-out);
+}
+
+.edgecard.is-shown .edgecard__card {
+  opacity: 1;
+  transform: none;
+}
+
+/* Pinned gets the relationship's own hue on its edge, so a held card is
+   visibly a different state from one that will vanish when the cursor moves. */
+.edgecard.is-pinned .edgecard__card {
+  border-color: color-mix(in srgb, var(--e) 46%, transparent);
+}
+
+.edgecard__accent {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  opacity: 0.9;
+  background: linear-gradient(90deg, var(--e), transparent 78%);
+}
+
+/* ── the two people ───────────────────────────────────────────────────────── */
+
+.edgecard__pair {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.edgecard__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.edgecard__mark {
+  flex: 0 0 auto;
+  display: block;
+  width: 24px;
+}
+
+.edgecard__name {
+  min-width: 0;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+  color: var(--ink-hi);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* An arrow when the relationship has an actor and a subject, a dash when it is
+   mutual. The glyph is the only place direction is stated in this card, so it
+   is not allowed to shrink away. */
+.edgecard__join {
+  flex: 0 0 auto;
+  font-size: var(--t-sm);
+  line-height: 1;
+  color: var(--e);
+}
+
+/* ── tags ─────────────────────────────────────────────────────────────────── */
+
+.edgecard__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) 6px;
+  margin-top: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.edgecard__chip,
+.edgecard__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--rad-full);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* The type chip is the legend, restated where the reader is looking. */
+.edgecard__chip {
+  color: var(--e);
+  border: 1px solid color-mix(in srgb, var(--e) 46%, transparent);
+  background: color-mix(in srgb, var(--e) 13%, transparent);
+}
+
+.edgecard__tag {
+  color: var(--ink-mid);
+  border: 1px solid var(--glass-edge-strong);
+  background: color-mix(in srgb, var(--ink-hi) 5%, transparent);
+}
+
+/* "Not fully cross-checked" is a state, so it takes the state channel rather
+   than a second warning red. */
+.edgecard__tag--unsure {
+  color: var(--callout-ink);
+  border-color: var(--callout-line);
+  background: var(--callout-bg);
+}
+
+/* ── the text ─────────────────────────────────────────────────────────────── */
+
+.edgecard__head {
+  margin-top: var(--sp-2);
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  line-height: 1.3;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.edgecard__body {
+  margin-top: 5px;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pinned, the whole description is worth reading, so the clamp lifts. */
+.edgecard.is-pinned .edgecard__body {
+  -webkit-line-clamp: 10;
+  line-clamp: 10;
+}
+
+/* ── what this pair has already settled ──────────────────────────────────
+   The description says what the tie is; this says how it came out. It sits
+   below the paragraph and above the hint because it is evidence for the
+   sentence above it, and it is set at the card's quiet rank — the headline
+   of this card is the relationship, not the scoreline.
+
+   Not tinted with --e. The hue on this card means "this is what kind of
+   relationship the line is"; a Genius death match result is not a property
+   of the edge type, and colouring it would say it was. */
+.edgecard__h2h {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--glass-edge);
+}
+
+.edgecard__h2hk {
+  color: var(--ink-mid);
+}
+
+.edgecard__ms {
+  list-style: none;
+  padding: 0;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.edgecard__m {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--sp-2);
+  padding-left: var(--sp-2);
+  border-left: 1px solid var(--glass-edge-strong);
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+/* One against one is the harder claim, and the rule says so — the same
+   distinction the dossier's ledger draws with the same device. */
+.edgecard__m.is-duel {
+  border-left: 2px solid var(--bone);
+}
+
+.edgecard__mkind {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border-radius: var(--rad-xs);
+  border: 1px solid var(--glass-edge-strong);
+  color: var(--ink-mid);
+}
+
+.edgecard__m.is-duel .edgecard__mkind {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--bone) 45%, transparent);
+}
+
+.edgecard__mbeat {
+  color: var(--ink);
+}
+
+.edgecard__mscore {
+  font-weight: var(--fw-bold);
+  color: var(--ink-hi);
+}
+
+.edgecard__mwhere {
+  flex-basis: 100%;
+  color: var(--ink-low);
+}
+
+.edgecard__hint {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--glass-edge);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.edgecard__close {
+  margin-top: var(--sp-2);
+  padding: 3px 9px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  color: var(--ink-mid);
+  cursor: pointer;
+  transition: color var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out);
+}
+
+.edgecard__close:hover {
+  color: var(--ink-hi);
+  border-color: var(--accent);
+}
+
+/* The tap dismiss. Only ever shown on a pointer with no Esc key (see below),
+   so it costs nothing on desktop and `display: none` keeps it out of the focus
+   order there rather than leaving a second, invisible way to close the card in
+   the tab ring. */
+.edgecard__x {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  color: var(--ink-mid);
+}
+
+@media (max-width: 640px) {
+  .edgecard {
+    max-width: 296px;
+  }
+}
+
+/* The card is welded to a cursor. A device without one gets the dossier's
+   connections list instead, which is the same content with a tap target — but
+   a PINNED card survives here, because a tap on a line is how a phone reader
+   opens one at all.
+
+   The hint is NOT suppressed here any more. It used to be: 'Esc 해제 · E 다음
+   인연' names two keys a phone does not have, so the line was a lie, and
+   `display: none` was the cheap answer. It replaced a wrong instruction with
+   no instruction — a card over half the screen, the graph dimmed behind it,
+   and nothing on it saying how to leave. The component now branches the
+   sentence on `(hover: none)` itself (`edge.pinnedHintTouch`, the same query
+   as the rule above so copy and visibility cannot disagree), and what is left
+   here is only what CSS can actually decide: the ✕ appears, a 32px target in
+   the corner every modal in this app already puts one in, with the '고정 해제'
+   text button under the hint for anyone who reads before they tap. */
+@media (hover: none) {
+  .edgecard:not(.is-pinned) {
+    display: none;
+  }
+
+  .edgecard.is-pinned .edgecard__x {
+    display: grid;
+  }
+
+  /* Room for the ✕ so it never lands on the first name in the pair. */
+  .edgecard.is-pinned .edgecard__pair {
+    padding-right: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edgecard__card {
+    transition: none;
+    transform: none;
+  }
+}

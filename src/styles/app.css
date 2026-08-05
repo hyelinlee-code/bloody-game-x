@@ -1,0 +1,190 @@
+/* App shell layout. Panels float over a full-bleed canvas rather than sitting
+   in a grid — the graph should always feel like the whole surface.
+
+   ── THE UNCOVERED RECT ────────────────────────────────────────────────────
+   This file is the single source of truth for how much canvas the chrome is
+   standing on. The camera in GraphCanvas is handed an inset box by App and
+   fits the graph inside it, so if the numbers here and the numbers there
+   disagree the graph is framed against a rectangle that does not exist — and
+   nodes get cut by an edge nobody thinks is there.
+
+   Round 3 found exactly that at two widths, so the geometry is now published
+   as four custom properties on `.app`. They are derived from the same tokens
+   the panels are laid out from, which means they cannot drift from the panels
+   again. App should read them rather than re-deriving the arithmetic:
+
+     const cs = getComputedStyle(appEl);
+     const px = (k) => parseFloat(cs.getPropertyValue(k)) || 0;
+     insets = { top: px('--inset-top'), right: px('--inset-right'),
+                bottom: px('--inset-bottom'), left: px('--inset-left') };
+
+   Each value already includes the panel's own margin plus a --sp-3 breathing
+   gap, so the camera should treat the box as final and not add its own pad.
+   ------------------------------------------------------------------------- */
+
+/* Registered so the four values compute to absolute pixels. An unregistered
+   custom property hands getComputedStyle back the literal token stream —
+   "calc(60px + 0.75rem)" — which parseFloat reads as NaN. With a <length>
+   syntax the engine resolves the calc and the reader gets a number. */
+@property --inset-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --inset-right {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --inset-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --inset-left {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+
+  /* Nothing open: the bar, the ledger and a hair of margin. */
+  --inset-top: calc(var(--topbar-h) + var(--sp-3));
+  --inset-bottom: calc(var(--statusbar-h) + var(--sp-3));
+  --inset-left: var(--sp-3);
+  --inset-right: var(--sp-3);
+}
+
+/* The rail is inset by --sp-3 and is --rail-w wide; the camera gets that plus
+   one more --sp-3 so a node disc never kisses the panel edge. */
+.app:not(.app--rail-closed) {
+  --inset-left: calc(var(--rail-w) + var(--sp-3) + var(--sp-3));
+}
+
+.app--dossier {
+  --inset-right: calc(var(--dossier-w) + var(--sp-3) + var(--sp-3));
+}
+
+.graph-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-graph);
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  display: block;
+}
+
+/* Shared glass treatment for every floating surface. */
+.pane {
+  background: var(--glass-1);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--sh-lg);
+}
+
+/* Panels sit inside the safe area and never cover the whole canvas. */
+.rail,
+.dossier {
+  position: absolute;
+  top: calc(var(--topbar-h) + var(--sp-3));
+  bottom: calc(var(--statusbar-h) + var(--sp-3));
+  z-index: var(--z-panel);
+  border-radius: var(--rad-lg);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--d-slow) var(--ease-out), opacity var(--d-base) var(--ease-out);
+}
+
+.rail {
+  left: var(--sp-3);
+  width: var(--rail-w);
+}
+
+.dossier {
+  right: var(--sp-3);
+  width: var(--dossier-w);
+}
+
+.app--rail-closed .rail {
+  transform: translateX(calc(-1 * (var(--rail-w) + var(--sp-4))));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --dossier-w: 380px;
+  }
+}
+
+/* Below 900 the rail narrows. The dossier deliberately does NOT change again
+   here: it was `min(420px, 92vw)`, which made the panel up to 40px wider than
+   the 380 the camera was told about, so at 641–900px the right-hand column of
+   the graph was drawn underneath the file and the fit had no idea. One width
+   per breakpoint, and the breakpoints are the ones the camera knows. */
+@media (max-width: 900px) {
+  :root {
+    --rail-w: 264px;
+  }
+  .rail {
+    box-shadow: var(--sh-lg), 0 0 0 100vmax rgba(0, 0, 0, 0.001);
+  }
+}
+
+/* Phone: both panels become bottom sheets, so they eat height, not width.
+
+   The height is fixed at 68dvh rather than capped at 68vh. Two reasons, both
+   of them the same bug from opposite ends: `max-height` let a short panel
+   claim less than the camera reserved (so the graph was squeezed into a box
+   taller than the one it was drawn in), and `vh` is the LARGE viewport on a
+   phone — it does not shrink when the browser toolbar is showing, while
+   window.innerHeight does, so the sheet covered up to 60px more canvas than
+   the camera was told. `dvh` is the unit that tracks innerHeight. */
+@media (max-width: 640px) {
+  .app {
+    --sheet-h: 68dvh;
+    --inset-top: var(--topbar-h);
+    --inset-bottom: var(--statusbar-h);
+    --inset-left: 0px;
+    --inset-right: 0px;
+  }
+  /* A sheet is up: it owns the bottom of the screen and nothing else does. */
+  .app:not(.app--rail-closed),
+  .app--dossier {
+    --inset-bottom: var(--sheet-h);
+    --inset-left: 0px;
+    --inset-right: 0px;
+  }
+  .rail,
+  .dossier {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: var(--sheet-h);
+    border-radius: var(--rad-xl) var(--rad-xl) 0 0;
+  }
+  .app--rail-closed .rail {
+    transform: translateY(110%);
+  }
+}
+
+/* Older engines without dynamic viewport units keep the previous behaviour
+   rather than losing the sheet height entirely. */
+@supports not (height: 1dvh) {
+  @media (max-width: 640px) {
+    .app {
+      --sheet-h: 68vh;
+    }
+  }
+}

@@ -1,0 +1,1820 @@
+/* ==========================================================================
+   Dossier — the character file.
+   Reads as a printed page inside a lit glass case: hairline rules, a single
+   crimson accent, brass only where a title was actually won.
+   ========================================================================== */
+
+/* Higher specificity than `.rail, .dossier` in app.css, which is injected
+   after this file and owns a transform transition we do not want here. */
+/* Enter AND exit are owned by motion in Dossier.tsx — a 240ms entrance
+   followed by a single-frame disappearance is the loudest craft tell there
+   is, so both halves live in one place. */
+aside.dossier {
+  overflow: hidden;
+  padding: 0;
+  transition: none;
+  /* ── the entrance is opaque ──────────────────────────────────────────────
+     This panel is glass: `.pane` fills it with --glass-1, which is --bg-panel
+     at 72% over a 22px backdrop blur. At rest that reads as solid, because the
+     blur has destroyed everything behind it. DURING THE SLIDE it does not: the
+     panel used to fade its own surface up from 0 while travelling, so the
+     composite alpha at the middle of the entrance was elementOpacity × 0.72.
+     Measured on the production build, frame 2 of a real click: element opacity
+     0.237 against a 0.72 background = 0.17, i.e. 83% of the graph printing
+     through the panel — which is the photographed failure, ten canvas captions
+     over the dossier's own type, one of them landing on a chip.
+
+     So the surface arrives opaque and stays opaque for the whole 240ms slide,
+     and only then eases to glass, by which time the backdrop blur is what is
+     hiding the canvas. Two halves, and both are needed: the fade is off (see
+     the `animate` prop in Dossier.tsx, opacity 1 from the first frame) and the
+     background is --bg-panel until the move is over. No frame of the slide is
+     see-through — that is now a property of the element, not a hope about the
+     frame rate.
+
+     Under prefers-reduced-motion --d-base is 1ms, so this collapses to the
+     glass value on the first frame with no extra rule. */
+  animation: dsr-bed var(--d-base) var(--ease-out) both;
+}
+
+@keyframes dsr-bed {
+  0%,
+  62% {
+    background-color: var(--bg-panel);
+  }
+  100% {
+    background-color: var(--glass-1);
+  }
+}
+
+/* ── top bar ─────────────────────────────────────────────────────────────── */
+
+.dsr-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--glass-edge);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+}
+
+.dsr-bar__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsr-bar__spacer {
+  width: 2px;
+}
+
+.dsr-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--rad-sm);
+  color: var(--ink-mid);
+  border: 1px solid transparent;
+  transition: color var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.dsr-icon:hover {
+  color: var(--ink-hi);
+  background: var(--bg-hover);
+  border-color: var(--glass-edge-strong);
+}
+
+.dsr-icon:active {
+  background: var(--bg-elevated);
+}
+
+/* ── scroll body ─────────────────────────────────────────────────────────── */
+
+/* Hangul syllable blocks are square, so a horizontal cut through one leaves a
+   legible-but-wrong shape rather than an obviously clipped one. Both ends of
+   the scroll region therefore dissolve instead of shearing. The top fade is
+   held at 0 until the reader has actually scrolled — a fade at scrollTop 0
+   would read as the header eating the first line.
+
+   The mask is base.css's `.scroll--faded .scroll--footer`, not a private copy.
+   The private copy ran a 30px linear ramp against a --t-body line box of
+   16 × 1.62 = 26px, so a whole line of the bio sat inside the fade and was
+   painted at roughly 40–60% alpha — "— Hid a day-one Death Match win and
+   walked back into" was plainly readable as sheared half-letterforms in
+   05-dossier-scrolled.png. That is the exact failure the comment above says
+   the fade exists to prevent. The shared utility runs 72px here (two line
+   boxes plus the sticky footer's own height, because the container floor is
+   *behind* the footer) with a weighted ramp. */
+.dsr-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+  /* The start pad is the top ramp and not --sp-5 (24px): the jump nav at the
+     head of the panel scrolls sections to this edge, and at 24px against the
+     52px ramp below a jumped-to heading arrived painted at about half alpha —
+     the reader clicks "Connections 11" and lands on a dissolving heading. */
+  scroll-padding-block: 56px var(--scroll-fade-b);
+}
+
+/* Nothing left to reveal — let the last line land cleanly on the footer. The
+   tail spacer below has already carried it clear of the footer bar. */
+.dsr-scroll[data-atend='true'] {
+  --scroll-fade-b: 8px;
+}
+
+/* The TOP ramp, raised off the shared 18px default.
+
+   The fifteen lines above about the bottom edge argue that a horizontal cut
+   through a square Hangul syllable block leaves a legible-but-wrong shape
+   rather than an obviously clipped one, and that is why the bottom runs 72px.
+   The top was still on the utility's 18px, i.e. the number that argument
+   rejects. Measured in this panel at scrollTop 900 on 홍진호: ramp 18px
+   against a 25.92px body line box, with a bio paragraph straddling it — two
+   thirds of a line of Hangul painted between 0% and about 70% alpha, at the
+   top of the panel, every time the reader scrolls.
+
+   52px is two line boxes, the same depth and the same weighted curve the
+   bottom edge uses, so both ends of this box dissolve at one rate. It is not
+   72 because the top has no sticky header to fade behind — only the panel's
+   own rounded edge. The rail carries the identical override for the identical
+   reason; the shared default belongs at this value, which is the handoff. */
+.dsr-scroll[data-scrolled='true'] {
+  --scroll-fade-t: 52px;
+}
+
+.dsr-doc {
+  padding: var(--sp-5) var(--sp-5) 0;
+}
+
+/* Enough scrollable whitespace that the last line of the document can reach
+   full opacity above the fade rather than ending inside it. Held at a literal
+   value rather than at var(--scroll-fade-b), because the at-end rule below
+   changes that variable and a tail that resized with it would oscillate
+   between "at end" and "not at end" on every frame. */
+.dsr-tail {
+  height: 72px;
+}
+
+/* ── A. identity ─────────────────────────────────────────────────────────── */
+
+.dsr-id {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'crest text'
+    'occ   occ'
+    'fr    fr'
+    'chips chips'
+    'key   key';
+  align-items: start;
+  column-gap: var(--sp-4);
+  row-gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+}
+
+/* The plate is the same object the graph drew: category ring, one season arc
+   per prior season sized by finish, a rim tick per verified connection. */
+.dsr-id__crest {
+  grid-area: crest;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+}
+
+/* A soft category-coloured pool under the plate, matching the focus glow the
+   canvas paints behind a selected node. */
+.dsr-id__crest::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--c) 22%, transparent), transparent 68%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.dsr-id__crest .portrait {
+  position: relative;
+  width: 100%;
+}
+
+.dsr-id__text {
+  grid-area: text;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+/* Hangul is drawn on a full em square with its own sidebearings; the negative
+   tracking that flatters a Latin display line crowds it. Korean display type
+   in this panel sits at 0. */
+/* `width: fit-content` is load-bearing, not tidiness: the h2 is a block in a
+   grid column, so its focus ring used to be a 455px rectangle drawn around a
+   four-character name. The ring now hugs the glyphs. */
+.dsr-id__ko {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  line-height: 1.12;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+/* The panel moves focus here when it opens, so this ring is the first thing a
+   keyboard reader sees. It used to be a 2px --accent box at 3px offset — a
+   second focus identity alongside base.css's --focus-ring at 2px, and, drawn
+   around a 31px Hangul display name, optically a filled text input. The
+   element is a heading with tabindex="-1"; it is not editable and a box says
+   it is. One ring token for the whole app, and on this element the ring is an
+   underline plus a gutter marker rather than a field. */
+.dsr-id__ko:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-decoration-color: var(--focus-ring);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-decoration-skip-ink: none;
+}
+
+/* The marker rail is the same object a selected row in the palette gets, so
+   "the keyboard is here" reads the same way everywhere. */
+.dsr-id__ko:focus-visible::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--sp-3));
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: var(--rad-full);
+  background: var(--focus-ring);
+}
+
+/* Focus is moved here programmatically when the panel opens, so the ring must
+   not fire for a mouse user who never asked for it. `:focus-visible` alone
+   does not settle it — Chrome keeps the keyboard modality from earlier in the
+   session — so the panel marks a pointer-initiated open as quiet and the
+   class wins over the rule above. See lastInputWasPointer() in Dossier.tsx. */
+.dsr-id__ko:focus:not(:focus-visible),
+.dsr-id__ko.is-quiet:focus-visible {
+  outline: none;
+}
+
+.dsr-id__en {
+  margin-top: 2px;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  color: var(--ink-mid);
+  letter-spacing: 0.01em;
+}
+
+.dsr-id__alt {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--sp-3);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.dsr-id__altk {
+  color: var(--ink-mid);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  margin-right: 4px;
+}
+
+.dsr-id__occ {
+  grid-area: occ;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-3);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+}
+
+.dsr-id__occk {
+  color: var(--ink);
+}
+
+.dsr-id__occe {
+  color: var(--ink-mid);
+}
+
+.dsr-id__yr {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--ink-mid);
+  font-size: var(--t-xs);
+}
+
+.dsr-id__yrk {
+  letter-spacing: var(--tr-wide);
+  color: var(--ink-mid);
+}
+
+.dsr-id__chips {
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* ── the plate key ───────────────────────────────────────────────────────
+   The last block of the identity header, because it is a caption on the crest
+   at the top of it: the marks that plate is carrying, named. Two columns at
+   panel width so four marks cost two lines rather than four, and the whole
+   thing sits a rank below the chips above it in both size and ink — it is an
+   explanation, not a fact about the person. */
+.dsr-id__key {
+  grid-area: key;
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-2) 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 5px var(--sp-3);
+  border-top: 1px solid var(--glass-edge);
+}
+
+.dsr-id__key .platekey__row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+}
+
+.dsr-id__key .platekey__mark {
+  width: 16px;
+  /* Optically centred on the first line of the label rather than on the box:
+     a two-line label would otherwise hang its swatch half a line high. */
+  margin-top: 1px;
+}
+
+.dsr-id__key .platekey__what {
+  font-size: var(--t-micro);
+  line-height: 1.45;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ── cumulative franchise strip ──────────────────────────────────────────
+   Twelve of these twenty have played before. The densest single fact about
+   any of them is the line across seasons — 4위, 13위, then hosting — and it
+   used to take three scrolls and three plates to assemble. */
+
+.dsr-frx {
+  grid-area: fr;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.dsr-frx__key {
+  flex: 1 1 100%;
+  color: var(--ink-mid);
+}
+
+.dsr-frx__list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dsr-frx__i {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--rad-full);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--c) 50%, var(--ink-hi));
+  background: color-mix(in oklab, var(--c) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c) 40%, transparent);
+  white-space: nowrap;
+}
+
+.dsr-frx__s {
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-wide);
+}
+
+.dsr-frx__r {
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+}
+
+/* The field the rank was taken from. Subordinate to the rank — it is the
+   denominator, and 3위 is still the headline — but it is on the chip, because
+   without it the chip is not a fact. */
+.dsr-frx__of {
+  font-size: 0.86em;
+  color: var(--ink-low);
+}
+
+/* A title is the only finish that gets brass, and it gets it once. */
+.dsr-frx__i.is-gold .dsr-frx__r {
+  color: var(--brass);
+}
+
+.dsr-frx__i.is-host {
+  border-style: dashed;
+}
+
+.dsr-frx__i.is-host .dsr-frx__r {
+  color: var(--bone);
+}
+
+.dsr-frx__sum {
+  margin-left: auto;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.dsr-frx__sum b {
+  font-weight: var(--fw-bold);
+  color: var(--ink-hi);
+}
+
+.dsr-frx__dot {
+  padding: 0 5px;
+  color: var(--ink-faint);
+}
+
+/* ── section index ───────────────────────────────────────────────────────
+   Every click on a node is a question about relationships; the answer used to
+   be the last section of a five-screen document. */
+
+.dsr-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-5);
+}
+
+.dsr-jump__b {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ink);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  line-height: 1.5;
+  white-space: nowrap;
+  transition: color var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.dsr-jump__b:hover {
+  color: var(--ink-hi);
+  background: var(--bg-hover);
+  border-color: var(--glass-edge-strong);
+}
+
+.dsr-jump__n {
+  color: var(--ink-mid);
+}
+
+.dsr-jump__b:hover .dsr-jump__n {
+  color: var(--ink);
+}
+
+/* ── chips + tags ────────────────────────────────────────────────────────── */
+
+/* The hue lives at full strength in the rules, rings and spines. Chip TEXT is
+   always a bone-lifted version of it, so even the darkest edge colour
+   (co-season) clears 4.5:1 on the panel. */
+.dsr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--rad-full);
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  font-weight: var(--fw-med);
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--c, var(--ink-mid)) 56%, var(--ink-hi));
+  background: color-mix(in oklab, var(--c, var(--ink-low)) 13%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c, var(--ink-low)) 38%, transparent);
+}
+
+.dsr-chip--cat {
+  font-weight: var(--fw-med);
+}
+
+.dsr-chip--brass {
+  --c: var(--brass);
+  color: var(--brass);
+}
+
+.dsr-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--rad-xs);
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: var(--ink-mid);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--glass-edge);
+  white-space: nowrap;
+}
+
+.dsr-tag--host {
+  color: var(--bone);
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--bone) 34%, transparent);
+  background: color-mix(in oklab, var(--bone) 8%, transparent);
+}
+
+.dsr-tag--unsure {
+  color: var(--brass);
+  border-color: color-mix(in oklab, var(--brass) 38%, transparent);
+  background: color-mix(in oklab, var(--brass) 10%, transparent);
+  cursor: help;
+}
+
+/* ── section frame ───────────────────────────────────────────────────────── */
+
+/* ── why the sections are content-visibility: auto ─────────────────────────
+   The document this panel scrolls is 8,975px tall on 홍진호 — eight sections,
+   eleven relation rows each carrying a portrait plate, six season plates, a
+   head-to-head ledger. All of it used to be laid out, styled and painted in
+   the commit that also has to animate the entrance, and the entrance is what
+   paid for it: measured on the production build, the last section did not
+   reach full opacity until 1.1–1.7s after the click, on frames 300–700ms
+   apart, against a designed 505ms budget.
+
+   `content-visibility: auto` is the cheap half of the fix — the browser skips
+   layout and paint for whatever is off screen, so the frame that has to move
+   carries the header and the two sections under it rather than five screens of
+   type. (The other half is the third commit in Dossier.tsx: React still has to
+   BUILD the DOM, which this property cannot help with.)
+
+   `contain-intrinsic-size: auto 520px` and not a bare length: `auto` tells the
+   engine to remember each section's real height once it has been rendered
+   once, so the scrollbar stops re-estimating and — the part that matters here
+   — the jump nav's scrollIntoView lands on the heading rather than near it
+   after the first pass. 520px is the median rendered section height in this
+   panel, so the first estimate is close before anything has been measured.
+
+   Paint containment comes with the property. Nothing in this panel draws
+   outside its own section — no negative margins, no sticky children, no
+   overflowing rings — so there is nothing for it to clip. */
+.dsr-sec {
+  padding-bottom: var(--sp-5);
+  scroll-margin-block-start: var(--sp-3);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
+}
+
+/* The measuring pass. Dossier.tsx turns this on for two frames once the
+   entrance is over, which renders every section once so that `auto` above has
+   a real height to remember for each of them; after that the skipping resumes
+   with the guesses replaced. See the note above `primed`. */
+.dsr-doc.is-primed .dsr-sec {
+  content-visibility: visible;
+}
+
+.dsr-sec__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+.dsr-sec__ko {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.dsr-sec__en {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsr-sec__n {
+  flex: 0 0 auto;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.dsr-sec .rule {
+  margin-bottom: var(--sp-4);
+}
+
+.dsr-subhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin: var(--sp-5) 0 var(--sp-3);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.dsr-subhead:first-child {
+  margin-top: 0;
+}
+
+.dsr-subhead__t {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink);
+}
+
+.dsr-subhead__en {
+  font-weight: var(--fw-text);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink-mid);
+}
+
+.dsr-subhead .mono {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* The parallel group. Its rule is dashed because that is what the canvas
+   draws for the same three edges (EDGE_DASH.parallel), so the subhead and
+   the line the reader clicked to get here agree about what kind of thing
+   this is — and it is set below both real groups, quieter than either. */
+.dsr-subhead--par {
+  border-bottom: 1px dashed var(--glass-edge-strong);
+}
+
+.dsr-subhead--par .dsr-subhead__t {
+  color: var(--ink-mid);
+}
+
+.dsr-note--par {
+  margin: calc(var(--sp-2) * -1) 0 var(--sp-3);
+}
+
+/* ── B. X lineup ─────────────────────────────────────────────────────────── */
+
+.dsr-rep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--sp-2);
+}
+
+.dsr-rep__badge {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--rad-sm);
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--c) 14%, transparent),
+    color-mix(in oklab, var(--c) 5%, transparent)
+  );
+  border: 1px solid color-mix(in oklab, var(--c) 44%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--c) 22%, transparent);
+}
+
+.dsr-rep__ko {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  line-height: 1.2;
+  color: color-mix(in oklab, var(--c) 60%, var(--ink-hi));
+}
+
+.dsr-rep__en {
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: color-mix(in oklab, var(--c) 34%, var(--ink-mid));
+}
+
+.dsr-rep__team {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dsr-rep__teamk {
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink-mid);
+}
+
+.dsr-rep__teamv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--ink-hi);
+  font-weight: var(--fw-med);
+}
+
+.dsr-rep__teame {
+  font-weight: var(--fw-text);
+  color: var(--ink-mid);
+}
+
+.dsr-quote {
+  position: relative;
+  margin: var(--sp-4) 0 0;
+  padding: var(--sp-1) 0 var(--sp-1) var(--sp-5);
+  border-left: 2px solid var(--blood);
+}
+
+.dsr-quote__mark {
+  position: absolute;
+  left: 9px;
+  top: -6px;
+  /* Ornament, sized off the quote's own body text. */
+  font-size: 1.6em;
+  line-height: 1;
+  color: var(--blood);
+  opacity: 0.55;
+}
+
+.dsr-quote p {
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--ink-hi);
+  letter-spacing: 0;
+  word-break: keep-all;
+}
+
+.dsr-note {
+  margin-top: var(--sp-3);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ── C. bio ──────────────────────────────────────────────────────────────── */
+
+.dsr-sec--bio {
+  padding-bottom: var(--sp-5);
+}
+
+.dsr-bio {
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+.dsr-bio::first-letter {
+  color: var(--ink-hi);
+}
+
+/* ── D. credentials ──────────────────────────────────────────────────────── */
+
+.dsr-cred {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dsr-cred li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: start;
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+.dsr-tick {
+  /* Was --blood. A crimson bullet on a credentials list is neither the brand
+     mark nor a betrayal, which are the only two jobs the token file gives
+     crimson; the mark channel is bone. */
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+/* ── E. franchise record ─────────────────────────────────────────────────── */
+
+.dsr-plates {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dsr-plate {
+  position: relative;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--glass-edge);
+  border-left: 3px solid var(--c);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--c) 8%, transparent), rgba(255, 255, 255, 0.02));
+}
+
+.dsr-plate--host {
+  border-left-style: double;
+  border-left-width: 5px;
+}
+
+.dsr-plate__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.dsr-plate__s {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  color: color-mix(in oklab, var(--c) 62%, var(--ink-hi));
+}
+
+.dsr-plate__yr {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-text);
+  color: var(--ink-mid);
+}
+
+.dsr-medal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.dsr-medal.is-gold {
+  color: var(--brass);
+  text-shadow: 0 0 14px var(--brass-glow);
+}
+
+.dsr-plate__place {
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  line-height: 1.4;
+  color: var(--ink-hi);
+  letter-spacing: 0;
+  word-break: keep-all;
+}
+
+.dsr-plate__meta {
+  margin-top: var(--sp-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.dsr-plate__meta span + span::before {
+  content: '·';
+  margin: 0 var(--sp-2);
+  color: var(--ink-faint);
+}
+
+.dsr-plate__arc {
+  margin-top: var(--sp-3);
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+.dsr-beats {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dsr-beats li {
+  position: relative;
+  padding-left: var(--sp-4);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+.dsr-beats li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 8px;
+  height: 1px;
+  background: var(--c, var(--ink-faint));
+  opacity: 0.85;
+}
+
+.dsr-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-4) var(--sp-4);
+  border-radius: var(--rad-sm);
+  border: 1px dashed var(--glass-edge-strong);
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.018) 0 6px,
+    transparent 6px 12px
+  );
+  text-align: center;
+}
+
+.dsr-empty__ko {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  color: var(--ink-hi);
+}
+
+.dsr-empty__en {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.dsr-empty__sub {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ── E2. has already faced ───────────────────────────────────────────────
+   A ledger, not a plate. The season plates above it are documents with a
+   coloured spine and a paragraph; a head-to-head row is a figure with its
+   evidence indented under it, so it is set as a table would be — the name
+   and the record on one baseline, the results beneath at a rank quieter.
+
+   No season hue anywhere in here on purpose. Half these results come from
+   outside the franchise (the Genius death matches, the poker fields) and
+   colouring the block --s2 would file a 2015 Grand Final as a season-2
+   event. Ink ranks carry the hierarchy instead. */
+
+.dsr-h2hs {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dsr-h2h {
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--glass-edge);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.dsr-h2h__btn {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.dsr-h2h__btn:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.dsr-h2h__who {
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+/* The figure the section exists for, so it is the one thing set larger than
+   body. Won/lost tint it; a level record stays neutral rather than being
+   coloured for one of the two people at random. */
+.dsr-h2h__rec {
+  flex: 0 0 auto;
+  font-size: var(--t-body);
+  font-weight: var(--fw-bold);
+  color: var(--ink-mid);
+}
+
+.dsr-h2h__rec.is-up {
+  color: var(--ink-hi);
+}
+
+.dsr-h2h__rec.is-down {
+  color: var(--ink-low);
+}
+
+.dsr-h2h__ms {
+  list-style: none;
+  padding: 0 var(--sp-4) var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dsr-h2h__m {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  padding-left: var(--sp-3);
+  border-left: 1px solid var(--glass-edge-strong);
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* A duel is the harder claim — they sat across one board — and the ledger
+   sorts them first, so the left rule states the difference rather than
+   leaving two visually identical rows making two different assertions. */
+.dsr-h2h__m.is-duel {
+  border-left: 2px solid var(--bone);
+}
+
+.dsr-h2h__kind {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: var(--rad-xs);
+  border: 1px solid var(--glass-edge-strong);
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.dsr-h2h__m.is-duel .dsr-h2h__kind {
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--bone) 45%, transparent);
+}
+
+.dsr-h2h__where {
+  color: var(--ink);
+}
+
+/* The five printed scorelines — 22:0, 17:8 — are the only numbers in this
+   dataset that no table can reconstruct. They get the one accent in here. */
+.dsr-h2h__score {
+  flex: 0 0 auto;
+  font-weight: var(--fw-bold);
+  color: var(--ink-hi);
+}
+
+.dsr-h2h__ranks {
+  flex: 0 0 auto;
+  color: var(--ink-mid);
+}
+
+.dsr-h2h__dot {
+  padding: 0 4px;
+  color: var(--ink-faint);
+}
+
+.dsr-h2h__of {
+  padding-left: 4px;
+  color: var(--ink-low);
+}
+
+.dsr-h2h__beat {
+  flex-basis: 100%;
+  color: var(--ink-low);
+}
+
+.dsr-h2h__un {
+  padding: 0 var(--sp-4) var(--sp-3);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink-low);
+  word-break: keep-all;
+}
+
+/* ── F. the record elsewhere ─────────────────────────────────────────────
+   The same plate as a season run — same shape, same rhythm, same arc
+   paragraph — because a Genius final or a KBL career is the same kind of
+   object as a season finish and should not be filed as a footnote to one.
+
+   The spine is bone, not a season hue: --s1/2/3 mean "this happened inside
+   the house" everywhere else in the app, and none of this did. Bone is
+   already what the panel uses for a role that has no season colour (see
+   .dsr-tag--host), so the plate reads as record rather than as state. */
+
+.dsr-plate--else {
+  --c: var(--bone);
+}
+
+/* Eight of the twenty have no franchise record at all: for them the section
+   above this one is an empty state and this plate is the document. It takes
+   the weight that section usually carries — the spine thickens the way a
+   host plate's does, and the wash comes up one step. */
+.dsr-plate--else.is-lead {
+  border-left-width: 5px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--bone) 13%, transparent),
+    rgba(255, 255, 255, 0.025)
+  );
+}
+
+/* The title in the script the reader is not in. Same job as .dsr-show__en on
+   a table row, so the same size and the same ink. */
+.dsr-else__alt {
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* Per-entry sources, folded away. Deliberately the ghost-button grammar the
+   footer's own sources toggle uses, one step quieter — this is a footnote on
+   one paragraph, not the citation list for the whole file. */
+.dsr-else__src {
+  margin-top: var(--sp-3);
+}
+
+.dsr-else__srcb {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--glass-edge);
+  background: transparent;
+  color: var(--ink-mid);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  transition: color var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.dsr-else__srcb:hover {
+  color: var(--ink-hi);
+  background: var(--bg-hover);
+  border-color: var(--glass-edge-strong);
+}
+
+.dsr-else__srcb[aria-expanded='true'] {
+  color: var(--ink-hi);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-edge-strong);
+}
+
+.dsr-else__n {
+  color: var(--ink-mid);
+}
+
+.dsr-else__srcb:hover .dsr-else__n,
+.dsr-else__srcb[aria-expanded='true'] .dsr-else__n {
+  color: var(--ink);
+}
+
+.dsr-else__list {
+  list-style: none;
+  padding: var(--sp-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* The list is display:flex, so the attribute needs to win on its own. */
+.dsr-else__list[hidden] {
+  display: none;
+}
+
+.dsr-else__list li {
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  overflow-wrap: anywhere;
+}
+
+.dsr-else__list a {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.dsr-else__list a:hover {
+  color: var(--accent-hot);
+}
+
+/* ── G. elsewhere, as a table ────────────────────────────────────────────── */
+
+.dsr-shows {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Two fixed columns, not a wrapping flex row.
+
+   As a flex row with `space-between`, a row that happened to carry a year
+   overflowed and wrapped, dropping its result onto a second line at the LEFT
+   margin, while a row without a year fitted and kept its result at the RIGHT
+   margin. Four consecutive rows in 06-dossier-connections.png did both. The
+   result is the scannable part of this table — "did they win this one?" —
+   and it has to be a column you can read down, so it now is one.
+
+   …but `auto` on the second track is not a column, it is whatever the longest
+   result string wants. Measured on 홍진호's table: three rows gave the title
+   330px and the result 26px, and the fourth — '포커 신들의 전쟁', result
+   '시즌2 인비테이셔널 우승 · 시즌3 팀 마스터' — gave the title 138px and the
+   result 218px, breaking the Korean title across three lines with a stranded
+   '(시즌2·3)'. The left edge of the result column jumped 192px between
+   consecutive rows, which is the same failure the flex layout had, one axis
+   over.
+
+   `fit-content(160px)` is the fix that keeps both behaviours: a short result
+   still sizes to its own content (so '우승' does not reserve a column it does
+   not need), and a long one caps and wraps instead of eating the title. It
+   has to be fit-content() and not minmax(0, 160px) — a minmax track with a
+   definite maximum takes the whole 160px during track maximisation whether it
+   has anything to put there or not, which would starve every short row to pay
+   for the one long one. */
+.dsr-show {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(160px);
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.dsr-show:last-child {
+  border-bottom: 0;
+}
+
+.dsr-show__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.dsr-show__ko {
+  font-size: var(--t-body);
+  color: var(--ink-hi);
+  font-weight: var(--fw-med);
+  word-break: keep-all;
+}
+
+.dsr-show__en {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* The right-hand column. Year over result rather than beside it, so the
+   result string always lands on the same baseline as the show name whether a
+   year is recorded or not. */
+.dsr-show__side {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  font-size: var(--t-sm);
+  text-align: right;
+}
+
+/* The result takes the first line of the column so that it always sits on the
+   show name's own baseline; the year drops beneath it. Visual order only —
+   the DOM keeps "2013, 우승", which is the order the sentence is spoken in. */
+.dsr-show__res {
+  order: 1;
+  color: var(--ink);
+  /* keep-all still governs where this breaks in the normal case — Korean does
+     not break between syllables of a word. `anywhere` is the escape hatch that
+     makes the fit-content() cap above binding: without it the track's minimum
+     is the longest unbreakable run ('인비테이셔널'), and a single long term
+     could still push the column past its cap. It only fires when there is no
+     legal break left. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.dsr-show__yr {
+  order: 2;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* ── H. connections ──────────────────────────────────────────────────────── */
+
+.dsr-rels {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Carries the edge colour down to the spine, chip and hover wash. */
+.dsr-rel {
+  display: block;
+}
+
+.dsr-rel__btn {
+  position: relative;
+  display: flex;
+  width: 100%;
+  text-align: left;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) 0;
+  border-radius: var(--rad-sm);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.022);
+  overflow: hidden;
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-out);
+}
+
+.dsr-rel__btn:hover {
+  background: color-mix(in oklab, var(--c) 9%, rgba(255, 255, 255, 0.03));
+  border-color: color-mix(in oklab, var(--c) 34%, transparent);
+  transform: translateX(2px);
+}
+
+.dsr-rel__btn:active {
+  transform: translateX(0);
+}
+
+/* The 2px spine restates the link's colour and its dashed/solid grammar:
+   dashed always means "this happened outside the house". */
+.dsr-rel__bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--c);
+}
+
+.dsr-rel__bar.is-dashed {
+  background: repeating-linear-gradient(180deg, var(--c) 0 4px, transparent 4px 8px);
+}
+
+.dsr-rel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-left: var(--sp-3);
+}
+
+.dsr-rel__who {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* The same plate the graph draws, at chip scale — clicking a row should feel
+   like picking the same object up off the table. */
+.dsr-rel__mark {
+  flex: 0 0 auto;
+  display: block;
+  width: 30px;
+}
+
+.dsr-rel__names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dsr-rel__ko {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  line-height: 1.2;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+.dsr-rel__en {
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: var(--ink-mid);
+}
+
+.dsr-rel__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.dsr-chip--edge {
+  font-size: var(--t-xs);
+}
+
+.dsr-rel__label {
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  line-height: 1.45;
+  letter-spacing: 0;
+  color: var(--ink-hi);
+  word-break: keep-all;
+}
+
+/* Two people who finished the same prior season, stated as a comparison
+   instead of leaving the reader to assemble it from two dossiers. */
+.dsr-rel__h2h {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--rad-xs);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-edge);
+}
+
+.dsr-rel__h2hk {
+  color: var(--ink-mid);
+}
+
+.dsr-rel__h2hv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+.dsr-rel__h2hv .is-better {
+  color: var(--ink-hi);
+  font-weight: var(--fw-med);
+}
+
+.dsr-rel__h2hd {
+  padding: 0 var(--sp-2);
+  color: var(--ink-faint);
+}
+
+.dsr-rel__dir {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--rad-xs);
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 2px solid color-mix(in oklab, var(--c) 62%, transparent);
+}
+
+.dsr-rel__arrow {
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+.dsr-rel__arrow .is-subject {
+  color: var(--ink-hi);
+  font-weight: var(--fw-bold);
+}
+
+.dsr-rel__ar {
+  color: color-mix(in oklab, var(--c) 55%, var(--ink-hi));
+  padding: 0 6px;
+}
+
+.dsr-rel__dirnote {
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink);
+  word-break: keep-all;
+}
+
+.dsr-rel__desc {
+  font-size: var(--t-sm);
+  line-height: 1.55;
+  color: var(--ink-mid);
+  word-break: keep-all;
+}
+
+/* ── I. footer ───────────────────────────────────────────────────────────── */
+
+.dsr-foot {
+  position: relative;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--glass-edge);
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.34), transparent);
+}
+
+/* The CTA row sits on a gradient rather than a hard cut, so the last line of
+   the document dies into the footer instead of being sliced by it. */
+.dsr-foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--sp-5);
+  pointer-events: none;
+  background: linear-gradient(to top, color-mix(in oklab, var(--bg-void) 66%, transparent), transparent);
+}
+
+.dsr-src {
+  max-height: 34vh;
+  padding: var(--sp-3) var(--sp-4) 0;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.dsr-src[hidden] {
+  display: none;
+}
+
+.dsr-src ul {
+  list-style: none;
+  padding: 0 0 var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dsr-src li {
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  overflow-wrap: anywhere;
+}
+
+.dsr-src a {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.dsr-src a:hover {
+  color: var(--accent-hot);
+}
+
+.dsr-foot__row {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.dsr-act {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--glass-edge-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  transition: background var(--d-fast) var(--ease-out), border-color var(--d-fast) var(--ease-out),
+    color var(--d-fast) var(--ease-out);
+}
+
+.dsr-act:hover {
+  background: var(--bg-hover);
+  color: var(--ink-hi);
+  border-color: color-mix(in oklab, var(--bone) 30%, transparent);
+}
+
+.dsr-act--primary {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.dsr-act--ghost {
+  flex: 0 0 auto;
+  background: transparent;
+  border-color: var(--glass-edge);
+  color: var(--ink-mid);
+}
+
+.dsr-act--ghost[aria-expanded='true'] {
+  color: var(--ink-hi);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-edge-strong);
+}
+
+/* An active toggle is a state, and state is bone. In crimson this button was
+   reading as an error banner sitting under the panel's own betrayal edges. */
+.dsr-act--primary[aria-pressed='true'] {
+  color: var(--ink-hi);
+  background: var(--accent-tint-strong);
+  border-color: var(--accent-line);
+  box-shadow: var(--sh-accent);
+}
+
+/* Never let the pressed state be carried by colour alone. */
+.dsr-act--primary[aria-pressed='true'] .dsr-act__ko::after {
+  content: ' · 켜짐';
+  color: inherit;
+}
+
+/* The same admission in the language the panel is actually running in. */
+.dsr-act--primary[aria-pressed='true'] .dsr-act__ko:lang(en)::after {
+  content: ' · on';
+}
+
+.dsr-act__ko {
+  font-weight: var(--fw-med);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.dsr-act__en {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.dsr-act--primary[aria-pressed='true'] .dsr-act__en {
+  color: color-mix(in oklab, var(--ink-hi) 72%, var(--accent));
+}
+
+.dsr-act__n {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 1180px) {
+  .dsr-doc {
+    padding: var(--sp-4) var(--sp-4) 0;
+  }
+  .dsr-act__en {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .dsr-id {
+    column-gap: var(--sp-3);
+  }
+  .dsr-src {
+    max-height: 26vh;
+  }
+}
+
+/* Motion tokens already collapse to 1ms under reduced motion; the JS-driven
+   section cascade is guarded separately with useReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+  .dsr-rel__btn:hover {
+    transform: none;
+  }
+}
+
+/* Verified-absence variant: this person has no sourceable tie to anyone else
+   in the cast. It reads as a finding, not as an error state. */
+.dsr-empty--cold {
+  border-color: color-mix(in srgb, var(--ink-low) 34%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink-faint) 12%, transparent),
+    transparent 70%
+  );
+}
+
+.dsr-empty--cold .dsr-empty__ko {
+  color: var(--ink-hi);
+}
+
+/* ── language ────────────────────────────────────────────────────────────
+   Hangul metrics are the default everywhere (see tokens.css), because the
+   headings of this atlas are Hangul whatever language the chrome is in. When
+   the panel is running in English those same display lines are Latin and want
+   the tight fit — but only where the run really is Latin, so the rules key off
+   the element's own inherited language rather than off the panel's. A gloss
+   or a piece of Korean-only data carries lang="ko" and keeps Hangul metrics
+   even in the middle of an English paragraph. */
+
+.dsr-id__ko:lang(en),
+.dsr-sec__ko:lang(en),
+.dsr-rel__ko:lang(en),
+.dsr-rel__label:lang(en),
+.dsr-plate__s:lang(en),
+.dsr-plate__place:lang(en),
+.dsr-rep__ko:lang(en),
+.dsr-empty__ko:lang(en),
+.dsr-act__ko:lang(en),
+.dsr-quote p:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+/* Hangul metrics for any Korean run in the panel, whatever the chrome language.
+   `:where()` holds this at (0,1,0) on purpose. It is a default for body text,
+   not a ruling: at its natural (0,2,0) it tied with base.css's
+   `.eyebrow [lang='ko']` and won on source order, because component sheets load
+   after base — which is why this file used to carry its own (0,3,0) copy of the
+   Hangul caps step-down to claw the eyebrow case back. base.css owns that rule
+   now (`.eyebrow:lang(ko), .eyebrow [lang='ko']` → --tr-caps-ko, same 0.08em),
+   so the local override is gone and this one gets out of its way instead.
+   Anything more specific than a single class still overrides, as before. */
+.dossier :where([lang='ko']) {
+  letter-spacing: var(--tr-tight-ko);
+}
+
+/* English runs ~1.4× longer than the Korean it replaces: the two-line badge in
+   the lineup block and the section eyebrow both have to survive that. */
+.dsr-rep__badge {
+  min-width: 0;
+}
+
+.dsr-rep__ko,
+.dsr-rep__en {
+  overflow-wrap: break-word;
+}
+
+/* ── paying for the em square ────────────────────────────────────────────
+   Every bilingual pair in this panel is a line plus a gloss, and which script
+   is which flips with the chrome language. The pairing was authored
+   Korean-first — a Hangul heading with a small tracked Latin gloss beneath —
+   and that works, because Latin at 0.72em next to Hangul at 1em reads as
+   subordinate. Inverted it does not: Hangul is drawn on a full em square
+   while Pretendard's Latin lowercase sits at about 0.52 x-height, so at the
+   SAME px a Hangul gloss reads roughly 15% larger and heavier than the Latin
+   label it is glossing. In the English build 'DOSSIER 인물 파일',
+   'The X lineup 피의 게임X 라인업' and 'From season 3 / 시즌 3 출신' all
+   invert their own hierarchy, and in the lineup chip the Korean sub-line is
+   the dominant element of the chip.
+
+   One size for two scripts is what causes it, so the difference is paid for
+   explicitly. The rules key off :lang(ko), which is true of a gloss exactly
+   when the gloss is the Hangul one — i.e. only in the English build. */
+
+/* Chrome glosses: a label the reader does not need, in the script they are
+   not reading. Down a step in size and a step in ink. */
+.dsr-bar__label [lang='ko'],
+.dsr-sec__en:lang(ko),
+.dsr-subhead__en:lang(ko),
+.dsr-frx__key [lang='ko'],
+.dsr-rep__en:lang(ko),
+.dsr-rep__teame:lang(ko),
+.dsr-empty__en:lang(ko),
+.dsr-act__en:lang(ko) {
+  font-size: 0.86em;
+  color: var(--ink-low);
+}
+
+/* Data secondaries — a person's own name, a show's Korean title, the other
+   party in a relation — step down in size but keep the reading ink. They are
+   the record, not chrome, and --ink-low would file them as decoration. */
+.dsr-id__en:lang(ko),
+.dsr-id__alt [lang='ko'],
+.dsr-rel__en:lang(ko),
+.dsr-else__alt:lang(ko),
+.dsr-show__en:lang(ko) {
+  font-size: 0.9em;
+}

@@ -1,0 +1,358 @@
+/* The traced route between two people. Sits in the uncovered canvas, out of
+   both panels' way, and reads like a chain of custody. */
+
+/* ── THE UNCOVERED RECT, READ RATHER THAN RE-DERIVED ───────────────────────
+   app.css publishes the box the camera is framed inside as four custom
+   properties on `.app`, and says in as many words that a second copy of the
+   arithmetic is how the graph ends up drawn against a rectangle that does not
+   exist. This card was that second copy: `left: rail-w + sp-3*2` (which is
+   --inset-left spelled out), a width subtracting --dossier-w whether or not a
+   dossier was open, and a bottom re-adding --statusbar-h.
+
+   It cannot read the four directly — they are @property-registered with
+   `inherits: false`, so below `.app` they resolve to the 0px initial value.
+   Aliasing them ON `.app`, where they are in scope, hands the same numbers
+   down to this file as ordinary inheriting properties. It is a read, not a
+   copy: change app.css and this moves with it.
+
+   --pc-free is the width of the canvas nobody is standing on. Measured at
+   1280×800 with the rail and a dossier open it is 512px, and the card was
+   340 of them — 29.2% of the uncovered rect, sitting on seven of the twenty
+   discs including all three cold-band plates. Under --pc-min the card stops
+   floating in that rectangle and docks along the bottom of it as a strip.
+
+   --pc-dock is that test as a number, 0 or 1: `(min - free)` scaled hard and
+   clamped, which is 1 for any free width below the threshold and 0 above it.
+   A media query cannot ask this question — the answer depends on two panel
+   states as well as the viewport — and a style container query is the shape
+   that could, but Chrome 151 does not match `@container style(--x: 1)` here
+   (measured). So the switch is arithmetic, and everything it switches is a
+   number: an edge, a height, and how wide a chain item is allowed to be. */
+.app {
+  --pc-l: var(--inset-left);
+  --pc-r: var(--inset-right);
+  --pc-b: var(--inset-bottom);
+  --pc-free: max(0px, 100vw - var(--inset-left) - var(--inset-right));
+  --pc-min: 1100px;
+  --pc-dock: clamp(0, (var(--pc-min) - var(--pc-free)) * 1000 / 1px, 1);
+  /* The floating card's width, and the widest a docked chain item may run. */
+  --pc-card-w: 340px;
+}
+
+.pathcard {
+  position: absolute;
+  left: var(--pc-l);
+  bottom: var(--pc-b);
+  /* Both edges are always set and the width is auto, so the one number that
+     changes between a card and a strip is where the right edge lands: the
+     dossier's inset when docked, one card width from the left when not. */
+  right: calc(
+    var(--pc-dock) * var(--pc-r) + (1 - var(--pc-dock)) * (100vw - var(--pc-l) - var(--pc-card-w))
+  );
+  width: auto;
+  /* A strip is short by definition — it is a band, not a panel. */
+  max-height: calc(46vh - var(--pc-dock) * 12vh);
+  z-index: var(--z-panel);
+  border-radius: var(--rad-lg);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  animation: pathcard-in var(--d-base) var(--ease-out) both;
+}
+
+/* The scroller is base.css's `.scroll` (applied in the markup), not a private
+   pair of scrollbar properties. The private copy set the thumb to --ink-faint,
+   which base.css:92-94 records as retired for exactly this job: 2.11:1 on dark
+   glass is invisible, so a card with more chain below the fold looked like it
+   had simply stopped painting. This card is capped at 46vh and does scroll.
+
+   It takes the shared thumb and not the shared fade: `.pathcard__hint` is the
+   last child, so a bottom ramp would permanently dissolve the one line that
+   tells the reader how to leave the trace. A ramp here would first need the
+   hint lifted out into a sticky footer, which is more structure than a
+   three-row card earns. */
+
+@keyframes pathcard-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* `.app--rail-closed .pathcard { left: var(--sp-3) }` used to live here. It is
+   what --inset-left already becomes when the rail is closed, and it outranked
+   the rule above on specificity, so keeping it would have pinned the card to
+   the viewport edge while the alias moved. */
+
+.pathcard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.pathcard__close {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -3px -3px -3px 0;
+  border-radius: var(--rad-full);
+  color: var(--ink-low);
+  transition: color var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out);
+}
+.pathcard__close:hover {
+  color: var(--ink-hi);
+  background: color-mix(in srgb, var(--ink-hi) 8%, transparent);
+}
+
+/* This 28px × is the only way out of a trace that has dimmed the whole graph —
+   the argument at the foot of this file is that a state the app cannot explain
+   is unacceptable, and then the escape hatch shipped at 28px. It hit-tests 44
+   on touch, the drawn control stays 28.
+
+   One query, `(pointer: coarse), (max-width: 640px)`. The app used to raise
+   targets under two different conditions — TopBar on width, FilterRail on
+   pointer — so a coarse tablet at 1024px got one fix and a narrow desktop
+   window got the other. Every raised target in the app now fires on this
+   exact pair. */
+@media (pointer: coarse), (max-width: 640px) {
+  .pathcard__close::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Stacked in the card, one line in the strip — the same wrapping trick the
+   chain uses, because a band has width to spend and no height to waste. */
+.pathcard__degree {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: baseline;
+  column-gap: var(--sp-2);
+  row-gap: 1px;
+}
+/* min-width and not flex-basis: a basis of 0 does not mean "auto", it means a
+   zero-width item that shrinks to min-content — measured, it set the English
+   gloss one word per line. A full-width MINIMUM forces the wrap in the card
+   without touching how the item sizes when it is allowed to sit inline. */
+.pathcard__degree-en {
+  min-width: calc((1 - var(--pc-dock)) * 100%);
+}
+.pathcard__degree-ko {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+  letter-spacing: var(--tr-tight);
+  word-break: keep-all;
+}
+.pathcard__degree-en {
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+}
+
+/* One flow, two shapes. The chain is a wrapping row whose items are allowed to
+   be exactly as wide as the mode wants: 100% when the card is a card, which
+   puts every person and every hop on its own line and is the layout this file
+   has always drawn, and one card-width when it is a strip, which lets the same
+   items flow left to right across the bottom of the canvas. Nothing inside a
+   step changes — a hop keeps its coloured rail down the left and its two rows
+   — so a docked chain reads as the same object laid on its side. */
+.pathcard__chain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  column-gap: var(--sp-4);
+}
+
+.pathcard__chain > li {
+  flex: 0 1 auto;
+  min-width: calc((1 - var(--pc-dock)) * 100%);
+  max-width: calc(
+    (1 - var(--pc-dock)) * 100% + var(--pc-dock) * var(--pc-card-w)
+  );
+}
+
+.pathcard__person button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 5px 6px;
+  border-radius: var(--rad-sm);
+  text-align: left;
+  transition: background var(--d-fast) var(--ease-out);
+}
+.pathcard__person button:hover {
+  background: color-mix(in srgb, var(--ink-hi) 7%, transparent);
+}
+
+.pathcard__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--rad-full);
+  flex: none;
+}
+
+.pathcard__name {
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+}
+
+.pathcard__step {
+  display: grid;
+  grid-template-columns: 8px 1fr;
+  column-gap: var(--sp-3);
+  align-items: stretch;
+}
+
+/* The vertical rail is the relationship itself, coloured by its type. */
+.pathcard__rail {
+  grid-row: 1;
+  width: 2px;
+  justify-self: center;
+  border-radius: 1px;
+  opacity: 0.72;
+  margin: 2px 0;
+}
+
+.pathcard__edge {
+  grid-column: 2;
+  padding: var(--sp-2) 0 var(--sp-2) 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 8px;
+}
+
+/* --c is the raw edge hue, set inline. The TEXT is a bone-lifted version of
+   it, the same mix .dsr-chip uses, because the raw ramp is a MARK ramp: at
+   10px against this card's measured background the raw co-season value set
+   2.97:1, on the string that names what kind of tie the chain is made of.
+   Mixed 56% into --ink-hi the binding case (co-season, the darkest of the
+   eleven) clears 4.5:1 and the hue is still unmistakably the line's own. */
+.pathcard__type {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-wide);
+  color: color-mix(in oklab, var(--c, var(--ink-mid)) 56%, var(--ink-hi));
+}
+
+/* Season hues are SEASON_INK, set inline — SEASON_COLOR is marks only. */
+.pathcard__season {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-wide);
+  color: var(--ink-low);
+}
+
+/* In the card the reason gets its own line under the type and the season; in
+   the strip it runs on after them, so a hop is two rows instead of three. */
+.pathcard__label {
+  min-width: calc((1 - var(--pc-dock)) * 100%);
+  font-size: var(--t-sm);
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.pathcard__person--inline {
+  grid-column: 2;
+}
+
+.pathcard__none-ko {
+  font-size: var(--t-body);
+  color: var(--ink-hi);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.pathcard__none-ko b {
+  font-weight: var(--fw-med);
+}
+/* The note under the headline — one language, the reader's. */
+.pathcard__none-en {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--ink-mid);
+  line-height: 1.5;
+}
+
+.pathcard__hint {
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  line-height: 1.5;
+  border-top: 1px solid var(--glass-edge);
+  padding-top: var(--sp-3);
+}
+
+/* ── language ─────────────────────────────────────────────────────────────
+   The degree line is the card's headline, so it takes the display fit of
+   whichever script it is actually set in; the gloss beneath it is the other
+   script and keeps its own metrics. */
+.pathcard__degree-ko:lang(en) {
+  letter-spacing: var(--tr-tight-latin);
+}
+
+.pathcard [lang='ko'] {
+  letter-spacing: var(--tr-tight-ko);
+}
+
+/* ── narrow ───────────────────────────────────────────────────────────────
+   This used to be `display: none` below 900px. Verified at exactly 900: the
+   shift-click fires, the graph dims everything off the route, the status bar
+   still says "Shift-click to trace a path between two people" — and the card
+   that names the two relationships is not rendered. The reader watches the
+   whole graph go dark for no stated reason, with no way back but guessing
+   Esc. A state the app cannot explain is worse than a state it cannot
+   decorate, so the card becomes a bottom sheet instead of disappearing. */
+@media (max-width: 900px) {
+  .pathcard {
+    left: var(--sp-3);
+    right: var(--sp-3);
+    bottom: calc(var(--sp-3) + var(--statusbar-h, 34px));
+    width: auto;
+    max-height: 42vh;
+  }
+  .app--rail-closed .pathcard {
+    left: var(--sp-3);
+  }
+}
+
+/* Phone. The status bar stands down while a sheet is up, so the card takes
+   the bottom edge itself and keeps clear of the home indicator. */
+@media (max-width: 640px) {
+  .pathcard {
+    left: var(--sp-2);
+    right: var(--sp-2);
+    bottom: calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+    max-height: 46vh;
+    animation-name: pathcard-in-sheet;
+  }
+  .app--rail-closed .pathcard {
+    left: var(--sp-2);
+  }
+}
+
+/* A sheet arrives from the edge it is attached to. */
+@keyframes pathcard-in-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pathcard {
+    animation: none;
+  }
+}

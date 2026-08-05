@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#07060a" />
+    <title>Bloody Game X · Cast Atlas</title>
+    <meta
+      name="description"
+      content="An interactive atlas of the 피의 게임X cast — who they are, where they came from, and every alliance, betrayal and shared stage that connects them. Spoiler-free: no season X story."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230b0a0f' stroke='%23ff2f43' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%23ff2f43'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <!--
+      The cold open used to start on ~1s of pure black, because the whole title
+      card waited on the module graph and the font. This is the first mark of
+      the sequence — the crimson rule, over the same bloom — drawn as static
+      markup so it lands at first paint.
+
+      The claim above this block used to be "there is no seam". There were
+      three, all measured in a production screencast:
+
+        • POSITION. #preboot centred its rule in the viewport while the real
+          .intro__line is the first child of a content-height stage that is
+          itself centred, i.e. ~240px higher. The rule jumped.
+        • PHASE. The real line restarted `intro-line` from scaleX(0) at mount,
+          so whatever the placeholder had drawn collapsed and redrew.
+        • CONTINUITY. The observer removed #preboot in the same task the .intro
+          element was inserted, one frame before it had painted anything —
+          140–250ms of full black in the production build, worse in dev.
+
+      All three are addressed below and in Intro.tsx, which reads the clock this
+      file stamps.
+    -->
+    <style>
+      #preboot {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        /* It is a painted frame, never a target — without this it swallows every
+           click for its whole lifetime, including the intro's own ENTER button. */
+        pointer-events: none;
+        display: grid;
+        place-items: center;
+        background: #07060a;
+        animation: preboot-out 320ms cubic-bezier(0.22, 1, 0.36, 1) 2600ms forwards;
+
+        /* ── where the rule goes ────────────────────────────────────────────
+           The real rule sits at `50vh − stageHeight/2 + 32px`, and the stage's
+           height is content: it moves with the display clamp, with the two
+           media queries in Intro.css, and with the language. So the placeholder
+           cannot centre — it has to reproduce the curve.
+
+           Measured off the running app (Playwright, .intro__line rect, offset
+           from the viewport centre, both languages, widths 340→1920):
+
+             ko   340 246.9 · 360-380 240.9 · 400 231.3 · 420-610 223.0
+                  620 223.4 · 700 226.9 · 800 233.0 · 900 240.3 · 1000 247.0
+                  1100 251.4 · 1200 255.8 · ≥1250 256.7
+             en   identical shape, 19.3px lower throughout (its stage is
+                  shorter: "Bloody Game X" sets smaller than 피의 게임X at the
+                  same clamp, and the Latin gloss lines drop out)
+
+           The ramp is the display clamp opening up between ~611px and ~1222px.
+           One linear fit across it lands within 2.3px of every sample, which on
+           a 1px hairline under a 16px glow is not a thing anyone can see —
+           against the 257px it used to be out by. A short viewport takes a flat
+           30px off (Intro.css's max-height:640 block removes exactly 60px of
+           stage), and that constant is exact at every width measured. */
+        --pb-rise: clamp(223px, calc(223px + 5.5862vw - 34.13px), 256.7px);
+        --pb-lang: 0px;
+        --pb-short: 0px;
+      }
+      #preboot.pb-en {
+        --pb-lang: -19.3px;
+      }
+      /* Below 480 the English stat label "PRIOR SEASONS" fits on one line and
+         below 410 the Korean wordmark takes two, so each language leaves the
+         shared curve at its own width. Both branches are the measured value. */
+      @media (max-width: 479px) {
+        #preboot.pb-en {
+          --pb-lang: -9.7px;
+        }
+      }
+      @media (max-width: 409px) {
+        #preboot {
+          --pb-rise: 241px;
+        }
+        #preboot.pb-en {
+          --pb-lang: -27.7px;
+        }
+      }
+      @media (max-height: 640px) {
+        #preboot {
+          --pb-short: -30px;
+        }
+      }
+      #preboot i {
+        position: absolute;
+        inset: -12%;
+        background:
+          radial-gradient(46% 38% at 50% 46%, rgba(255, 47, 67, 0.2), transparent 70%),
+          radial-gradient(112% 84% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.78) 100%);
+        /* The same 2200ms bloom the real backdrop runs, started here. It used to
+           be static at full strength, so the real .intro__bloom coming up from
+           opacity 0 dropped the whole backdrop to black at the handoff. Two
+           halves of one animation now, joined by __prebootAt below. */
+        animation: intro-bloom 2200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      #preboot b {
+        display: block;
+        /* `top` rather than a transform: the keyframe owns transform, and a
+           translate here would be overwritten by scaleX the moment it starts. */
+        position: relative;
+        top: calc(-1 * (var(--pb-rise) + var(--pb-lang) + var(--pb-short)));
+        width: min(860px, 90vw);
+        height: 1px;
+        transform-origin: 50% 50%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          #b00f22 14%,
+          #ff2f43 38%,
+          #ff5566 50%,
+          #ff2f43 62%,
+          #b00f22 86%,
+          transparent
+        );
+        box-shadow: 0 0 16px rgba(255, 47, 67, 0.42);
+        animation: intro-line 820ms cubic-bezier(0.22, 1, 0.36, 1) 40ms backwards;
+      }
+      /* Both keyframes are copies of Intro.css's. They have to be: this block
+         is inline so that it paints before the module graph — and therefore
+         before the stylesheet that owns the originals — exists. The colours are
+         literals for the same reason (tokens.css is not loaded yet). Anything
+         changed there has to be changed here, and the handoff is what tells
+         you: the rule will visibly restart. */
+      @keyframes intro-line {
+        from {
+          opacity: 0;
+          transform: scaleX(0);
+        }
+        14% {
+          opacity: 1;
+        }
+        to {
+          opacity: 1;
+          transform: scaleX(1);
+        }
+      }
+      @keyframes intro-bloom {
+        from {
+          opacity: 0;
+          transform: scale(1.06);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes preboot-out {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #preboot b,
+        #preboot i {
+          animation: none;
+        }
+      }
+    </style>
+    <div id="preboot" aria-hidden="true"><i></i><b></b></div>
+    <script>
+      /* Two things, both of which have to happen before the first paint.
+
+         The language, because the placeholder's rule sits at a different height
+         in each one and the app's own choice is not available for another
+         second. This is useLang.ts's `detect()` in miniature — link, then saved
+         preference, then navigator — and it is a copy for the same reason the
+         keyframes above are: nothing importable exists yet. It only has to
+         agree about which of two heights to use, so a disagreement costs 19px
+         for one frame rather than a wrong UI.
+
+         And the clock. Intro.tsx reads __prebootAt to give its own line and
+         bloom a negative animation-delay, so they continue what is already on
+         screen instead of restarting it from zero. */
+      (function () {
+        var lang = null;
+        var m = /(?:^|&)lang=(ko|en)(?:&|$)/.exec(location.hash.replace(/^#/, ''));
+        if (m) lang = m[1];
+        if (!lang) {
+          try {
+            var saved = localStorage.getItem('bgx.lang');
+            if (saved === 'ko' || saved === 'en') lang = saved;
+          } catch (e) {
+            /* private mode */
+          }
+        }
+        if (!lang) lang = (navigator.language || '').toLowerCase().indexOf('ko') === 0 ? 'ko' : 'en';
+        if (lang === 'en') document.getElementById('preboot').className = 'pb-en';
+        window.__prebootAt = performance.now();
+      })();
+    </script>
+    <div id="root"></div>
+    <script>
+      /* The real cold open takes over the moment React paints; drop the
+         placeholder then rather than waiting out its own timeout.
+
+         Two frames, not zero. The observer fires as a microtask on the mutation
+         that inserts .intro — before style, layout or paint have touched it —
+         so removing the placeholder there left a frame with the placeholder
+         gone and the intro not yet drawn: a fully black viewport, measured at
+         140–250ms in the production build. One rAF gets us to the frame that
+         will paint .intro; the second runs after that paint has happened. The
+         two overlap harmlessly in between, because .intro carries the same
+         z-index and is later in the tree, so it covers this. */
+      new MutationObserver((_m, obs) => {
+        if (!document.querySelector('.intro')) return;
+        obs.disconnect();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => document.getElementById('preboot')?.remove());
+        });
+      }).observe(document.getElementById('root'), { childList: true, subtree: true });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
