@@ -34,6 +34,15 @@ export function initAnalytics(): void {
     defaults: '2025-05-24',
     // See (1). The manual call is below.
     capture_pageview: false,
+    /* …and this has to be said out loud BECAUSE of the line above it.
+     *
+     * posthog-js 1.414 defaults `capture_pageleave` to the string
+     * "if_capture_pageview" — verified in node_modules/posthog-js/dist, not
+     * assumed — so turning manual pageviews on silently turns page-LEAVE off.
+     * PostHog's Web Analytics product computes bounce rate and session duration
+     * from $pageleave, so the dashboard this project was created for would have
+     * come up with those two columns quietly empty and no error anywhere. */
+    capture_pageleave: true,
     /* The one input on this surface is the command palette's search box, and
        what a reader types into it is a person's name. Autocapture already masks
        input VALUES, but this is the setting that is easy to turn on later
