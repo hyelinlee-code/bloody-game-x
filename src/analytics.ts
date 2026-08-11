@@ -43,12 +43,41 @@ export function initAnalytics(): void {
      * from $pageleave, so the dashboard this project was created for would have
      * come up with those two columns quietly empty and no error anywhere. */
     capture_pageleave: true,
-    /* The one input on this surface is the command palette's search box, and
-       what a reader types into it is a person's name. Autocapture already masks
-       input VALUES, but this is the setting that is easy to turn on later
-       without thinking about it, so it is stated rather than left defaulted. */
-    mask_all_text: false,
-    autocapture: true,
+
+    /* ── everything below is about not exporting the reader's spoilers ──────
+     *
+     * This app is an atlas of a survival show, so almost every string on screen
+     * is a result somebody may not want to know. A reader who sets the spoiler
+     * control is telling us what they have not seen; shipping their screen to
+     * an analytics vendor turns that setting into a lie in three ways at once.
+     *
+     * SESSION REPLAY transports the DOM, so it defeats a display-time redaction
+     * completely — the layer renders, the frames are recorded, and the recording
+     * is replayable. It also captured every text node with masking off. Off.
+     *
+     * AUTOCAPTURE carries up to ~1KB of a clicked element's text plus every
+     * ancestor's `title` and `aria-label`. One click on a dossier relation row
+     * exported two seasons of placements. Off — and note `track()` below has no
+     * call sites, so the funnel loses nothing that exists today: manual
+     * `$pageview` and `$pageleave` are the whole of what this project measures.
+     *
+     * mask_all_text stays declared and is now TRUE, kept as belt-and-braces for
+     * whoever turns replay back on in the PostHog project UI, which is a
+     * setting this file cannot see or override. */
+    disable_session_recording: true,
+    mask_all_text: true,
+    autocapture: false,
+
+    /* The fragment IS the navigation here — `#p=hong-jin-ho`, `#tie=a~b`, and
+       `#q=` carries whatever was typed into the search box. Sent as
+       `$current_url` it becomes a per-event log of which people a reader
+       opened, which is the same disclosure by another route. The path is what
+       the funnel needs; the fragment is not. */
+    sanitize_properties: (props) => {
+      const strip = (v: unknown): unknown =>
+        typeof v === 'string' && v.includes('#') ? v.slice(0, v.indexOf('#')) : v;
+      return { ...props, $current_url: strip(props.$current_url), $referrer: strip(props.$referrer) };
+    },
   });
 
   const page = () => posthog.capture('$pageview');
