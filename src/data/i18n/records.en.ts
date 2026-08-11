@@ -84,15 +84,15 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
          three seasons; read in parts it needs far less, which is the point. */
       scope: ['bg3'],
       scopes: {
-        placement: [],
+        placement: ['bg3'],
         arc: ['bg1', 'bg2', 'bg3'],
-        beats: [[], ['bg1', 'bg3'], []],
+        beats: [['bg3'], ['bg1', 'bg3'], ['bg3']],
       },
       placement: 'Ghost-casino dealer and purgatory butler',
       arcParts: [
         {
           text: 'After two seasons as a player she moved behind the table, running the phantom casino built into the ruins (잔해) as its dealer and butler — dealing out to others the kind of game that had caught her twice. ',
-          scope: ['bg1', 'bg2'],
+          scope: ['bg1', 'bg2', 'bg3'],
         },
         {
           text: "Returning contestants who remembered her from season 1 address her on camera by the name she earned back then, 'the icon of betrayal' (배신의 아이콘), and the edit leaves it in.",

@@ -1273,7 +1273,7 @@ export const edges: Edge[] = [
     confidence: 'medium',
     sources: ['https://namu.wiki/w/프로젝트%20지니어스'],
     scope: [],
-    scopes: { label: ['bg1', 'genius-1'], labelEn: ['bg1'], description: ['bg1', 'genius-1', 'poker-gods'] },
+    scopes: { label: ['bg1', 'genius-1'], labelEn: ['bg1', 'genius-1'], description: ['bg1', 'genius-1', 'poker-gods'] },
     descriptionParts: [
       { text: "2022년 5월에 이 명단이 만들어질 때 두 사람이 각각 어디에 서 있었는지를 보면 왜 함께 불렸는지가 보인다. ", scope: [] },
       { text: "이태균은 넉 달 전인 1월 24일에 피의 게임 시즌1 결승을 끝내고 프랜차이즈의 초대 챔피언이 된 참이었다. ", scope: ['bg1'] },

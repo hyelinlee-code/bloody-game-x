@@ -189,16 +189,18 @@ export const records: Record<string, SeasonRun[]> = {
          reading it in parts needs much less. */
       scope: ['bg3'],
       scopes: {
-        placement: [],
+        placement: ['bg3'],
         arc: ['bg1', 'bg3'],
-        beats: [[], ['bg3'], []],
+        beats: [['bg3'], ['bg3'], ['bg3']],
       },
       placement: '유령 카지노 딜러 · 연옥 집사',
       sources: [P_PJM, S3_CAST],
       arcParts: [
         {
+          /* The dealer seat is the reveal, so this part is bg3 even though it
+             reads like a job description. */
           text: '두 시즌을 플레이어로 뛴 뒤, 시즌3에서는 경쟁자가 아니라 판을 굴리는 쪽으로 자리를 옮겼다 — 잔해에 설치된 유령 카지노의 딜러 겸 연옥 담당 집사이고, 상금을 놓고 겨루는 참가자가 아닌 보조 출연이다. ',
-          scope: [],
+          scope: ['bg3'],
         },
         {
           text: '제작진이 그의 출연 사실 자체를 반전 카드로 아껴둔 탓에 첫 등장은 6화(4일차)였고, 그래서 시즌3을 본 사람도 그가 나왔다는 것 자체를 기억하지 못하는 경우가 많다. ',
