@@ -142,6 +142,10 @@ async function main() {
 
   // ── desktop journey ──────────────────────────────────────────────────────
   const ctx = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 2, colorScheme: 'dark', locale: 'ko-KR' });
+  /* Arm the in-page probes. They are gated in src/probe.ts so a live
+     visitor never receives the link list; addInitScript runs in every
+     frame before any page script, so the app sees this at module init. */
+  await ctx.addInitScript(() => { window.__atlasProbe = true; });
   await ctx.addInitScript((l) => {
     try {
       localStorage.setItem('bgx.lang', l);
@@ -430,6 +434,10 @@ async function main() {
     colorScheme: 'dark',
     locale: 'en-US',
   });
+  /* Arm the in-page probes. They are gated in src/probe.ts so a live
+     visitor never receives the link list; addInitScript runs in every
+     frame before any page script, so the app sees this at module init. */
+  await ctxEn.addInitScript(() => { window.__atlasProbe = true; });
   await ctxEn.addInitScript(() => {
     try {
       localStorage.setItem('bgx.lang', 'en');
@@ -473,6 +481,10 @@ async function main() {
 
   // ── laptop ───────────────────────────────────────────────────────────────
   const ctx2 = await browser.newContext({ viewport: LAPTOP, deviceScaleFactor: 2, colorScheme: 'dark', locale: 'ko-KR' });
+  /* Arm the in-page probes. They are gated in src/probe.ts so a live
+     visitor never receives the link list; addInitScript runs in every
+     frame before any page script, so the app sees this at module init. */
+  await ctx2.addInitScript(() => { window.__atlasProbe = true; });
   await ctx2.addInitScript((l) => {
     try {
       localStorage.setItem('bgx.lang', l);
@@ -501,6 +513,10 @@ async function main() {
     colorScheme: 'dark',
     locale: 'ko-KR',
   });
+  /* Arm the in-page probes. They are gated in src/probe.ts so a live
+     visitor never receives the link list; addInitScript runs in every
+     frame before any page script, so the app sees this at module init. */
+  await ctx3.addInitScript(() => { window.__atlasProbe = true; });
   await ctx3.addInitScript((l) => {
     try {
       localStorage.setItem('bgx.lang', l);

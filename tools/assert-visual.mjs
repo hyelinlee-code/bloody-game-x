@@ -586,6 +586,10 @@ async function openPage(browser, base, { viewport, lang, dpr = 2, mobile = false
     locale: lang === 'ko' ? 'ko-KR' : 'en-US',
     ...(mobile ? { isMobile: true, hasTouch: true } : {}),
   });
+  /* Arm the in-page probes. They are gated in src/probe.ts so a live
+     visitor never receives the link list; addInitScript runs in every
+     frame before any page script, so the app sees this at module init. */
+  await ctx.addInitScript(() => { window.__atlasProbe = true; });
   await ctx.addInitScript((l) => { try { localStorage.setItem('bgx.lang', l); } catch { /* private mode */ } }, lang);
   if (block) await ctx.route(block, (r) => r.abort());
   const page = await ctx.newPage();
@@ -896,6 +900,7 @@ async function suiteReveal(browser, base) {
    * out the countdown. The entrance is supposed to be the same entrance. */
   for (const [who, waitMs] of [['early', 1700], ['patient', 4600]]) {
     const ctx = await browser.newContext({ viewport: VIEWPORTS.desktop, deviceScaleFactor: 1, colorScheme: 'dark', locale: 'ko-KR' });
+    await ctx.addInitScript(() => { window.__atlasProbe = true; });
     await ctx.addInitScript(() => { try { localStorage.setItem('bgx.lang', 'ko'); } catch { /* ignore */ } });
     await ctx.addInitScript(() => {
       window.__probe = { rows: [], t0: performance.now() };
@@ -945,6 +950,7 @@ async function suiteChrome(browser, base) {
   //      it IS the timer's clock, so it has to be running while it is on screen.
   {
     const ctx = await browser.newContext({ viewport: VIEWPORTS.desktop, deviceScaleFactor: 1, colorScheme: 'dark', locale: 'ko-KR' });
+    await ctx.addInitScript(() => { window.__atlasProbe = true; });
     await ctx.addInitScript(() => { try { localStorage.setItem('bgx.lang', 'ko'); } catch { /* ignore */ } });
     await ctx.addInitScript(() => {
       window.__cd = { rows: [], t0: performance.now(), seen: null };
@@ -1367,6 +1373,59 @@ async function suiteSystem(browser, base) {
     });
     check(`sources.phantomMarker.${lang}`, s.phantomMarker, {
       eq: 0, note: 'the disclosure may not quote a UI label the app never paints',
+    });
+    await ctx.close();
+  }
+
+  /* ── the probes, both polarities ────────────────────────────────────────
+     `__atlasDebug` hands out the live link list. It shipped unconditionally,
+     which is a leak on a public site and squarely the thing the redaction
+     work exists to prevent. src/probe.ts now gates both globals on a flag
+     armed before boot — by this harness and by nothing a visitor can reach.
+
+     Gating is a fact about today's source; these two make it an invariant of
+     the SHIPPED BUNDLE. `probes.dark` is the one that matters: it opens a
+     context WITHOUT the arming script, against the same production build
+     every other check ran against, and asserts the globals are simply not
+     there. It is what stops someone re-arming the probes to debug something
+     in six months and forgetting to put the gate back.
+
+     This is also the template PLAN-spoilers.md §8 needs — assert the redacted
+     profile AND full exposure — so it pays for itself again in Phase 3. */
+  console.log('\n── the test probes ──────────────────────────────────────────────────');
+  {
+    const { ctx, page } = await openPage(browser, base, { viewport: VIEWPORTS.desktop, lang: 'ko', dpr: 1 });
+    await enterAndSettle(page);
+    const armed = await page.evaluate(() => ({
+      debug: typeof window.__atlasDebug,
+      paint: typeof window.__atlasPaint,
+    }));
+    check('probes.armed.debug', armed.debug, {
+      eq: 'object', note: 'the harness arms the probes, so they must be there — a miss here reads as 200 downstream failures otherwise',
+    });
+    check('probes.armed.paint', armed.paint, { eq: 'object' });
+    await ctx.close();
+  }
+  {
+    /* Deliberately NOT openPage(): that helper is what arms them. */
+    const ctx = await browser.newContext({ viewport: VIEWPORTS.desktop, deviceScaleFactor: 1, colorScheme: 'dark', locale: 'ko-KR' });
+    await ctx.addInitScript(() => { try { localStorage.setItem('bgx.lang', 'ko'); } catch { /* private mode */ } });
+    const page = await ctx.newPage();
+    await page.goto(base, { waitUntil: 'load' });
+    await enterAndSettle(page);
+    const dark = await page.evaluate(() => ({
+      debug: window.__atlasDebug === undefined,
+      paint: window.__atlasPaint === undefined,
+      /* Proves the page really booted, so "undefined" means gated rather than
+         "the app never ran and nothing was defined either way". */
+      painted: document.querySelectorAll('canvas').length,
+    }));
+    check('probes.dark.debug', dark.debug, {
+      eq: true, note: 'an unarmed visitor must not receive the link list',
+    });
+    check('probes.dark.paint', dark.paint, { eq: true });
+    check('probes.dark.appBooted', dark.painted, {
+      min: 1, note: 'the control for the two above — an app that never mounted would pass them for the wrong reason',
     });
     await ctx.close();
   }

@@ -18,6 +18,7 @@ import { applyLayout, membershipResidual, seatResidual, type Cluster, type Layou
 import { CATEGORY_COLOR, SEASON_COLOR } from './palette';
 import { EMPTY_HINT_DY, invalidateBackdrop, labelExtent, render, renderBackdrop } from './render';
 import { plateExtent } from './plate';
+import { PROBES } from '../probe';
 import { onPortraitLoad, preloadPortraits } from './portraits';
 import { CATEGORY_LABEL_I18N, EDGE_LABEL_I18N, edgeText, personName, t } from '../data/i18n';
 import type { EdgeType } from '../data/types';
@@ -1743,8 +1744,15 @@ export function GraphCanvas({
   }, [selectedId, filterKey, insetKey]);
 
   /* Test hook: lets the screenshot harness aim at a real node without having
-     to reimplement the projection. Dev/preview only. */
+     to reimplement the projection.
+
+     Gated, because this one hands out the live link list — every tie between
+     every pair — which is the exact thing the redaction feature is being built
+     to withhold. `PROBES` is armed before boot by the harness and by nobody
+     else; see src/probe.ts for why it is not a DEV flag, a build flag or a URL
+     parameter. */
   useEffect(() => {
+    if (!PROBES) return;
     const w = window as unknown as { __atlasDebug?: unknown };
     w.__atlasDebug = {
       centralNodeScreenPos: () => {

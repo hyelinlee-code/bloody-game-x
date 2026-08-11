@@ -2,6 +2,7 @@ import { BRASS, EDGE_DASH, INK_HI, INK_LOW, INK_MID, alpha, mix } from './palett
 import { drawPlate, plateExtent } from './plate';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
 import { PORTRAIT_URL, photoGain, portraitImage } from './portraits';
+import { PROBES } from '../probe';
 import type { Cluster } from './layout';
 import type { GLink, GNode, Viewport } from './types';
 
@@ -1465,7 +1466,7 @@ export const paintedFrame = {
  * PLACE once per frame, so one reference published once at module scope is a
  * live view of the current frame and costs nothing per frame. Same unconditional
  * treatment `__atlasDebug` already gets in GraphCanvas. */
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && PROBES) {
   (window as unknown as { __atlasPaint?: unknown }).__atlasPaint = {
     labels: paintedLabels,
     frame: paintedFrame,
