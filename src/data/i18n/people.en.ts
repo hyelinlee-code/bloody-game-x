@@ -26,11 +26,11 @@ export const peopleEn: Record<string, PersonEn> = {
   'park-ji-min': {
     occupation: 'MBC announcer',
     bio:
-      "An MBC announcer who works both the news desk and the variety floor, with hosting credits including Welcome, First Time in Korea? (어서와~ 한국은 처음이지?) and Oh Eun-young Report: Marriage Hell (오은영 리포트 – 결혼지옥). No one is more deeply embedded in the Bloody Game franchise: she played as a contestant in seasons 1 and 2, then moved across to the host's chair for season 3, running the board instead of standing on it.",
+      "An MBC announcer who works both the news desk and the variety floor, with hosting credits including Welcome, First Time in Korea? (어서와~ 한국은 처음이지?) and Oh Eun-young Report: Marriage Hell (오은영 리포트 – 결혼지옥). No one is more deeply embedded in the Bloody Game franchise: she played as a contestant in seasons 1 and 2, and returned for season 3 not as a competitor but as the dealer of the 잔해 ghost casino and the butler of its purgatory — a supporting appearance rather than a hosting one, which production held back as a twist until episode 6.",
     notableFor: [
-      'Contestant in Bloody Game 1 and 2, host in season 3',
+      'Contestant in Bloody Game 1 and 2, ghost-casino dealer in season 3',
       'The only person present for all three seasons',
-      'Broadcasting award for hosting Bloody Game',
+      'Broadcasting award for presenting',
       'MBC announcer',
     ],
   },

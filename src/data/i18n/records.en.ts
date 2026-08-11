@@ -45,7 +45,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     },
     {
       season: 3,
-      placement: 'Host — dealer and butler',
+      placement: 'Ghost-casino dealer and purgatory butler',
       arc: "After two seasons as a player she moved behind the table, running the phantom casino built into the ruins (잔해) as its dealer and butler — dealing out to others the kind of game that had caught her twice. Returning contestants who remembered her from season 1 address her on camera by the name she earned back then, 'the icon of betrayal' (배신의 아이콘), and the edit leaves it in.",
       beats: [
         'Dealer and butler of the phantom casino down in the ruins',

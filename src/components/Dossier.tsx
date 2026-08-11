@@ -45,7 +45,7 @@ import {
 import { useLang } from '../state/useLang';
 import { PlateKey, Portrait, type PortraitConnection } from './Portrait';
 import './Dossier.css';
-import { watched } from '../data/types';
+import { watched, type Role } from '../data/types';
 
 export interface DossierProps {
   node: GNode | null;
@@ -437,7 +437,7 @@ function FranchiseStrip({
         {chrono.map((r, i) => {
           const host = watched(r);
           const result = host
-            ? t(lang, 'dossier.roleHost')
+            ? t(lang, roleKey(r.role))
             : r.rank !== undefined
               ? rankText(r.rank, lang)
               : t(lang, 'dossier.onRecord');
@@ -538,7 +538,7 @@ function SeasonPlate({ personId, run, index, meta, lang }: SeasonPlateProps): JS
           {meta?.year && <span className="mono tnum dsr-plate__yr">{meta.year}</span>}
         </span>
         {run.rank !== undefined && <Medal rank={run.rank} lang={lang} />}
-        {host && <span className="dsr-tag dsr-tag--host">{t(lang, 'dossier.roleHost')}</span>}
+        {host && <span className="dsr-tag dsr-tag--host">{t(lang, roleKey(run.role))}</span>}
       </div>
 
       <p className="dsr-plate__place" lang={ko}>
@@ -1977,6 +1977,14 @@ function DossierPanel({
 
 /** The panel leaves the way it arrived. AnimatePresence lives here rather than
     in App so the dossier owns both halves of its own transition. */
+/* Which chip a non-playing run wears. `watched()` says only "was there without
+   competing", and the two runs it covers are not the same thing: a studio
+   panellist never entered the house, a dealer sat at a table players were sent
+   to. Printing "Host" over both was a false credit about two named people. */
+function roleKey(role: Role): UiKey {
+  return role === 'panel' ? 'dossier.rolePanel' : role === 'crew' ? 'dossier.roleCrew' : 'dossier.roleHost';
+}
+
 export function Dossier(props: DossierProps): JSX.Element {
   const { node, ...rest } = props;
   return (

@@ -121,7 +121,7 @@ export const ui = {
     'dossier.aka': '활동명',
     'dossier.birthYear': '출생',
     'dossier.pastWinner': '역대 우승자',
-    'dossier.hosted': '진행 경력',
+    'dossier.hosted': '비참가 출연',
     'dossier.unverified': '미확인',
     'dossier.unverifiedProfile': '프로필 일부가 교차 확인 전입니다.',
     'dossier.unverifiedTie': '교차 확인이 끝나지 않았거나, 두 사람이 만난 기록이 없는 관계입니다.',
@@ -260,7 +260,13 @@ export const ui = {
     'tie.parallelNote': '기록은 겹치지만 만난 적은 없는 관계입니다. 확인된 인연 수에는 넣지 않습니다.',
 
     'dossier.roleContestant': '참가자',
-    'dossier.roleHost': '진행',
+    /* Split by Role. Neither person these fire for hosted anything: 이상민
+       sat on season 1's studio panel and 박지민 dealt in season 3's 유령
+       카지노. `dossier.roleHost` is kept only so an unforeseen role cannot
+       render blank. */
+    'dossier.roleHost': '비참가',
+    'dossier.rolePanel': '스튜디오 패널',
+    'dossier.roleCrew': '진행 측',
     'dossier.focusOrbit': '인물 중심으로 보기',
     'dossier.dirBetrayal': '배신을 실행한 쪽',
     'dossier.dirRivalry': '먼저 각을 세운 쪽',
@@ -270,7 +276,7 @@ export const ui = {
 
     /* ── hover card ───────────────────────────────────────────────────── */
     'hover.pastWinner': '역대 우승자',
-    'hover.host': '진행자',
+    'hover.host': '비참가 출연',
     'hover.relations': '관계',
     /* The tie count next to the "관계" eyebrow counts with common.tie /
        common.ties — the same counter the rail and the status bar use — so the
@@ -768,7 +774,7 @@ export const ui = {
     'dossier.aka': 'Known as',
     'dossier.birthYear': 'Born',
     'dossier.pastWinner': 'Past winner',
-    'dossier.hosted': 'Hosted',
+    'dossier.hosted': 'Non-playing role',
     'dossier.unverified': 'Unverified',
     'dossier.unverifiedProfile': 'Parts of this profile have not been cross-checked.',
     'dossier.unverifiedTie': 'Not fully cross-checked, or a pair with no recorded meeting.',
@@ -848,7 +854,9 @@ export const ui = {
     'tie.parallelNote':
       'The records rhyme; the two have never been in the same room. Not counted in the verified total.',
     'dossier.roleContestant': 'Player',
-    'dossier.roleHost': 'Host',
+    'dossier.roleHost': 'Not playing',
+    'dossier.rolePanel': 'Studio panel',
+    'dossier.roleCrew': 'Ran the game',
     'dossier.focusOrbit': 'Focus orbit',
     'dossier.dirBetrayal': 'made the betrayal',
     'dossier.dirRivalry': 'started the antagonism',
@@ -858,7 +866,7 @@ export const ui = {
 
     /* ── hover card ───────────────────────────────────────────────────── */
     'hover.pastWinner': 'Past winner',
-    'hover.host': 'Host',
+    'hover.host': 'In a season, not playing',
     'hover.relations': 'Relations',
     /* See the Korean side: the count uses common.tie / common.ties. */
     'hover.pipsAria': 'Ties by type',

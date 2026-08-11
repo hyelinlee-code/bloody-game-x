@@ -1,732 +1,653 @@
-# CRITIQUE — round 12
+# CRITIQUE — round 15
 
-Five independent reviewers.
+Five independent reviewers, one per pillar, run against the Release A build
+(rename + pronoun fix + probe gating + phase 0) with all twenty portraits.
 
+| pillar | score |
+|---|---|
+| visual | **6** |
+| polish | **7** |
+| depth | **8** |
+| ux | **6** |
+| motion | **6** |
+
+Previous round: visual 6 · polish 6 · depth 8 · ux 6 · motion 6.
 
 ---
 
-## reviewer 1 — 8/10
+## VISUAL DESIGN & ART DIRECTION — 6/10
 
-**Verdict:** The prose and the derived layers are flagship-grade reference work, but the app's central editorial claim — that every record carries the page it was written from — is quietly untrue in two places: the 77%-namu.wiki provenance paragraph is authored, build-validated and never rendered, and seven of the twenty-one "record elsewhere" essays ship with no citation at all.
+> The colour system, the type ramp and the Hangul/Latin tracking split are flagship-grade thinking, but the frames that actually ship are not: the camera never re-fits, so four captured states put the figure in a corner of a black field; a caption is set square across a face in the path-trace state; two of the four layout modes are visually unresolved; and the cast wall gives the photographs a quarter of their own tile.
 
-**Biggest single win:** Render `meta.sourcing` in the Sources panel and then add the missing `sources` arrays to the seven uncited priorElsewhere essays. It is a four-line component change plus fourteen URLs already declared at the top of people.ts, and it closes the one gap between what this atlas claims about its own evidence and what it actually shows — which is the single thing separating it from a reference work you would cite.
+**Biggest single win.** Make the canvas's effective viewport an explicit rect (full canvas minus the rail when open, minus the dossier when open, minus the status bar) and re-run the fit-to-extent transform with a ~420ms eased tween every time that rect or the visible node set changes — filter apply/clear, rail toggle, dossier open/close, mode switch. One change fixes the corner-blob composition in shots/14, 15 and 17, stops the dossier amputating the cold band and orphaning 곽범's name in 04/06/19/27, and — by giving the label solver back the space it currently has to fight for — removes most of the pressure that drives captions onto faces in the first place.
 
-### Working
-- The season arcs do what almost no fan wiki does: they name the moment. 이태균 climbing the boiler-room shaft to pull the real key out of the living-room TV; 최혜선 winning her day-one Death Match 58 chips to 12 and being sent down anyway; 홍진호 fracturing an ankle on the CCTV stairs and finishing the season on crutches; 허성범 losing the final round on one dropped syllable of a title. Sixteen runs, sixteen specifics, no hedging.
-- headToHead.ts is a genuine analytical contribution rather than a data dump: duels are authored (only the source's own scoreline), field results are derived, `unadjudicated` exists so a "2–0" can say what it is not holding, and `share` (outlasted / field size, summed) is the first number in any Bloody Game reference that makes 3rd-of-13-twice and 4th-of-18-once comparable.
-- The honesty apparatus is unusually rigorous and mostly user-visible: the `parallel` type exists precisely so a non-meeting cannot be counted as a tie, 서출구's season-2 placement preserves the source disagreement inside the placement string, the glossary entry for 상금 explains why the three seasons' prize figures are not comparable, and the Sources tab volunteers that the twenty portraits carry no credit, source or licence.
-- Bilingual parity is complete at the data level and does not thin out: 47/47 edge descriptions, 16/16 season arcs with beats, 20/20 bios and credential lists, plus full English glossary, franchise copy and season formats. The English is written, not translated — "He won the house and went back to work" is not a rendering of the Korean.
+<details><summary>What is working</summary>
 
-### Defects
+- The palette is the best-argued thing in the project and it holds in the pixels. Four channels with a stated job each, min pairwise ΔE 21.8 inside the archetype ramp, and crimson genuinely disciplined — across all 30 screenshots #ff2f43 appears only on the wordmark X, betrayal edges and the betrayal legend swatch. Every state colour is warm bone (--accent #dcd0b6). That restraint is rare and it is what stops this reading as a generic dark dashboard.
+- The tone correction on the twenty photographs measurably works. Sampling a 46px box at the face centre of eight gallery tiles in shots/24-gallery.png gives mean luma 69.6–97.0, seven of eight inside 77–81. The wall reads as one set and the correction is not visible as a correction — this is the headline change and it landed.
+- The cold band's parallel-record terminators are properly authored: the line stops short, ends in an OPEN circle (not the filled active bead), and the stub's x is now pinned to the cold person's x — measured in the crop of shots/02, all three caps sit within ~10px of the disc below them. The gap carries the meaning and the vertical carries the referent. That is a real design idea, executed.
+- The tracking system splits Latin display tracking (−0.035em) from Hangul (0em) and caps tracking from language, and it is followed. 피의 게임 is not crowded the way a naive −0.035em would crowd it, and 'CAST ATLAS' / 'NO VERIFIED TIE' carry proper 0.16em Latin small-caps.
 
-#### [blocker] The provenance paragraph — the app's single most important editorial disclosure — is never rendered anywhere
-`src/data/dataset.ts`
+</details>
 
-*Evidence:* Playwright dump of the About sheet, Sources tab, EN and the grep for `sourcing` across src/
+### [blocker] The camera never re-fits, so filtering or hiding chrome leaves the graph as a small blob in one corner of a black field
 
-**Wrong:** `meta.sourcing` / `meta.sourcingEn` carries the paragraph that says 223 of 290 citations (about 77%) are namu.wiki, that namu.wiki is a wiki anyone can edit, that the five betrayal edges each carry a non-wiki source, and that fifteen ties marked 확인됨 still stand on wiki citations alone. Grepping the whole of src/ for `sourcing` outside the data files returns exactly one hit, and it is a code comment. I drove the running app and dumped every About tab: What this is, Seasons, Track record, Glossary, The franchise, Shortcuts and Sources. The Sources tab prints the portraits notice and seven top-level links and nothing about evidence quality. The paragraph is dead data that the build check (validate-data section 9) nevertheless asserts against the live citation count.
+`src/graph/GraphCanvas.tsx` · shots/14-filtered.png, shots/15-rail-closed.png, shots/17-zoomed-out.png; contrast shots/02-graph-default.png, shots/18-laptop.png
 
-**Matters:** The whole product prints 확인된 인연 / 'verified' on every tick of every rim and puts a `confidence` field on every edge. A reader who trusts that apparatus has no way to learn that three quarters of it rests on a crowd-editable wiki whose season pages keep moving — which is exactly the thing the editor already wrote down and already measured. It also has a downstream cost: three data-file comments (edges.ts:1073, edges.ts:1123, people.ts:227) cite this invisible paragraph as the reason they cannot add citations, and one of them quotes stale arithmetic ('287건 중 220건') that no longer matches dataset.ts. Work is being blocked to protect the accuracy of prose nobody can read.
+**What is wrong.** In shots/14-filtered.png the ten remaining people occupy x 880–1520, y 190–700 of a canvas region that runs x 384–2000, y 75–1245 — roughly 17% of the frame's area, parked in the upper-right, with the entire lower half and the left 500px empty. shots/15-rail-closed.png is the same failure from the other direction: the rail is hidden, 292px of canvas is handed back, and the figure stays exactly where the with-rail fit put it, so it now sits top-left with ~60% of the frame as dead black. shots/17-zoomed-out.png repeats it. Compare shots/02 and shots/18, where the fit is correct and the composition is genuinely handsome — the difference is entirely whether a fit ran.
 
-**Fix:** Render it in the Sources panel, above the link list and above the portraits block, as the first thing under `about.sourcesHeading` — `<p className="abt-prose">{bilingual(meta.sourcing, meta.sourcingEn)}</p>` in `sourcesPanel()` in src/components/AboutSheet.tsx (~line 1704), the same treatment `policy` already gets on the What-this-is tab at line 575. Once it is visible, the citation arithmetic becomes a normal edit rather than a cross-file blocker.
+**Why it matters.** Filtering and hiding the rail are both acts of 'show me this more clearly', and both are answered by making the subject smaller and pushing it off-centre. A designer judging this from a screenshot of state 14 or 15 would conclude the layout is uncomposed, which is unfair to the layout — the composition exists, it is just never re-solved. This is also a re-file: CRITIQUE.md line 160 reports it as a blocker and it has not landed.
 
-#### [major] Seven of the twenty-one 바깥에서의 기록 essays carry no sources at all
-`src/data/people.ts`
+**Fix.** Make the effective viewport a value (full canvas minus rail width when open, minus dossier width when open, minus statusbar height) and re-run the fit-to-extent transform with a ~420ms eased tween whenever that rect OR the visible node set changes — filter apply, filter clear, rail toggle, dossier open/close, language switch. The figure should visibly slide and re-scale, not sit still while the frame changes around it.
 
-*Evidence:* Structural scan of every priorElsewhere block in people.ts; 강지후 dossier dump showing the per-block 'Sources 1' row that these seven lack
+### [blocker] A caption is painted square across the face it names, and the code knows
 
-**Wrong:** 박지민, 정근우, 이태균, 윤비, 서출구, 최혜선 and 허성범 each have a `priorElsewhere` block with no `sources` array. These are the longest continuous prose in each of those dossiers (200–300 words) and they make hard, checkable claims: 정근우's Beijing 2008 gold and repeat Golden Gloves, 최혜선's Durham MSc and London teaching hospital, 허성범's Calvin Klein and LG Gram modelling, 서출구's Brigham Young enrolment and withdrawal. The dossier renders a per-block source count (강지후's University War 3 block shows 'Sources 1'); on these seven the row is simply absent. The comment at people.ts:227–234 says this is deliberate — 'SOURCES PENDING, DELIBERATELY' — because adding references would change the citation totals printed by `dataset.meta.sourcing`.
+`src/graph/render.ts` · shots/23-path-trace.png (김유현, ~x1776 y824 natural), confirmed by 3× crop; render.ts ~L2440-2470; tools/assert-visual.mjs L151
 
-**Matters:** records.ts's own header states the rule: 'EVERY RUN CARRIES ITS OWN CITATIONS… the longest and most argued-over prose in the app was the only text in it with no source list.' That defect was fixed for season runs and then reintroduced one section lower, on essays of comparable length about the same people. A third of the atlas's biographical prose is uncited in a product that treats citation as its differentiator, and the stated reason is bookkeeping against a paragraph no user sees (see the blocker above).
+**What is wrong.** In shots/23-path-trace.png the caption 김유현 is set at the exact vertical centre of 김유현's disc, covering his eyes and nose and overhanging the disc on both sides (I cropped it at 3× to confirm — the name is wider than the photograph). The disc is dimmed, so the label is grey-on-dark-face and neither the name nor the picture reads. render.ts lines ~2440–2470 measure this precisely — 'mobile 390 choi-hye-sun disc 22.6px box 75x18 covers 100%', 'laptop en park-ji-min covers 98%' — and then say 'NOT GATED YET … it is a product call'. assert-visual.mjs line 151 files it as a live defect failing 5 of 13 states.
 
-**Fix:** Add `sources` to each of the seven from the URLs already declared at the top of the file and already on each person's own `sources` array — e.g. 정근우 → [NAMU_JKW, NAMU_BASEBALL_LEAGUE]; 이태균 → [NAMU_PROJECT_GENIUS, `${NAMU}(시즌%201)`]; 최혜선 → [`${NAMU}3`, LINEUP_1]; 서출구 → ['https://namu.wiki/w/서출구', NAMU_DEATHGAME]; 허성범 → [NAMU_UNIWAR_3-equivalent 대학전쟁 page, NAMU_DEATHGAME]; 윤비 → ['https://ko.wikipedia.org/wiki/윤비']; 박지민 → ['https://namu.wiki/w/박지민(아나운서)']. Then re-run `npx tsx tools/validate-data.mjs` and update the three numbers in `meta.sourcing`/`sourcingEn` in the same commit.
+**Why it matters.** Every plate now has a photograph and no mark is drawn anywhere, so the caption IS the identification and the photograph IS the plate. Laying one across the other destroys both at once. plate.ts already refuses to draw a MARK over a face for exactly this reason; the argument does not weaken because the ink happens to be a name. As shipped, the reader sees a face with a word stamped on it and reads it as a rendering fault.
 
-#### [major] The Track record table hides half the cast, including the most decorated brain-survival player in the lineup after 홍진호
-`src/data/headToHead.ts`
+**Fix.** Apply the one-line gate the file already names — reject the own-face seat when the box is wider than the picture (`if (b.w > 2 * rPhoto) return Infinity;`) — and pay for the resulting anonymity properly rather than by overprinting: when no honest seat exists, drop the caption and draw a 1px leader hairline from the disc to a seat in free space (the mechanism already exists; it is used for 하승진 in shots/17). Never both a face and a name in the same pixels.
 
-*Evidence:* headToHead.ts:288–318; Playwright dump of the About sheet, Track record tab
+### [major] The cold band — the one new editorial idea — is not composed: three discs on three baselines at two different pitches, and a name struck through by the fence
 
-**Wrong:** `CareerRecord` is built only from `records[p.id]`, so `careerTable` contains the twelve franchise returners and the tab closes with 'Everyone else in the lineup is new to the franchise.' But four of the eight excluded people have machine-readable ranked finishes in `otherShows` that headToHead already reads for its field results: 김경훈 (Genius Grand Final, runner-up, rank 2 of 13; Black Garnet, 12th), 김유현 (5th, then 9th of 13), 이상민 (Genius S1 3rd of 13, S2 winner), 홍진호 (S1 winner of 13, S4 4th of 13). 김경훈 — a Grand Final runner-up who won all three of his Death Matches — appears in no track-record table anywhere in the app.
+`src/graph/layout.ts` · shots/02-graph-default.png (3× crop of the band), shots/19-laptop-dossier.png (3× crop), src/graph/layout.ts L713-810
 
-**Matters:** A fan opening 'Track record' is asking who in this house has actually won things. The tab answers for twelve people and tells them the other eight are blank, when the dataset already knows that one of the eight was runner-up of the last season of The Genius and another has a KAIST-team third place. It makes a research gap out of data that is present, indexed and already used elsewhere in the same file.
+**What is wrong.** webLayout anchors the three no-tie people with a soft spring (anchorW 4, no fx/fy), so the row never actually lands on a line. Measured off shots/02-graph-default.png: disc centres at CSS y 805 / 804 / 796 (최연청 sits 9px high) and pitched 188px then 226px apart — a 20% pitch variance across three items. At 1280×800 with the dossier open (shots/19-laptop-dossier.png) it degrades badly: the three discs sit at three y's ~34 CSS px apart, and 신승용's caption is drawn straddling the band's dashed top rail so the rule passes through the middle of the glyphs and reads as a strikethrough. The band's caption is left-aligned in a container whose members are centred over a different span, leaving ~200 CSS px of empty band to the right of the caption and below the discs.
 
-**Fix:** Extend `CareerRecord` with an `elsewhere` block computed the same way from `ExternalShow.rank`/`fieldSize` (the ingredients are already gathered in the outside-field loop at headToHead.ts:139–168), and add a second section to the Track record panel — 'Elsewhere in the genre' — with the same Best-finish / Outlasted columns. While there, add `rank: 3` (and a `fieldSize` if a source gives one) to 강지후's 대학전쟁3 row in people.ts:762, which currently states the third place only in the prose `result` string so nothing derived can see it.
+**Why it matters.** The band's entire rhetorical job is to say 'these three are set apart, deliberately'. A rank of exactly three that is ragged in both axes says the opposite — it reads as three nodes the physics failed to place, i.e. as missing data rather than as a finding. CRITIQUE.md line 207 already filed the baseline half of this; the stub-x half was fixed and this half was not.
 
-#### [major] 라이벌 / 'Sustained head-to-head antagonism' overclaims on four of its seven edges, three of which say so in their own text
-`src/data/i18n/ui.ts`
+**Fix.** In the cold band only, pin the discs with fx/fy (or clamp after the tick) to one shared y and an exactly equal pitch, and lock every caption to one shared baseline directly under its own disc, bypassing the collision placer — there are no collisions in a three-item row. Give the caption block the same horizontal centre as the row, and reserve the caption's own height inside the band so the rail can never cross a glyph.
 
-*Evidence:* src/data/i18n/ui.ts:1319–1348 against the seven rivalry descriptions in edges.ts; FilterRail dump showing 'Rivalry 7 — Sustained head-to-head antagonism'
+### [major] By-season and by-archetype are the two modes nobody art-directed
 
-**Wrong:** `EDGE_GLOSS_I18N.rivalry` reads 시즌 내내 정면으로 부딪친 관계 / 'Sustained head-to-head antagonism'. Four of the seven rivalry edges document a single incident, and three state it outright in the description the reader sees on the same card: 홍진호×하승진 — '기록에 남은 두 사람의 정면 충돌은 이 한 게임이고'; 서출구×허성범 — '기록에 남은 두 사람의 정면 마찰은 10일차 \'선과 악\' 한 판이다'; 서출구×하승진 — one Money Challenge on day 8; 하승진×박지민 — one vote in one nomination. edges.ts's own comment at line 638 says exactly this reasoning is why 홍진호×허성범 was retyped to `co-season`, and closes 'when the vocabulary over-claims, change the word, not the paragraph' — then the four remaining cases had their paragraphs rewritten and their type left alone.
+`src/graph/layout.ts` · shots/08-seasons.png, shots/09-archetype.png; contrast shots/07-orbit.png
 
-**Matters:** edges.ts states that filtering to 라이벌 is 'the single most likely thing a fan does with this app'. Doing it now returns seven pairs of which four are one-off clashes, and the legend beside them promises season-long antagonism. That is the legend contradicting the paragraph under it — the precise failure mode the file already caught once and documented.
+**What is wrong.** By-season (shots/08): four ellipses with near-identical dark fills overlap so heavily that the two- and three-way lens regions composite to a muddy warm grey — the region under 박지민 reads as a rendering artifact, not as an intersection. The group captions land at four different distances and four different angles from their own ellipses (시즌 2 top-centre, 시즌 1 far bottom-left, 시즌 3 mid-right, 이전 시즌 없음 floating above its ellipse). The whole figure sits at x 790–1660 in a region running 384–2000, so the left 400px is dead. By-archetype (shots/09): ten enclosure circles of wildly mismatched size — 곽범's one-person bubble is ~135px radius around a 25px disc, i.e. 97% empty — several of them overlapping each other (전문직 into 방송인, 이진형's into 최혜선's), which defeats the one thing an enclosure is for. Group labels sit above-left, below-left, right and below with no system, and the whole cluster floats up-and-right leaving the bottom-left third of the canvas black.
 
-**Fix:** Cheapest correct fix: widen the gloss to what all seven actually support — 정면으로 부딪친 기록이 남아 있는 관계 / 'A documented head-to-head clash' — in EDGE_GLOSS_I18N (ui.ts:1323 and :1337). If the stronger reading is wanted, retype 하승진×박지민 (one vote) and 서출구×하승진 (one game) to `co-season` and leave 홍진호×하승진 and 서출구×허성범 as rivalries on the strength of their being the most-replayed confrontations of their seasons. Same audit applies to `alliance`, whose gloss says 'Played together inside the house' while 홍진호×김남희 is a 더 타임호텔 alliance with `season: 0`.
+**Why it matters.** Four modes are offered as equals in the top bar. Web and Orbit are genuinely composed — Orbit in particular, with its concentric rings and leader-lined legend, is the best frame in the app. Landing on 2 or 3 after that is a visible drop in authorship, and it makes the whole set look like one designed view plus three algorithmic ones.
 
-#### [major] The negative research — the best material about the three cold-band players — is trapped in a code comment
-`src/data/edges.ts`
+**Fix.** By-season: give each ellipse a stroke-only treatment with a single very low-alpha fill and let overlaps read by stroke crossing rather than by fill compositing; place every set caption at a fixed angular position on its own ellipse's boundary with a short leader. By-archetype: size each enclosure to its members' actual extent plus a constant padding (a 1-member group should be a ~55px circle, not 135px) and add a light circle-packing pass so no two enclosures overlap. Both: run the same fit-to-frame the web mode gets, so the figure fills the region instead of drifting into a corner.
 
-*Evidence:* src/data/edges.ts:926–967 vs the 강지후 dossier dump (EN), 'Walks in cold' section
+### [major] The cast wall gives the photographs about a quarter of their own tile
 
-**Wrong:** Lines 926–967 hold a superb, specific account of what was searched and came back empty for 강지후, 신승용 and 최연청: the KAIST four of all three 대학전쟁 seasons named out, 황인성 hosting all three so there is no shared-MC route, the entire 환승연애4 cast read out by name, 퀸승용's documented guests, 최연청's two agencies and four music videos, and the one near-miss that was rejected on principle (이진형 suggesting 강지후's channel name, undated, therefore unusable). None of it reaches the screen. The dossier's cold-band copy is one generic sentence — 'No shared credit and no documented working relationship with any of the other nineteen turned up in public sources' — identical for all three.
+`src/graph/plateGeometry.ts` · shots/24-gallery.png, shots/25-gallery-scrolled.png, shots/29-en-gallery.png; src/graph/plateGeometry.ts L26-35, L662
 
-**Matters:** 'We looked and there is nothing' is a weak claim; 'we read out the eleven names on the 환승연애4 cast list and none of them is in this house' is a strong one, and it is already written. Three of twenty people — 15% of the cast — get the app's thinnest page precisely where the editor has the app's most interesting unpublished paragraph. It is also the difference between the cold band reading as an editorial finding and reading as missing data, which is the exact distinction the brief asks the product to make legible.
+**What is wrong.** R_DISC 27 against R_RIM 40.4 and R_LAUREL_OUT 49.4 means the picture is 30% of the plate's area and the ring apparatus is 70%. On the gallery that lands as a ~72px photograph inside a ~135px ring assembly inside a ~300px column (shots/24, shots/25, shots/29). Compounding it, PHOTO_SEAT_IN = 0.62 darkens everything outside 62% of the disc radius to near-black, so the readable part of an already-small picture is 38% of its area. The net is a wall whose smallest, dimmest element is the face.
 
-**Fix:** Add an optional `checked?: { ko: string; en: string }[]` to `Person` (or to a small `coldNotes` map keyed by id) and render it in the dossier's `Walks in cold` block as a short 'what was checked' list under the existing sentence — three or four items per person, lifted verbatim from the comment. The Gallery card and the HoverCard can stay as they are.
+**Why it matters.** The cast wall exists so a reader can learn twenty faces. It is the one surface with no space pressure — a 1824px-wide modal, four columns — and it still shows the faces smaller than the diagram wrapped around them. The rings are beautiful and they are winning an argument they should be losing on this specific surface.
 
-#### [minor] A placement the dataset itself flags as contested is hardened into an unqualified 2–0 in the ledger
-`src/data/headToHead.ts`
+**Fix.** On the gallery variant only, raise R_DISC toward R_SEASON (27 → ~33) and pull the tick rim and laurel in proportionally, or simply scale the whole plate up so the photograph clears 120px in a 300px column. Separately, crop the sources tighter: the supplied frames are half grey seamless, so a face-detected crop at ~1.4× face height would buy back roughly a third of the apparent size at every node size for free.
 
-*Evidence:* src/data/records.ts:315 against src/data/headToHead.ts:112–131; screenshot 06-dossier-connections.png, the 서출구 순위 2-0 card
+### [major] 300×300 sources at 5KB are visibly mushy at zoom and unusable at the sizes most nodes are actually drawn
 
-**Wrong:** 서출구's season-2 placement string carries the disagreement on purpose: '4위 / 13명 중 · 4th of 13 (본인 문서는 홍진호와 공동 3위로 표기)'. But `rank: 4` is what the field-result loop reads, so the ledger derives 홍진호 > 서출구 for season 2 and prints it beside the season-3 result as 순위 2–0 with the flat line 홍진호가 서출구보다 높이 끝났다. The caveat authored one file away is dropped at exactly the point where the app converts it into a scoreline.
+`public/portraits/` · shots/16-zoomed-in.png (1.6× crop of 이태균), shots/19-laptop-dossier.png (3× crop of cold band); public/portraits/*.webp file sizes
 
-**Matters:** records.ts's header says 'Where two sources genuinely disagree, the alternative wording is kept in the placement string rather than hidden' — and then the derived layer hides it. A reader who opens 홍진호's dossier sees a 2–0 over 서출구 with no indication that one of the two results is disputed by 서출구's own page, which is the kind of quiet overclaim the rest of this dataset goes to great lengths to avoid.
+**What is wrong.** Two ends of the same problem. At the top: 300px source against a node reaching 298 CSS px (597 device px at 2×) is a 2× upscale, and the files are 4.0–6.4 KB webp — about 0.45 bits/pixel. The 1.6× crop of 이태균 in shots/16-zoomed-in.png shows it plainly: smeared hair edges, waxy blotching across the cheek, and ringing along the jacket shoulder. At the bottom: node radius runs 24–44 world units, which at default zoom puts the smallest discs at ~20 CSS px diameter with only the inner 62% un-vignetted — a ~12px face. With the dossier open on a 1280×800 laptop (shots/19) that is where most of the cast lives, and 김유현, 김경훈, 정근우 and the three cold-band members are indistinguishable smudges.
 
-**Fix:** Add `rankContested?: boolean` to `SeasonRun`, set it on 서출구's season-2 run, propagate it onto the derived `Meeting` and render the row with the existing 미확인 / Unverified marker plus a one-line note ('one source records this as a joint 3rd'). Alternatively exclude contested ranks from `Ledger.wins`/`losses` and count them in `unadjudicated`, which already exists for exactly this class of problem.
+**Why it matters.** The photograph is now the whole plate — no mark is drawn anywhere — so at both ends of the zoom range the identification system is delivering nothing and the caption is carrying 100% of the load. That is also why the caption defect above hurts so much: there is no second identifier to fall back on.
 
-#### [minor] Three of the forty-seven ties are the same non-fact written three ways, on one source each
-`src/data/edges.ts`
+**Fix.** Resupply at 600×600, q≈78 (~25–35 KB each, ~600 KB for twenty — nothing against the two variable fonts already loading) and have tools/vite-plugin-portraits.mjs emit both sizes, picking by devicePixelRatio × view scale. If resupply is impossible, clamp max camera k so plate diameter never exceeds the source's device pixels. At the small end, raise the minimum node radius (24 → ~30) and/or pull PHOTO_SEAT_IN out to ~0.72 so more of the face survives the vignette.
 
-*Evidence:* src/data/edges.ts:1127–1168; single-source count run across the file (3 edges with ≤1 source, all three of these)
+### [minor] The filter rail's node-key row is guillotined mid-glyph in every desktop and laptop capture
 
-**Wrong:** 홍진호×이태균, 현성주×이태균 and 현성주×김유현 exist solely because four names appear on the eight-person call sheet for 프로젝트 지니어스, a 2022 shoot that was never released. Each description says in its own last sentence that nothing is known about what happened in the room, and each fills its length with biography restated from the two dossiers — what each person was doing in May 2022. All three cite a single URL, the thinnest sourcing in the file, on `confidence: 'medium'`. Their gloss reads 'Met first on another programme outside the house'.
+`src/components/FilterRail.css` · shots/02-graph-default.png y≈1052; shots/18-laptop.png and shots/19-laptop-dossier.png y≈1030
 
-**Matters:** Two of these are half of 이태균's out-of-season-1 connections, so the franchise's first champion's link into the wider graph rests largely on a shoot nobody has seen. edges.ts's own rule says a fact named on an edge belongs on the person it is about and the edge should then describe only the pair — these three do the inverse. It is the only place in an otherwise substantive edge list where a reader learns nothing about the pair.
+**What is wrong.** The scroll container's bottom fade is 28px (FilterRail.css ~L476) and the boundary lands in the middle of a row rather than between rows. In shots/02, 03, 04, 05, 06, 07, 08, 09, 14 and 17 the row '크기 = 연결 수' under 노드 읽는 법 is rendered at roughly 35% and sliced horizontally through its x-height. In shots/18 and 19 (1280×800) it is worse: '평행 이력 … 3' is cut through the middle of the Hangul with a hard edge ~12px below its cap height.
 
-**Fix:** Either merge all four Project Genius pairs into one edge type/label that names what it is — a shared call sheet, not a meeting — with a single shared description and `strength: 1`, or leave the edges and drop the biography: two sentences that say only 'both names are on this eight-person list; the shoot was never released' is more honest than three different 150-word framings of the same absence. At minimum add the second source (each person's own page attesting the 촬영 후 미공개 row) so they are not the only edges in the file standing on one URL.
+**Why it matters.** It is the first row of the section that explains how to read the whole graph, and it looks erased rather than scrollable. A hard edge through Hangul syllable blocks reads as a clipping bug, not as an affordance — the fade is too short to say 'more below'.
 
-#### [minor] The Track record 'Seasons' column counts a panel seat and a dealer's chair as seasons played
+**Fix.** Lengthen the bottom fade to ~56px (a full row height plus air) so the cut is unambiguously soft, and add scroll-snap or a scroll-padding so the container never rests with a row half-visible. Alternatively collapse 노드 읽는 법 by default so the resting boundary lands on a section rule.
+
+### [minor] The About sheet and the cast wall set their headers to 55% of the panel and leave the rest ruled and empty
+
+`src/components/AboutSheet.css` · shots/12-about.png, shots/24-gallery.png, shots/29-en-gallery.png
+
+**What is wrong.** In shots/12-about.png the '지금 / THE SEASON IN QUESTION' table draws full-width rules to x≈1540 while every value (Wavve, 2026.07.03, 주간 공개) ends by x≈735 — roughly 800px of ruled, empty row, three times. The body paragraph above it wraps at x≈1260 in a 1140px-wide panel. The same shape in shots/24 and shots/29: the gallery's explanatory paragraph occupies the left 55% and the right 45% of the header block is empty, while the tile grid immediately below uses the full width. The header and the body are not on the same grid.
+
+**Why it matters.** Long ruled rows terminating in nothing read as an unfinished table rather than as deliberate air, and the mismatch between a 55%-wide header and a 100%-wide grid makes the modal look like two pasted-together layouts.
+
+**Fix.** Either right-align the values against the rule's end (a proper definition list), or cap the rule at the value's column so the row and its content end together. For the gallery header, either set the paragraph to the same four-column grid the tiles use (span 2 of 4) with something in the remaining span — the legend key, a count summary — or narrow the whole header block and centre it.
+
+### [minor] The wordmark's X collides with 임 — no side-bearing between the Hangul and the Latin
+
+`src/components/Intro.css` · shots/01-intro.png (3× crop), shots/20-mobile-intro.png, shots/02-graph-default.png topbar
+
+**What is wrong.** At 3× on shots/01-intro.png the crimson X's upper-left arm overlaps the right vertical stem of 임's ㅁ. The inter-syllable gaps in 피의 게임 measure ~35 crop px; the 임-to-X gap measures 0. The same lockup at 24px in the TopBar (shots/02) is tight for the same reason. Pretendant's Hangul is drawn on a full em square with its own sidebearings and Inter's X is not, so butting them produces a crash rather than a kern.
+
+**Why it matters.** This is the brand mark, set at ~88px on the cold open — the first thing anyone sees, and the one element that has to look decided. A crashed pair at display size reads as a font-fallback accident.
+
+**Fix.** Wrap the X in a span with `margin-left: 0.06em` (or a hair space), and give it its own `letter-spacing: var(--tr-display-latin)` rather than inheriting the Hangul 0em. Check the TopBar lockup at the same time — it needs the same treatment at a smaller value.
+
+### [nit] The season arc's round terminal is optically twice the arc's own weight
+
+`src/graph/plate.ts` · shots/16-zoomed-in.png, 1.6× crop, green terminal at ~(935,590) in crop space
+
+**What is wrong.** In the 1.6× crop of 이태균 in shots/16-zoomed-in.png the season-1 arc is stroked at ~28 crop px and its end terminal renders as a filled blob ~55 crop px across — roughly double. At max zoom it is the single heaviest mark on the plate and it reads as a tadpole head or a stray dot rather than as the end of a progress arc.
+
+**Why it matters.** At the zoom where a reader is deliberately studying one person's record, the ornament that is meant to say 'this is how far they got' looks like a rendering artifact hanging off the ring.
+
+**Fix.** Either drop the separate terminal dot and rely on `lineCap: 'round'` alone (which already gives a semicircular cap at exactly the arc's width), or if the dot is doing separate work, cap its radius at `arcWidth * 0.6`.
+
+### [nit] tokens.css warns that the canvas is still violet-black; it isn't, and the warning will get a fixed thing 'fixed'
+
+`src/styles/tokens.css` · src/styles/tokens.css L111-118 vs src/graph/render.ts L321-323 and src/graph/plate.ts L273-274
+
+**What is wrong.** Lines 111-118 state 'THE CANVAS HAS NOT BEEN ROTATED YET' and that render.ts still paints #0a0810 / #08070c / #060509 and #221d29 → #100d16. `grep` returns zero hits for all five hexes; render.ts:321-323 already uses the warm #0d0807 / #0a0706 / #070504 and plate.ts:273 the warm #231e1c → #110e0b. The rotation landed; the warning did not get deleted.
+
+**Why it matters.** This is the design system's own file and it is the document a new component owner reads before picking a background. A stale 'not done yet' block in the canonical token file is how a fixed thing gets re-fixed, or how someone concludes the two halves of the frame disagree when the screenshots show they do not.
+
+**Fix.** Delete the paragraph, or reduce it to one line recording that the rotation is complete and naming the two files that carry the canvas values, so the next reader knows where to look rather than what to do.
+
+---
+
+## POLISH & CRAFT — 7/10
+
+> Unusually disciplined craft everywhere the work is old — tokenised CSS with zero dead classes, a real label solver, honest copy coupling — but the two newest surfaces (the photographed plate and the cold band) both ship visible misses in the default view, and one mobile artifact reads as an outright bug.
+
+**Biggest single win.** Re-encode the twenty portraits at 600×600, WebP q≈80. They are currently 4–6 KB each at 300×300 — roughly 0.5 bits per pixel — against a node that reaches 597 device pixels at maximum zoom, so the default presentation of every person in the atlas softens into blocks exactly when the reader leans in. At q80/600px each file lands around 25–40 KB, under 800 KB for the whole set, and it fixes the one quality ceiling that is visible on every screen in the app at once.
+
+<details><summary>What is working</summary>
+
+- CSS is genuinely systematised: every border-radius and colour goes through a token (only `50%`, `inherit` and `0` appear raw), and a sweep of every class selector in all 12 stylesheets against the TSX found zero dead rules — that is rare.
+- Focus handling is real work, not a default: the language switch is a proper `role="radiogroup"` with roving tabindex and Home/End, the mode segment uses the same pattern, and every control paints a 2px ring.
+- The honesty coupling is done properly — `gallery.note`/`gallery.notePhotos` and `about.tilePlate`/`about.tilePlatePhotos` swap on folder contents, so the app never claims "nobody here was photographed" over photographs.
+- The brass laurel does survive against a face: on 이태균's plate the laurel band sits outside the photo rim entirely, so the one ring most at risk never lands on skin.
+
+</details>
+
+### [major] Portraits are 4–6 KB WebP at 300×300 against a node that reaches 597 device px
+
+`public/portraits/*.webp`
+
+**What is wrong.** `ls -la public/portraits` shows every file between 4,026 and 6,432 bytes for a 300×300 image — roughly 0.5 bits per pixel. That is two problems compounding: a ~2× upscale at maximum zoom (298 CSS px × 2 DPR = 597 device px from a 300 px source) on top of an encode so aggressive that hair and skin are already smeared in the source. I captured the running app at max zoom (scratchpad/b-zoomed.png, 1600×1000 @2x) — 이진형's hair, 홍진호's jaw and 박지민's fringe are visibly mush, and at 4× (scratchpad/j-tile-tae.png) 이태균's hair reads as flat blocks rather than strands. It is also visible one step down: the dossier's 96 px header plate at DPR3 is soft.
+
+**Why it matters.** The photograph is now the whole of the plate — the monogram is never drawn — so the picture quality IS the node's quality. Zooming in is the app's core gesture (`scroll to zoom` is in the footer hint) and the reward for using it is a blurrier face than the one you started with.
+
+**Fix.** Re-encode the set at 600×600, WebP q≈80. That lands each file around 25–40 KB, ~700 KB for all twenty, which is nothing against the fonts already being shipped. If the byte budget is genuinely fixed, the alternative is to cap `photoRadius` so the disc never exceeds ~1.25× the source's device pixels and let the plate grow around a photo that stops growing — but re-encoding is the right fix.
+
+### [major] The cold band's row is not a row: unequal pitch and unequal baseline
+
+`src/graph/layout.ts`
+
+**What is wrong.** layout.ts:771–783 sets a single `gap` and puts all three cold nodes on one `y` with `anchorW = 4`, but the springs park before they converge. Measured on the shipped capture shots/02-graph-default.png the three disc centres are at x ≈ 889 / 1123 / 1410 — gaps of 234 and 287 px, a 23% difference. My live 1600×1000 @2x crop (scratchpad/a-cold.png) gives 377 and 454, the same 20%. Vertically they are not level either: shots/19-laptop-dossier.png has 신승용's disc ~15 px higher than its two neighbours, and in shots/26-en-graph.png the three sit at y ≈ 999 / 985 / 1005. The band's rails are centred on `cx` (the mesh centroid) while the row's own midpoint is elsewhere, so the container is ~11 px off-centre against its contents as well.
+
+**Why it matters.** This band is the app's single most rhetorical composition — a deliberate, captioned rank that says 'these three are a set'. A rank whose pitch varies by a quarter and whose baseline wanders 20 px reads as three nodes that happened to drift near each other, which is exactly the reading the band exists to prevent. It is in the default view at every viewport.
+
+**Fix.** The comment at layout.ts:781 rejects `fx`/`fy` because it would 'lose the transit'. Keep the transit and pin on arrival: let the spring fly them there, then set `fx`/`fy` once the node is within a few units of its anchor (or once GraphCanvas's brake fires). Alternatively drop cold nodes out of the charge and collide forces entirely once the row has formed — they have no links, so nothing else needs them in the sim. Also seat the band's rails and caption on the row's own midpoint rather than on the mesh centroid.
+
+### [major] On mobile the cold-band names are seated off their own faces, and the band's rail strikes through two of them
+
+`src/graph/render.ts`
+
+**What is wrong.** In my live 390×844 @3x capture (scratchpad/m-cold.png) the label 'Kang Ji-hoo' sits at y≈505 while his disc is at y≈617 — 112 px above and offset right, landing immediately to the right of the parallel-record open-circle terminator at (417,475). 'Shin Seung-yong' is 27 px above-right of its disc, 'Choi Yeon-cheong' is level-right of its disc: three peers in one composed rank, three different seats. Worse, the band's dashed top rail runs horizontally at y≈508 — exactly the x-height of 'Kang Ji-hoo' and 'Kwak Beom' — so the rule's dashes emerge on both sides of two names. 'Kwak Beom' itself is seated ~80 px down-left of its own node, closer to the band than to its face.
+
+**Why it matters.** The brief's own test — with no mark drawn, the caption is the whole of a node's identification — fails here. A phone reader looking at that region sees a name adjacent to a small hollow ring and will conclude the ring is Kang Ji-hoo. And a container rule drawn through a name is the kind of collision that reads as a broken renderer, on the app's most-used screen size.
+
+**Fix.** Two changes. (1) Treat the cold row as one composed object for label placement: force all three names to the same side and the same offset, chosen once for the row (drawLabels already solves `coldSide` once at render.ts:1832 — extend that from 'which side' to 'the whole seat'). (2) Add the band's top and bottom rails to the label solver's obstacle set so no name can be seated on a rule, the same way discs and link geometry already are.
+
+### [major] The parallel-record open-circle terminator has no legend entry
+
 `src/components/AboutSheet.tsx`
 
-*Evidence:* src/components/AboutSheet.tsx:646, 1499; Playwright dump of the Track record tab (박지민 row: '4th of 10 | 13th of 13 | Host | 3')
+**What is wrong.** render.ts:769–818 invents a glyph — a parallel line that stops short of the band and terminates in an open circle — and reasons about it carefully in the comment ('the universal "does not connect here" cap'). But the field guide's 'how to read' grid has fourteen KeyTiles (AboutSheet.tsx:879–1190: tileSize, tileRing, tileArcs, tileHalo, tileDashedRim, tileHostRing, tileNoTies, tileDashedLine, tileArrow, tileEdgeRead, tileEdgePin, tileColdBand, tileRimTicks, tileShiftClick) and not one of them is the terminator. `about.tileColdBand` draws a gradient rectangle — the band, not the stub.
 
-**Wrong:** `played: runs.length` (line 646) counts every `SeasonRun` regardless of role, so 박지민 shows Seasons 3 when she played two and hosted one, and 이상민 shows Seasons 1 with an em-dash in both Best finish and Outlasted — a row in a table headed 'Track record across seasons 1–3' for a man who never entered the house. headToHead.ts's `CareerRecord` already splits `seasons` (contestant) from `presided`, and its comment states the rule explicitly: 'A host or a panellist is in the credits of a season, not in its field.' The table ignores the split it was given.
+**Why it matters.** This is precisely the 'legible or merely correct' question. In the default view (shots/02-graph-default.png) three teal dashed lines run down from 허성범, 박지민 and 이상민 and stop at small hollow rings above the band. At that size the ring is indistinguishable from a distant unlabelled node, and nothing on the canvas or in the guide tells the reader that a parallel record is a non-tie. The distinction is stated correctly in `gallery.note`, `about.coldBody` and `dossier.coldSub` — three places a reader looking at the graph is not.
 
-**Matters:** 'Seasons' next to 'Best finish' and 'Outlasted' reads as seasons played, and sorting by it puts a studio panellist above people who actually competed. The Korean header 출신 시즌 is defensible; the English 'Seasons' is not.
+**Fix.** Add a fifteenth KeyTile between `tileDashedLine` and `tileColdBand`: a disc, a teal dashed line, an open circle, and the copy '평행 이력 = 같은 기록, 만난 적 없음 — 관계로 세지 않음 / Parallel record — same history, never met; not counted as a tie'. It is one tile and it closes the loop between the glyph and its meaning.
 
-**Fix:** Render `career[id].seasons.length` with the presided count as a subscript — '2 +1 hosted' / '2 +1 진행' — and sort on the played count. Or, if the column must stay a single number, rename the English header at ui.ts:1005 from 'Seasons' to 'Appearances'.
+### [major] The Orbit keyboard-shortcut badge leaks onto mobile as a stray 9 px dashed circle
 
-#### [minor] The Project Genius editorial note is stale and contradicts the file forty lines below it
-`src/data/edges.ts`
+`src/components/TopBar.css`
 
-*Evidence:* src/data/edges.ts:1053–1079 vs :1127–1168; `npx tsx tools/validate-data.mjs` output
+**What is wrong.** I probed the live DOM at 390×844: `.tb-seg-slot` measures 0×0 for Web, By season and By background, but 9×9 at x=361, y=55 for Orbit (`.tb-seg-btn is-locked`). It renders as an unexplained dashed circle floating at the right edge of the segmented pill, half-clipped by the pill's own border. It is in the shipped capture too — shots/21-mobile-graph.png at (862,140) — and in my scratchpad/h-mobile-top.png. The rule that collapses the badge on narrow viewports is evidently scoped so that the locked variant escapes it.
 
-**Wrong:** The block at lines 1053–1079 is headed '── THE OTHER THREE PAIRS ON THIS CAST LIST — RESEARCHED, NOT YET DRAWN ──', lists 이태균×홍진호, 이태균×현성주 and 현성주×김유현 as missing, explains 'WHAT BLOCKS THEM', and says 'Section 0c below keeps the three pairs on the build's open-seams list until they do'. All three edges are drawn at lines 1127–1168. The same note quotes the sourcing figures as '287건 중 220건, 약 77%' while dataset.ts now says 290 / 223, and the validator's open-seams list now reports something else entirely (15 high-confidence edges on wiki-only citations).
+**Why it matters.** On a touch device a keyboard-shortcut badge should not be there at all, and this one survives only for the one mode that is locked, so it reads as a fragment of a fifth tab or a clipping bug. It sits in the top 90 px of the phone's primary screen where it is the first thing a reader's eye lands on.
 
-**Matters:** These comments are the dataset's editorial log and they are unusually good — they are the reason a fifth reviewer can tell what was decided and why. A block that describes as blocked-and-undrawn three edges sitting immediately beneath it costs the log its authority, and the next editor will either re-do the research or trust a stale number.
+**Fix.** Whatever media-query rule sets `.tb-seg-slot { width: 0 }` at narrow widths, drop the `:not(.is-locked)` (or equivalent) qualifier so it applies to all four, and hide the shortcut badge outright under `(hover: none)`.
 
-**Fix:** Replace the 'NOT YET DRAWN' block with a two-line note saying the three were drawn and where the shared narrative lives, and delete the arithmetic quotation entirely — `dataset.meta.sourcing` and validate-data are the authority for those figures and a copy in a comment is a copy that will drift again.
+### [minor] Korean text in the palette's empty state is rendered with monospace word gaps
 
-#### [nit] One English show title is mislabelled and leaves raw Hangul in an English-only field
-`src/data/people.ts`
+`src/components/CommandPalette.css`
 
-*Evidence:* src/data/people.ts:631; screenshot 27-en-dossier.png for the Elsewhere table treatment
+**What is wrong.** The echoed query is wrapped in `.mono`, which base.css:287 binds to `var(--font-mono)` = JetBrains Mono. JetBrains Mono carries no Hangul, so the syllables fall back to Pretendard while the U+0020 spaces keep the monospace advance (~0.6 em against Pretendard's ~0.26 em). In my scratchpad/e-palette-long.png the heading reads "스타크래프트  프로게이머  출신  포커  플레이어  홍진호" with gaps roughly 2.3× normal — it looks like badly justified type.
 
-**Wrong:** 김경훈's credits list carries `show: 'Society Game spinoffs / 금수저 전쟁'`. The `show` field is the English title everywhere else in the file and is also the join key headToHead matches outside programmes on. 금수저 전쟁 is not a Society Game spin-off, the slash construction appears nowhere else in 83 credit rows, and an English reader gets unromanised Hangul in a column where every other row is Latin.
+**Why it matters.** Korean is the source language and this is the one surface whose whole job is to help a reader recover from a bad query. Setting their own words back at them in visibly broken spacing undermines that.
 
-**Matters:** It renders in the English dossier's Elsewhere table beside clean entries like 'The Genius: Grand Final' and 'University War', and it is the one row a reader would flag as unedited. It would also silently fail to join if that programme ever gained a `rank`.
+**Fix.** Give `.cp__empty-q .mono` its own stack that puts the Hangul face first — `font-family: var(--font-kr), var(--font-mono)` — or, cleaner, drop the `.mono` class from the echo when the query contains Hangul and keep it only for the Latin/numeric case that motivated it.
 
-**Fix:** Set `show: 'Golden Spoon War'` (or the show's own English billing) and leave `showKo: '금수저 전쟁'` to carry the Korean, exactly as the other 82 rows do.
+### [minor] Photo crops are not normalised across the set
 
-
----
-
-## reviewer 2 — 6/10
-
-**Verdict:** The default web view is genuinely handsome and the colour reasoning is better than most shipped work, but the headline change — twenty photographs — carries a visible chroma-key halo on every face above ~1.3× zoom, the camera never refits so opening the dossier clips a fifth of the cast off-screen, two of the four layout modes are visually unresolved, and the cast wall shows 68px faces inside 299px columns.
-
-**Biggest single win:** Kill the chroma-key fringe on the portraits — erode the keyness field by one pixel before building the mask and change the ramp band from a source-over composite toward PHOTO_SEAT_INK to a multiply/darken, then trim each disc's residual backdrop to within ±4 luma of PHOTO_WALL_TARGET. The photograph is now the entire identification system, and right now every one of the twenty is outlined like a cut-out sticker the moment you zoom past 1.3×. Nothing else in this review touches all twenty faces on every surface.
-
-### Working
-- The relationship ramp is genuinely disciplined: crimson is confined to the wordmark and betrayal, alliance mint / rivalry orange / prior-show periwinkle / parallel petrol are separable at 2px on a near-black ground, and the `parallel` long-dash/dot rhythm is the one rhythm nothing else uses — a non-meeting is carried by shape as well as hue, which is the right call.
-- Per-language typography is real, not decorative: `--tr-display-latin` / `--tr-display-ko` and the `:lang(en)` tracking overrides in Dossier.css mean the Latin display lines get -0.035em and Hangul gets 0em, and a Korean gloss inside an English paragraph keeps Hangul metrics. Very few bilingual products bother.
-- The cold band is an authored idea, not a fallback: a fenced strip below the graph, a dedicated caption, and parallel-record lines that visibly stop short and terminate in a hollow ring rather than landing on the person. The concept is right even where the execution misses.
-- The source photographs are a genuinely uniform set — one pale blue-grey seamless, frontal, black wardrobe, near-identical head size — so the tone pipeline is solving a smaller problem than it was written for, and the wall does read as one cast rather than twenty sources.
-
-### Defects
-
-#### [blocker] Every portrait carries a pale keying fringe around hair and shoulders
-`src/graph/portraits.ts`
-
-*Evidence:* scratchpad z-max.png and the 1.6× / 1.8× crops z1.png (Park Ji-min), z2.png (Lee Tae-gyun), driven live at localhost:5173
-
-**Wrong:** The backdrop matte (KEY_PERP_IN 12 → KEY_PERP_OUT 32, composited source-over toward PHOTO_SEAT_INK) leaves the anti-aliased boundary pixels between hair and seamless only partly keyed. At 1× the residue is a 1px line; at max zoom, where the disc reaches ~608 device px from a 300px source, it becomes a 3–5px light outline that traces the entire silhouette. In my max-zoom capture Lee Tae-gyun is outlined in pale grey along his hair, ear, jaw and left shoulder, with a bright cloudy patch over the top-right of his hair; Park Ji-min is outlined down both sides of her hair and across her collar. The effect is a badly cut-out sticker pasted on black.
-
-**Matters:** The photograph is now the WHOLE of a node's identity — no mark is drawn anywhere. A halo that reads as a compositing artefact turns twenty real people into twenty clip-art cutouts, and it is on all twenty, on every surface, at any zoom above about 1.3×. It is the single most visible thing in the app once you scroll in, and it directly contradicts the product's claim to be a considered, verified document.
-
-**Fix:** Erode the keyness field by one pixel at KEY_PX before building the mask (a 3×3 min filter over `kn`), and change the edge treatment from a source-over composite toward PHOTO_SEAT_INK to a multiply/darken on the ramp band only, so a 40%-keyed hair pixel is darkened by 40% rather than tinted 40% toward a flat ink. Also widen KEY_PERP_OUT from 32 to ~44 so the ramp covers more of the mixed edge and each pixel moves less.
-
-#### [blocker] Opening the dossier pushes four of the twenty people off-screen; the camera never refits
-`src/graph/GraphCanvas.tsx`
-
-*Evidence:* 04-dossier.png, 06-dossier-connections.png, 27-en-dossier.png, 15-rail-closed.png
-
-**Wrong:** The dossier is a fixed 530px right panel that overlays the canvas without changing the camera. In 04, 06 and 27 the panel sits directly on top of Kwak Beom's node (only his dimmed label survives, orphaned at x≈1383), and the whole cold band — Kang Ji-hoo, Shin Seung-yong, Choi Yeon-cheong — is sliced by the bottom edge and the status bar, discs cut roughly in half. Compare 02, where all twenty are fully visible. The same non-refit is why 15-rail-closed leaves the bottom 45% of a 1250px frame as dead black while the blob stays where the with-rail fit put it.
-
-**Matters:** Clicking a node is the primary interaction. It costs the reader 20% of the cast, including the exact three people the cold band exists to explain, and it does so silently. Compositionally it turns a deliberately balanced frame into an off-centre blob with a panel bolted onto it — which is the charge this design has to answer.
-
-**Fix:** Make the canvas's effective viewport rect a prop (inset right by the panel width, bottom by the status bar) and re-run the fit-to-extent transform with an eased 420ms tween whenever that rect changes — on dossier open/close and on rail toggle. The graph should visibly slide left and settle, not sit still and get covered.
-
-#### [major] 300px sources at 2.03× upscale: faces go waxy while the rings stay hairline-crisp
 `public/portraits/README.md`
 
-**Wrong:** At maximum zoom Park Ji-min's disc measures ~608 device px across, driven from a 300×300 WebP — a 2.03× upsample. Skin goes plastic, WebP blocking is visible on her forehead and cheek, individual hair strands smear into blobs, and eyelashes disappear. The damage is unmissable because the vector furniture drawn on the same plate — the 4px archetype ring, the season arcs, the rim ticks — is resolution-independent and razor sharp. Soft photo inside a perfect ring reads as a broken asset, not as a style.
+**What is wrong.** The tone correction does its job — the wall does read as one exposure — but the framing does not. At 4× (scratchpad/j-tile-tae.png) 이태균's hair is clipped by the top of the disc; in the same gallery row (scratchpad/c-gallery-top.png) 이상민 sits noticeably smaller with clear headroom, and 박지민's hair grazes the rim. Head size varies by roughly 15% of the disc diameter across the three, and the eye-line sits at three different heights.
 
-**Matters:** Zooming in is the app's reward loop: you scroll toward a face to look at a person. The one moment the product invites close attention is the moment its central asset falls apart.
+**Why it matters.** The disc is a repeated frame twenty times over on the cast wall (shots/24-gallery.png, shots/29-en-gallery.png). Inconsistent head size inside a repeated circle is the single loudest signal that the images came from twenty sources — louder than exposure, which has been solved.
 
-**Fix:** Either ask the owner for 600×600 sources (20 × ~14KB at the same 0.4bpp — a rounding error next to the fonts), or clamp the plate's maximum photo diameter to ~1.35× the source's device resolution (about 400 device px) and let the rings, ticks and caption keep growing past it. A disc that stops growing reads as a deliberate cap; a disc that keeps growing and dissolves reads as a bug.
+**Fix.** Add a crop normalisation to the source pass: detect the face box, place the pupils at a fixed fraction of the disc diameter from the top (~0.40) and set head width to a fixed fraction (~0.52), then re-crop. This is a one-off on the twenty source files, not runtime work.
 
-#### [major] The design-system colour channel is dead code and two of its values are the retired ones
-`src/styles/tokens.css`
+### [minor] Names in the seasons layout's "no prior season" cluster sit between two rows of faces
 
-*Evidence:* tokens.css:222,226,280–284 vs palette.ts:49–103; grep for consumers returns zero hits outside tokens.css
-
-**Wrong:** `--c-esports: #6f87cf` and `--c-poker: #c8a85b` are still the exact values that src/graph/palette.ts spends 40 lines of docblock explaining were fatal — the first ΔE 2.9 from `--s2` (an esports player's archetype ring and his season-2 arc as one colour on the same plate), the second ΔE 10.3 from `--brass` (five gold discs where there are two champions). tokens.css also still carries a 'STILL BROKEN, on purpose' paragraph describing a bug that palette.ts fixed. And `grep -rn '\-\-c-\|--r-\|--s1\b' src/ --include=*.css --include=*.tsx | grep -v tokens.css` returns nothing: not one of the twenty-four archetype/relationship/season variables is read by any component. Every coloured surface goes through palette.ts inline styles.
-
-**Matters:** The prompt calls tokens.css 'THE design system'. It is now a file that declares two retired colours, documents a solved collision as unsolved, and is consumed by nothing. The next person to add a chip will reach for `var(--c-esports)`, get the season-2 blue back, and reintroduce by hand the exact collision the codebase congratulates itself on fixing.
-
-**Fix:** Either delete the `--c-*` / `--r-*` / `--s*` blocks and the stale prose outright, leaving palette.ts as the single source; or generate them from palette.ts at build time and route the DOM surfaces back through the variables. Do not leave a design token file whose colour section is both wrong and unread.
-
-#### [major] The cast wall shows 68px faces in 299px columns, and the face reads as indented
-`src/components/Gallery.css`
-
-*Evidence:* 24-gallery.png, 29-en-gallery.png, crop c4.png
-
-**Wrong:** In 29-en-gallery the portrait disc measures ~68 CSS px across inside a ~299 CSS px column: 23% of the column width, ~5% of its area. Everything else is empty ring-space out to the rim ticks at ~123 CSS px. Separately, the plate is left-aligned by its INVISIBLE extent — the outermost tick lands at x = the name's left edge — so the visible photo starts 27 CSS px inboard of 'Lee Sang-min' below it. Four cards in a row all show a face that looks accidentally indented from its own caption.
-
-**Matters:** This is the one screen whose entire job is 'look at twenty faces'. After twenty real photographs were supplied, the wall still presents them at command-palette thumbnail scale, and the one alignment a reader can actually perceive is wrong. It is the largest unclaimed win in the product.
-
-**Fix:** Take the photo disc to ~140 CSS px and the tick extent to ~185 in the gallery only (the plate geometry already parameterises radius), and align the plate on the OPTICAL form: set the photo disc's left edge flush to the text column's left edge and let the ticks overhang into the gutter. Optical alignment beats bounding-box alignment whenever the bounding box is invisible.
-
-#### [major] The parallel-record stubs point at nobody: terminators don't align with the cold people
 `src/graph/render.ts`
 
-*Evidence:* 02-graph-default.png, crop c3.png
+**What is wrong.** In shots/08-seasons.png the eight people with no prior season sit in a tidy two-row lattice inside their ellipse, but the labels alternate sides with no pattern. 최연청's label at (1505,951) is 69 px above its own disc (1505,1020) and only ~16 px below 이관희's disc (1410,935) — it is nearer, vertically, to the wrong row. 신승용's label at (1315,972) sits in the same gutter between 김유현's disc and its own. 강지후, 곽범 and 김남희 take yet other seats.
 
-**Wrong:** Three teal dash-dot lines descend from the connected cluster and terminate in small hollow rings on the cold band's fence. Measured in 02 the terminators sit at x ≈ 848, 1035, 1190 while Kang Ji-hoo, Shin Seung-yong and Choi Yeon-cheong sit at x ≈ 828, 1080, 1352 — the third is 162px off. There is nothing linking a stub to a person. In the same band, the three captions sit on three different baselines (강지후 y≈865, 신승용 y≈823, 최연청 y≈890) and at three different offsets (below-left, below-centre, below-right) for three items in one deliberately composed row.
+**Why it matters.** Same failure mode as the cold band and the same reason it matters: with no mark on the plate, the caption is the identification. In an anchored lattice — where the app knows the positions exactly, unlike the free web layout — a name landing in the gutter between two rows is unambiguously solvable and currently is not.
 
-**Matters:** The whole point of the cold band is to make ONE distinction legible: 'same record, never met' is not a tie. The picture currently says 'three lines stop at a fence, and three people stand behind it' — the pairing has to be guessed or clicked for. And a row of exactly three whose captions land on three baselines reads as ragged rather than as a set, which undercuts the band's status as an authored object.
+**Fix.** In anchored modes, seat labels by row rather than per node: every disc in a lattice row takes the same side and the same offset, resolved once for the row. The solver already has the cluster membership it would need.
 
-**Fix:** Give each parallel edge a fixed terminator x equal to its cold person's node x, so the stub sits directly above the face it refers to and the vertical gap becomes the meaning. In the cold band only, lock every caption to one shared baseline directly under its disc — ignore the collision-avoidance placer, there are no collisions in a three-item row.
+### [minor] Mobile filter-rail controls are below the touch-target floor
 
-#### [major] By-archetype is not composed: orphan labels, eleven groups, three indistinguishable greens
-`src/graph/layout.ts`
-
-*Evidence:* 09-archetype.png
-
-**Wrong:** Eleven enclosures of wildly different radii overlap in a way no reader can parse. Two group labels have no visible enclosure at all — '기타 · 1명' at (627,726) and '포커 플레이어 · 2명' at (866,793) float as a dot plus a caption in empty canvas. Label anchoring is arbitrary: some sit above their circle, some far to the left, some outside at the frame edge. And three of the eleven swatches are effectively one hue — 전문직 #89996e, 운동선수 #569c8b and e스포츠 #8fae52 are three greens on one screen, next to 크리에이터 #c46390 and 배우 #d199b0, two pinks.
-
-**Matters:** It is one of four top-level modes, presented as a peer of the default view, and it looks generated rather than designed. A categorical palette cannot carry eleven members at 8px dot size no matter what the pairwise ΔE says — ΔE 21.8 between two olives is a lab number, not a perceptual one at that scale on a dark ground.
-
-**Fix:** Collapse the eleven archetypes to five or six presentation groups for this mode (the singletons — comedian 1, creator 1, actor 1, other 1 — merge into one 'other' enclosure) and anchor every group label to the same clock position on its own circle, e.g. always tangent at 12 o'clock. Never draw a group label whose enclosure isn't on screen.
-
-#### [major] By-season: muddy triple-overlap fill and a fourth group drawn to a different rule
-`src/graph/layout.ts`
-
-*Evidence:* 08-seasons.png
-
-**Wrong:** Three tinted ellipses (purple S2, green S1, amber S3) overlap heavily, and where all three cross — around 박지민, dead centre of the frame — the additive fills composite to a murky mustard-brown that belongs to no token and reads as a rendering fault. The fourth group, '이전 시즌 없음 · 8명', is drawn as a stroke-only ellipse with no fill, so it is visually a different KIND of object from its three siblings. Group labels are anchored top-centre (S2), bottom-left-outside (S1) and right-edge (S3) — three different rules. Long dashed edges run from the bottom group straight through all three ellipses, so no enclosure actually encloses anything.
-
-**Matters:** The most attractive idea in the mode — you can see who overlaps whom — is destroyed by the one place the overlap is greatest going brown. And a fourth peer group drawn to a different spec tells the reader it means something different, which it doesn't.
-
-**Fix:** Composite the enclosure fills with `globalCompositeOperation = 'lighter'` capped, or better: drop the fills entirely and carry membership on the stroke plus a season pip on each node's caption. Give the no-prior-season group the same fill treatment as the other three at the same alpha, and anchor all four labels tangent at the same clock position.
-
-#### [major] At high zoom the caption is set into the plate's ring band and a hairline crosses it
-`src/graph/render.ts`
-
-*Evidence:* scratchpad z-max.png, crop z1.png
-
-**Wrong:** At max zoom 'Park Ji-min / MBC announcer' is drawn between the photo edge and the plate's outer hairline ring, with no gutter and no scrim — the outer ring arc passes visibly behind and through the descender zone of 'MBC announcer', and a second ring skims the cap-height of 'Park Ji-min'. Meanwhile Lee Tae-gyun's caption in the same frame is set well outside his plate to the left, and Jung Keun-woo's above. Three captions, three different relationships to the plate.
-
-**Matters:** With no mark drawn on any disc, the caption is the entire identification — the code's own comment says as much. Setting it into a band that two hairlines cross, without a scrim, is the one place the type must not be compromised, and the inconsistency across three adjacent nodes makes it look like a placement bug rather than a rule.
-
-**Fix:** Add the caption's own rect to the plate-extent solver as an exclusion so no ring is drawn through it, or paint a 6px radial scrim (alpha 0.75 of --bg-base) behind the caption box. Whichever slot the placer picks, keep a minimum 8px clear of every ring stroke.
-
-#### [major] Residual disc backdrops land on visibly different values person to person
-`src/graph/plateGeometry.ts`
-
-*Evidence:* scratchpad z-max.png, crops z1.png and z2.png
-
-**Wrong:** PHOTO_WALL_TARGET is solved to a median, so the outcome is a spread, not a value — and at zoom the spread is plainly visible. In one frame Park Ji-min's disc interior is a cool olive-grey with a lighter aura around her head, Lee Tae-gyun's is a warm mid brown-grey noticeably lighter overall, and Jung Keun-woo's is greenish-dark. Side by side at ~300 CSS px each they read as three different plates.
-
-**Matters:** The brief's own test is 'is the correction visible as a correction'. Here the answer is yes twice over: the halo and the residual level. The elaborate two-band solve is buying set-level consistency at 1× and losing it exactly where the reader is looking hardest.
-
-**Fix:** After the matte solve, run a second per-image trim on the KEPT wall pixels — solve a small additive offset so each disc's matted region lands within ±4 luma of PHOTO_WALL_TARGET rather than only its median. Cheap: the samples are already retained in wallSamplesOf.
-
-#### [minor] No optical size compensation on mixed Hangul/Latin runs
-`src/styles/tokens.css`
-
-*Evidence:* 27-en-dossier.png, 28-en-dossier-scrolled.png
-
-**Wrong:** Tracking is handled per-language (--tr-display-latin vs --tr-display-ko, the :lang() overrides in Dossier.css) but size is not. Hangul syllable blocks in Pretendard fill nearly the full em; Inter's cap-height is 0.727em and x-height 0.52em. At the same px they are not the same optical size. In 27-en-dossier the grey secondary '前 프로게이머 · 프로 포커 플레이어' visually matches the white primary 'Former StarCraft professional · professional poker player' above it despite being smaller and dimmer, and on the 'Known as 콩 · 폭풍저그' line the Hangul value out-shouts its own Latin label.
-
-**Matters:** In English mode the Korean gloss is meant to sit UNDER the English. It doesn't — it sits alongside it, so the hierarchy the panel was designed with inverts for every English reader on every mixed line.
-
-**Fix:** Add `font-size-adjust: 0.52` on Latin-primary containers, or simpler and safer: an explicit `[lang='ko'] { font-size: 0.92em }` on inline Korean runs inside `:lang(en)` blocks, mirrored by `[lang='en'] { font-size: 1.05em }` inside `:lang(ko)`. One rule pair fixes it everywhere.
-
-#### [minor] The hover card occludes four nodes and never flips
-`src/components/HoverCard.css`
-
-*Evidence:* 03-hover.png
-
-**Wrong:** In 03-hover the card describing 홍진호 is placed down-and-right of the cursor and covers 이태균 (his label survives as a clipped '|태균'), 박지민 and 정근우 entirely, plus a slab of the edge bundle it is describing.
-
-**Matters:** The card's job is to help you decide where to look next, and it hides the candidates. It also occludes the arrowheads on the betrayal edges leaving the hovered node — the exact marks it is annotating.
-
-**Fix:** Flip the card to the side of the cursor with more free canvas (measure the node quadtree's occupancy in each of the four quadrants around the pointer), and offset it perpendicular to the hovered node's densest edge bundle.
-
-#### [minor] Gallery: the archetype word is printed twice within 60px, in two colours
-`src/components/Gallery.tsx`
-
-*Evidence:* 29-en-gallery.png, crop c4.png
-
-**Wrong:** On Lee Sang-min's card the role line reads 'Broadcaster · former leader and producer of Roo'Ra' in grey, and 60px below it the metadata rule is labelled 'Broadcaster' again in #6da3ba. Same on Park Ji-min. Adjacent to that blue label, the season pip at the right end of the rule is --s1 #367f45 pine green, while Jung Keun-woo's card puts --c-athlete #569c8b teal beside the same pine-green pip — two greens, two channels, 320px apart on one hairline.
-
-**Matters:** Duplicated words read as a template bug and cost a line of a card that is already 90% empty ring. The green-on-green adjacency is the one place in the app where two channels are forced into the same eye-span.
-
-**Fix:** Strip the leading archetype token from the role string when the metadata rule below already carries it. Move the season pips off the archetype rule onto the record line below, where the S1/S2/S3 labels already live and where the pine green has a matching '$S1' label to anchor it.
-
-#### [minor] Mobile: 26% of the viewport is chrome and the language switch is the loudest control on screen
-`src/components/TopBar.css`
-
-*Evidence:* 21-mobile-graph.png, 22-mobile-dossier.png, 20-mobile-intro.png
-
-**Wrong:** At 390×844 the top bar is two stacked pill rows totalling ~216 CSS px before any content — 26% of the viewport. Within that, the 한국어|EN toggle is a filled bone-coloured pill (--accent at full value, 12.9:1) and is the brightest, largest object on the entire screen, larger than search (icon-only circle) and heavier than the four layout tabs it sits above.
-
-**Matters:** On the one form factor where every pixel of canvas counts, the control a reader touches once per session is the visual anchor, and the graph gets 620px of a 844px screen.
-
-**Fix:** Collapse the language switch on mobile to a single 'KO'/'EN' ghost chip at --ink-mid, and merge the two rows: layout tabs left, the four utility icons right, one 56px bar. That returns ~160px of canvas.
-
-#### [nit] Command palette: the bottom scrim fades a fully-visible result row to unreadable
-`src/components/CommandPalette.css`
-
-*Evidence:* 11-palette-typed.png, 10-palette-empty.png
-
-**Wrong:** In 11-palette-typed the last row (이진형) is entirely inside the panel — nothing is clipped — yet a bottom fade drops it to roughly 35% opacity, taking its 우승 badge and its 시즌 2 chip to near-invisible. The scrim's start point is ~90px too high.
-
-**Matters:** A fade that means 'there is more below' is being read as 'this row is disabled'. The 32px avatars in the same list are also too small to resolve a face and read as coloured smudges beside otherwise strong typography.
-
-**Fix:** Start the mask gradient at the panel's scroll edge minus 24px, not minus 110px, and floor the fade at 0.55 opacity. Take the palette avatars to 44px so the photo resolves, or drop them to a bare 10px archetype dot and let the type carry the row.
-
-#### [nit] Four of the supplied screenshots do not show the state they are named for
-`tools/shots.mjs`
-
-*Evidence:* shots/07-orbit.png vs 02, shots/23-path-trace.png vs 07, shots/16 vs 17
-
-**Wrong:** 07-orbit.png shows the Web tab active and is the default web layout, not orbit. 16-zoomed-in.png and 17-zoomed-out.png both show a search filter ('시즌', 14/20) at near-identical zoom, not a zoom range. 23-path-trace.png is pixel-identical in composition to 07 with no path highlighted. The capture script's state setup is silently failing for those four.
-
-**Matters:** Two of the four layout modes and the headline path-trace feature cannot be reviewed from the deliverable screenshot set. I had to drive the app to see max zoom, and I still could not reach a verified orbit or path-trace state — which means nobody reviewing from shots/ has ever looked at them.
-
-**Fix:** In tools/shots.mjs, assert the expected state before each capture (e.g. wait for the Orbit tab's aria-selected, wait for the PathCard to mount) and fail the run rather than shooting whatever is on screen.
-
-
----
-
-## reviewer 3 — 5/10
-
-**Verdict:** The choreography is beautifully reasoned and, once the app has been idle for ~4.5 seconds, genuinely excellent — but the two set-piece moments (the cold open and the curtain-up) are delivered in two to four frames if the reader presses ENTER when the UI invites them to, the command palette's entrance never renders a single intermediate frame, the cold open's countdown hairline never starts, and the dossier's cascade runs bottom-to-top.
-
-**Biggest single win:** Give the warm pass a deadline and stop gating it on the camera. Remove `!tweenRef.current` from `warmable` (a mount frameArrival tween has nothing to do with whether the label solve and plate cache are warm — and it is the mount's own DUR.cine tween that blocks it), run the first two passes immediately with fallback metrics instead of waiting on `document.fonts.ready` for all three, and have GraphCanvas publish an `onWarm` callback that App holds `revealArmed` on with a ~400ms ceiling. That one change is the difference between a 1.3s entrance delivered in 26–39 frames and the same entrance delivered in 2.
-
-### Working
-- Settling is exemplary: traced on the production build, the free web mesh reaches rest ~256ms after the entrance and `restRef` never flips back — meanErr held at 23.59 for six straight seconds with zero repaints. No jiggle, no overshoot, no d3 alpha tail. The ARRIVE_MS landing / BRAKE_MS brake pair does exactly what its comment claims.
-- Layout-mode transitions run at a flat 60fps: web→season 126 frames in 2.6s at median dt 17ms, season→archetype median 17 / p90 17 / max 66. Both arrangements arrive at ~931ms and stop. That is a hard thing to do with twenty force-simulated bodies and it is done.
-- The idle gate is real and correct — a rested scene stops painting entirely, and the `visibilitychange` / `onPortraitLoad` wake-ups are all wired. An atlas left open in a tab costs nothing.
-- Reduced motion is honoured properly and end-to-end: countdown element absent, hint copy swapped, canvas mode changes teleport in one frame (17ms) rather than easing, and the canvas honours the flag itself rather than leaving a 420ms ease under a UI that snaps.
-
-### Defects
-
-#### [blocker] The entrance collapses to 2–4 frames if ENTER is pressed early — the warm pass has no deadline and is blocked by the mount's own camera tween
-`src/graph/GraphCanvas.tsx`
-
-**Wrong:** `warmable = fontsReadyRef.current && sizeRef.current.w > 2 && !tweenRef.current` (the reveal-scale block in the render loop, ~line 2384). The mount fires `frameArrival()` → `setTween(..., DUR.cine)`, and the debounced refit and every `sizeVersion` bump re-issue one, so `tweenRef.current` is non-null for seconds after mount. Measured on the production preview, headed, real GPU, 1440×900 @dpr2: the camera tween was live from the first frame the debug hook existed (533ms) until 2500ms, and the three warm passes only completed at 3300ms. Four runs pressing ENTER at 1700ms — 300ms after the CTA has finished arriving — gave warmAtEnter=0 on three of four, and those three delivered the whole 1.3s entrance in 2 / 35 / 36 frames with median dt 500ms in the worst case and only 1, 2 and 4 frames respectively showing a partially-faded curtain. `sweepAt` (which SWEEP_AT is supposed to pin at 291ms) landed at 100ms, 550ms and undefined. The same four runs with a 4500ms wait gave warmAtEnter=3 every time, 26–39 frames of visible fade, 22–35 frames of visible sweep, and sweepAt 283–333ms.
-
-**Matters:** The entrance is the piece this codebase has re-tuned across four rounds — SWEEP_AT, DRAW_SPAN, DRAW_DUR, REVEAL_DPR, the bearing-ordered sweep, the whole chromeReady deferral — and whether any of it renders is decided by how long the reader happened to wait. The cold open's own CTA lands at 1400ms and the copy offers four ways out, so pressing early is the invited behaviour. Those readers see black, then one dim half-composed frame, then the finished graph: no curtain, no mesh growing outward from the hub. Previous round filed the reveal frame budget (CRITIQUE.md line 563) and the warm pass is the fix that landed for it; it lands only for readers who wait.
-
-**Fix:** Drop `!tweenRef.current` from `warmable` — the warm pass exists to compile the label solve, the measureText cache and the plate ladder, none of which care where the camera is. Split the fonts gate: run two passes immediately and re-run the third on `fonts.ready`. Then close the loop from the other side: publish an `onWarm` callback beside `onEntranceDone`, and in App.tsx hold `setRevealArmed(true)` until it fires or 400ms have passed, whichever is first, so `reveal` never starts against an uncompiled painter. Assert it in the harness: `__atlasDebug.intro().warm` must equal WARM_PASSES on the frame `reveal` first exceeds 0.
-
-#### [blocker] The command palette's 180ms entrance never renders — the animations sit pending for 1.13s and then jump to finished
-`src/components/CommandPalette.css`
-
-**Wrong:** Traced per rAF on the production build, headed, dpr 1, with the graph at rest: `.cp__dialog` enters the DOM 171ms after the Ctrl+K keydown, then `cp-dialog-fade` and `cp-dialog-lift` report playState 'running' with `currentTime: 0` and computed `opacity: 0`, `transform: matrix(0.98,…)` for 1133ms — through samples at t=171, 1021 and 1054 — and at t=1304 both are suddenly 'finished' (currentTime 90 and 180). Frame gaps after the keydown on a first open: 517, 401, 66, 167, 150ms. The cause is two new backdrop-filter layers over a live full-viewport canvas (`.cp__scrim` blur(9px) and `.cp__dialog` blur(26px) saturate(1.2)) forcing a full backdrop snapshot before the first animated frame can run — the exact trap HoverCard.css documents at the top of its own file. Same measurement on G (gallery): 584ms gap at keydown then 100/233/83/233. On ? (about sheet): 100/350/167.
-
-**Matters:** The palette is the app's keyboard-first entry point and the one surface whose CSS carries the longest reasoning in the file — the 90ms lead, the separated fade and lift, the anti-'two typographic layers' argument. None of it is ever on screen. What the reader gets is a dead second after Ctrl+K and then a fully-formed drawer appearing between two frames, which reads as a hang, not as an opening. Every full-screen glass overlay in the app has the same fault.
-
-**Fix:** Warm the layer the way HoverCard already does: keep the scrim and dialog mounted at `opacity: 0.008` / `visibility: visible` for two frames on app mount (or on first focus of the search shortcut) so the backdrop snapshot is paid before the reader asks for it. Cheaper and probably better: drop `backdrop-filter` from `.cp__scrim` entirely — it sits under a 96%-opaque dialog and a 74% void wash, so it is buying almost nothing — and promote the dialog with `will-change: transform, opacity` before the open. Assert the fix: `document.querySelector('.cp__dialog').getAnimations()[0].startTime` must be non-null within one frame of mount.
-
-#### [major] The cold open is a slideshow: the title mask-rise and the kicker wipe get zero to one intermediate frame
-`src/components/Intro.css`
-
-**Wrong:** Sampled per rAF on the production preview, headed: frame gaps through the first 2.2s of the cold open were 433, 333, 267, 250, 233, 83, 200, 200, 66ms. Against that budget, `.intro__title-in` (intro-rise, 700ms from translateY(108%), delay 180ms) was measured at translateY(100.733px) at t=0, still 100.733px at t=696, and 'none' by t=1829 — not one intermediate value. `.intro__kicker` (intro-kicker, 900ms clip-path wipe, delay 620ms) read inset(0 100% 0 0) at t=696 and inset(0 0.466% 0 0) at t=1829: one frame of a 900ms wipe. `.intro__line` (820ms) got three. The blocking work is React mounting App → GraphCanvas, whose simulation effect runs `for (let i = 0; i < 190; i++) sim.tick()` synchronously alongside the force construction, the layout solve and the i18n tables, all on the main thread the intro is trying to animate on.
-
-**Matters:** This is the product's first impression and its most expensive gesture — a masked wordmark rising behind a crimson rule. It is not seen. The reader gets the composed final card in one step, which makes the 2.6s of scheduling in this file, and the whole #preboot handoff apparatus above it, invisible work.
-
-**Fix:** Get the graph's construction off the intro's critical path. Chunk the 190-tick pre-settle across rAF (20 ticks a frame) or move it behind a `requestIdleCallback`, and defer mounting GraphCanvas until two rAFs after the Intro has committed — the canvas is behind an opaque curtain for 4.5s and has no reason to compete for the frame the wordmark is rising in. Verify with the same per-rAF sampler: `.intro__title-in`'s transform must take at least 20 distinct values between mount+180ms and mount+880ms.
-
-#### [major] The cold open's countdown hairline never starts, so the auto-advance is armed ~1.8s late off an animation that is still pending
-`src/components/Intro.tsx`
-
-**Wrong:** `intro-countdown` is created with `transform: scaleX(0)` and `animation-fill-mode: both`, and it does not get a start time. Measured headless on the production build: the element existed by t=2951 and the animation reported `playState: 'running'`, `pending: true`, `startTime: null`, `currentTime: 0` until t=4717 — 1.77 seconds — before finally starting. Headed on a real GPU it was still `pending: true, startTime: null` at t=6149. The arming effect (lines 171–200) does `void anim.ready.then(() => arm(anim.currentTime))`, so the 4500ms auto-advance timer does not begin until that late resolution, and it begins from currentTime ≈ 0. Net effect measured: the bar's own 1400ms delay also starts late, so the hairline reads scaleX(0) — completely empty — for roughly the first 3 seconds of the window it is supposed to be reporting, and the screen changes at ~6.3s rather than the 4500ms the constant names.
-
-**Matters:** The file's own comment is explicit that this bar is not a picture of the timer, it IS the timer's clock, and that it exists so the reader is never surprised by an involuntary transition. Both halves fail: the readout under-reports (an empty rule says 'plenty of time' for three seconds), and the promise in the hint line — 기다리면 저절로 열립니다 — is honoured almost two seconds late. It is the same class of error the odometer was deleted for: a control that is false while it is on screen.
-
-**Fix:** Do not read the clock off an element that Chromium can refuse to paint. Either give the bar a non-zero resting footprint (animate `width` from 1px, or scaleX from 0.001, or animate `clip-path` on a full-width rule) so it is painted and the animation can start, or — better — make the timer authoritative in JS: arm a `performance.now()`-based interval at mount, drive the bar from `anim.currentTime = elapsed` (or from a CSS variable), and keep `anim.ready` only as a sanity check. Assert: `getAnimations()[0].startTime` must be non-null within 100ms of the Intro's first paint.
-
-#### [major] The dossier's section cascade runs bottom-to-top — the below-the-fold sections arrive ~250ms before the two above them
-`src/components/Dossier.tsx`
-
-**Wrong:** `SECTION_TAIL` (line 233) carries no delay at all, while `SECTION_BY_SLOT` gives slot 2 a 220ms delay and slot 3 a 285ms delay. Since `.dsr-sec` elements 3 onward take the tail, they start first. Traced per rAF on the production build, second click: at t=360ms the six visible `.dsr-sec` opacities read [0.038, 0, 0.791, 0.791, 0.791, 0.791] — the credentials/record/faced blocks are four-fifths in while the lineup and bio blocks above them are at 0.04 and 0. Lineup does not reach 1 until ~479ms and bio not until ~512ms. First click is worse: [0, 0, 0.544, 0.544, 0.544, 0.544] at t=527.
-
-**Matters:** A staggered entrance's whole job is to give the eye a reading order, and this one gives it the reverse of the reading order. The panel visibly fills from the middle down and then pops two blocks in above what the reader has already started reading, which pushes the text they were looking at. The comment justifying the change ('nothing below the fold is being watched arrive') is true of the delay but not of the ordering it produced — on a 900px window all six of these sections are on screen.
-
-**Fix:** Give the tail the last slot's delay measured from its own mount rather than dropping it: `SECTION_TAIL.show.transition.delay = SECTION_LEAD + (SECTION_SLOTS - 1) * SECTION_STEP - TAIL_COMMIT_OFFSET`, with the offset measured once (~33ms, two frames) — or simplest, hold the body render until the tail is ready so header and tail commit together and the ordered stagger works as originally written. Assert in the harness: the opacity of `.dsr-sec:nth-of-type(1)` must be greater than or equal to `.dsr-sec:nth-of-type(4)` on every sampled frame of the entrance.
-
-#### [major] Every mode change drops the region scaffolding to ~0.32 and hard-swaps identity at the bottom of the dip
-`src/graph/GraphCanvas.tsx`
-
-**Wrong:** `regionPainted = Math.max(exitAlpha, regionAlpha)` with `REGION_CROSS_CAP = 0.35` puts a floor under the crossing but the two sets still take the slot in turn — `clusters: exitHoldsSlot ? exitClustersRef.current : clustersRef.current`. Measured per rAF on the production build: web→by-season painted alpha ran 1 → 0.979 → 0.901 → 0.514 → 0.331 (t=178) → 0.563 → 0.848 → 1; by-season→by-archetype ran 1 → 0.984 → 0.558 → 0.464 (t=176) → 0.741 → 1. So on every mode switch the ellipses and captions fade to a third, the set of shapes on screen is replaced in a single frame at that alpha, and the new set brightens back. The file's own HANDOFF note on REGION_CROSS specifies the real fix (per-cluster `Cluster.at`, both sets painted together) and it is not implemented.
-
-**Matters:** The reason the crossing was tuned at all is that the frame the reader most needs is 'these circles are about to become those circles'. A dip to 0.32 with a hard identity swap at the bottom is not that frame — it is a dissolve to near-nothing followed by a cut, and it lands exactly while twenty people are travelling their furthest, i.e. when the scaffolding is the only thing telling the eye where they are going.
-
-**Fix:** Land the handoff the comment already specifies: add `at?: number` to `Cluster`, multiply it into `ra` at the top of `drawClusters`'s cluster loop and into `ctx.globalAlpha` in `drawCaptions`, then hand the painter `[...exit, ...current]` with `at` set from `exitAlpha` and `regionAlpha` respectively. The composite floor then becomes exitAlpha + regionAlpha rather than max(), which never drops below ~0.7, and the old rings dissolve inside the new ones instead of being cut to.
-
-#### [minor] Layout transitions are not legible for the nodes that barely move — path lengths up to 3.7× the straight line
-`src/graph/GraphCanvas.tsx`
-
-**Wrong:** Traced per frame at 1440×900 by sampling every node's screen position through each transition and dividing total path length by net displacement: web→by-season gave 현성주 103px travelled for 28px net (3.69×), 박지민 70/29 (2.41×), 홍진호 265/126 (2.11×); by-archetype→web gave 강지후 551/238 (2.32×), 신승용 448/206 (2.17×), 최연청 823/446 (1.84×). The cause is the ordering in the render loop: the anchor ramp (`settle(dt, 260)`) and the collide/link régime swap fight for the first ~250ms before the ARRIVE_MS landing takes over, so a node whose new seat is near its old one is pushed away and pulled back.
-
-**Matters:** The whole justification for animating a layout change rather than cutting is that the eye can follow an individual through it. A node that travels three and a half times its own displacement does not read as moving from A to B — it reads as scattering and re-forming, which is the failure mode a cut at least does not pretend to avoid. The three cold-band people (강지후, 신승용, 최연청) are among the worst, and they are the ones whose position in the picture carries the most meaning.
-
-**Fix:** Suppress the physics for nodes whose anchor error is already small: in the anchored branch, skip `applyAnchors`/tick contribution and drive straight onto ax/ay via the ARRIVE_TAU exponential for any node with `hypot(ax-x, ay-y) < 2 * radius` from the first frame of the transition rather than only after ARRIVE_MS. Verify with the same detour-ratio measurement — no visible node should exceed ~1.3× on a mode change.
-
-#### [minor] The first hover of a session is still ~60ms and two dropped frames slower than every hover after it
-`src/components/HoverCard.tsx`
-
-**Wrong:** Measured per rAF on the production build with the canvas at rest: first hover — canvas focus lit at 59ms, card opacity > 0.02 at 209ms, full at 242ms, with frame gaps of 133ms and 151ms inside that window. Second hover of the same session — lit at 67ms, card visible at 99ms, full at 182ms, no gaps over 40ms. The two-frame warm at 0.008 opacity paints a shell (`.hovercard__warm`), not the real payload, so the first hover still pays for the person's type, the plate and the layout.
-
-**Matters:** The first hover is the reader's first evidence that the discs answer to the pointer, and it is the slowest one they will ever get — and the 133/151ms stalls make it stutter rather than merely lag. CRITIQUE.md line 605 filed this and it is still measurable, which makes this the second round it has been reported fixed.
-
-**Fix:** Warm with a real payload: mount the card off-viewport at app mount carrying an actual person's data, the actual portrait plate and the longest name string in the current language, let it lay out and decode once, then hide it. The target is the first hover landing within 15% of the 182ms steady state, and that assertion belongs in the shots harness.
-
-#### [nit] Intro.css calls the kicker wipe 'a compositor-only wipe'; clip-path animations are not composited in Chromium
-`src/styles/../components/Intro.css`
-
-**Wrong:** The comment above `.intro__kicker` (line 213–220) says 'The reveal is a compositor-only wipe now: clip-path and opacity, no layout', and the rule declares `will-change: clip-path, opacity`. Chromium does not run clip-path animations on the compositor — they are main-thread paint-level, and `will-change: clip-path` does not promote them. Measured consequence in the capture above: the 900ms wipe was delivered with one intermediate value.
-
-**Matters:** Not the wipe's fault that it stutters — the main thread is the real problem — but the comment is the reason nobody looked again, and it will mislead the next person deciding where the cold open's frame budget is going.
-
-**Fix:** Either correct the comment to 'no layout, but still main-thread paint', or make the claim true by wiping with a `transform: translateX` on a mask element inside an `overflow: hidden` wrapper, which genuinely is compositor-only and reads identically at this size.
-
-
----
-
-## reviewer 4 — 6/10
-
-**Verdict:** The plate engineering, token system and bilingual typography are flagship-grade, but on the default mobile view three of twenty captions sit under somebody else's face, captions are painted for nodes that are off-screen or hidden behind the dossier, and the photographic plate intermittently reverts to a text mark — identification failures in a product whose whole job is identification.
-
-**Biggest single win:** Make a misattributed caption impossible rather than merely expensive in src/graph/render.ts: run the seat ranker once with MISSEAT = Infinity, and only fall back to the priced version if every one of the sixteen slots is a lie — and when it does fall back, stroke the leader hairline unconditionally (in a colour that is not the same grey as the 'same season' edge). That one change fixes the three wrong-face names on the default mobile view, which is the only defect here that makes the app state something untrue.
-
-### Working
-- The photographic plate itself is the best thing here: the per-image tone solve, the chromaticity-keyed backdrop matte and the solved seat depth genuinely make twenty sources read as one set — in shots/24 and shots/29 the wall does not look like twenty photographers, and the correction is invisible as a correction.
-- The bilingual treatment is disciplined and consistent almost everywhere: primary/secondary swap correctly in the dossier, the cold-band caption, the gallery group heads and the status bar, and the Korean never becomes a footnote in EN (shots/27).
-- Numbers are genuinely tabular — .tnum is applied in 45 places, the filter counts, ledger placements and 'N ties' columns all align, and the mono keycaps use slashed-zero. This is the detail most projects skip.
-- tokens.css is a real design system, not a colour list: the --rad-* rename carries a written rationale, and the deprecation comment on the old aliases is honest about its own debt.
-
-### Defects
-
-#### [blocker] On mobile the default view puts three names under the wrong faces
-`src/graph/render.ts`
-
-**Wrong:** At 390x844 (shots/21-mobile-graph.png, and reproduced live — see the crop I captured of the 0–290 × 230–480 CSS region): 'Choi Hye-sun' is seated directly below the purple-ringed male disc that is Seo Chul-gu, ~65px from his centre and ~196px from her own pink-ringed disc; 'Seo Chul-gu' is seated directly below the big gold-ringed disc that is Lee Jin-hyung, 73px from his centre and 97px from his own; 'Hong Jin-ho' sits immediately right of Choi Hye-sun's pink disc while his own yellow-ringed disc is well down and right. Meanwhile Choi Hye-sun's and Hyun Seong-joo's discs carry no caption at all near them. No leader hairline is drawn on any of the three, so there is nothing to correct the reading. render.ts prices this exact failure (MISSEAT, MISSEAT_PX) but MISSEAT is deliberately finite and the code comment promises 'when that happens the leader fires unconditionally' — on mobile it accepts the lie and the leader does not fire.
-
-**Matters:** The brief's own premise is that with the mark never drawn, the caption under the disc is the WHOLE of a node's identification. A reader on a phone — the majority case for a Korean variety-show companion — is told the wrong person's name for three of twenty cast members, on the first screen, with no way to detect it. This is worse than an unnamed node: an unnamed node is a gap, a mis-seated one is a false claim, and this app is otherwise obsessive about not making false claims.
-
-**Fix:** Two changes in the label ranker. (1) Make a misattributed seat unaffordable rather than expensive: if ownerOf(b).who !== null, return Infinity unless every one of the sixteen slots is misattributed — i.e. run a first pass with MISSEAT = Infinity and only fall back to the priced version if the argmin is Infinity. (2) Make the leader unconditional in fact, not just in comment: assert it — whenever the chosen box's nearest disc centre is not the node's own, stroke the leader hairline regardless of the standoff test that currently suppresses it. Verify by asserting in a dev build that for every painted caption, argmin over discs of distance(boxCentre, discCentre) === the caption's own node.
-
-#### [blocker] Captions are painted for nodes that are off-screen or hidden behind the dossier
-`src/graph/render.ts`
-
-**Wrong:** Opening the dossier re-frames the camera and pushes Kwak Beom's disc under the panel, but his caption is still painted just left of the panel edge — a name floating in empty canvas with no disc anywhere near it. Visible in shots/04-dossier.png (곽범 at ~x1410), shots/06-dossier-connections.png, shots/19-laptop-dossier.png and shots/27-en-dossier.png (Kwak Beom at ~x1384). Worse at high zoom: in my max-zoom capture the caption 'Shin Seung-yong / Physician · aesthetic dermatology' is set in full at the left of the viewport with a leader hairline running left and terminating in blank space, because the node is entirely off-canvas. chromeBoxes() correctly treats the dossier as an obstacle for the label BOX, but nothing tests whether the NODE is still visible.
-
-**Matters:** An orphaned name is the one artefact that makes a carefully-built graph look broken. It also actively misleads: in shots/04 the nearest thing to the floating '곽범' is 이태균's disc, so the label reads as a second, contradictory caption for a node that already has one.
-
-**Fix:** In the label pass, drop any node whose disc centre (plus rPhoto) is outside the visible canvas rect, and any node whose disc is more than ~70% covered by a chrome box. You already compute chromeBoxes() and discs — the coverage test is one overlapArea call per node. Nodes the reader cannot see do not need naming.
-
-#### [blocker] The photographic plate intermittently falls back to the name mark
-`src/graph/plate.ts`
-
-**Wrong:** shots/26-en-graph.png — one of the delivered captures — shows SEVEN of twenty nodes rendering the generated mark instead of a photograph: 'Gwan hee', 'Yoo hyun', 'Beom', 'Nam hee', 'Ji hoo', 'Seung yong', 'Yeon cheong'. All seven are the smallest-radius nodes; the thirteen large ones are photographed. I reproduced it live at 1280x800: after opening the cast wall with G and closing it, Shin Seung-yong and Choi Yeon-cheong lost their photographs and reverted to 'Seung yong' / 'Yeon cheong' text discs, and stayed that way — this was 1.4s after the interaction, not a decode race. The mechanism is plate.ts:370 `const photo = d.image ? gradedDisc(...) : null` feeding plate.ts:408 `if (d.glyph && !photo …)` — when gradedDisc cannot strike a buffer, or when the never-DOM-attached `new Image()` has had its decode purged and naturalWidth goes to 0, the plate silently degrades to text.
-
-**Matters:** The stated premise of this release is that the photographed plate is the DEFAULT and the mark is a fallback reachable only by deleting a file. Seven text discs in the app's own English screenshot says the opposite, and the two presentations are so visually different that a reader sees a broken load, not a graceful degradation. It also lands hardest on exactly the three cold-band people, who are already the hardest nodes to read.
-
-**Fix:** Two guards. (1) Never regress a plate that has already been photographed: keep the last successfully-struck graded canvas per person and blit that if gradedDisc returns null this frame, rather than falling through to the mark. (2) Stop relying on a detached HTMLImageElement staying decoded — call createImageBitmap() on the decode callback and hold the ImageBitmap, which the browser will not silently purge; also guard gradedDisc against coverRect().sw <= 1 and treat it as 'not ready' rather than building a 16px buffer.
-
-#### [major] The no-verified-tie band breaks apart when the dossier opens on a laptop
-`src/graph/layout.ts`
-
-**Wrong:** At 1600x1000 (shots/04-dossier.png) and 1280x800 (shots/19-laptop-dossier.png, shots/27-en-dossier.png) the dossier re-frames the camera and the cold band goes half off the bottom edge: 강지후 / 신승용 / 최연청 are cut through the middle of their discs by the viewport, the band's lower dashed boundary is gone entirely, and in shots/19 the '신승용' caption ends up overlapping 강지후's disc. Compare shots/02-graph-default.png where the band is a complete, bounded object with its caption above and captions below.
-
-**Matters:** The cold band is the app's one editorial statement — three people whose only line is a parallel record, i.e. 'same record, never met'. It fires for the first time in this release and the moment a reader clicks anyone to learn more, the statement is amputated. Half-discs bleeding off a canvas edge also read as a rendering bug rather than a crop.
-
-**Fix:** Include the band's own bounding box (dashed rule, caption, discs and captions) in the fit-to-view rect the dossier-open re-frame solves against, the same way chromeBoxes already constrains labels. If it will not fit, collapse the band to its caption row plus a '3' count and let the discs live only in the unobstructed layout, rather than clipping them.
-
-#### [major] The filter rail clips a legend row mid-glyph and its section-jump strip wraps
 `src/components/FilterRail.css`
 
-**Wrong:** At 1280x800 the rail body is 456px against 832px of content. In shots/18-laptop.png the '평행 이력 / Parallel record 3' row is sliced roughly in half by the rail's lower edge with only a very short fade, and '멘토 / Mentorship 1' — a real relationship type with a real count — is not visible at all; the legend appears to have six types when it has seven. In EN at 1280 (my capture, and shots/26-en-graph.png) the same cut lands through 'Outer arcs = prior seasons'. Separately, the bottom section-jump strip wraps to two lines in EN ('↓ Relationships | Node key | Archetype' then 'Most connected' orphaned on a second line, left-aligned under the arrow), which reads as a broken toolbar rather than a nav.
+**What is wrong.** Measured on the live 390×844 build: `.frail__sec-btn` is 24 px tall (three of them), `.fmini` is 30×28 and 47×28, `.frail__close` is 30×30, the five `.fchip` lineage chips are 30 px tall, and the seven `.frow.fedge` relationship rows are 32 px. WCAG 2.2 target-size AA is 24×24 as an absolute floor and the 24 px buttons are exactly on it before their 1 px border is counted.
 
-**Matters:** The legend is the key to the entire encoding, and the one row a laptop reader never sees is the one type that has a count of 1 — the rarest and therefore most interesting mark on the graph. A hard cut through the middle of Korean glyph bodies is also the single most 'unfinished' thing on the screen, because Hangul has no descender slack to hide it in.
+**Why it matters.** The 전체 / 없음 pair and the section jump links are the rail's primary controls on a phone, and at 24 px they are a coin-flip to hit with a thumb.
 
-**Fix:** Lengthen the tail mask so a row is either fully legible or fully gone — set the fade to at least one full row height (var(--sp-9)) and snap the scroll to row boundaries with scroll-snap-type: y proximity on .frail__body. For the jump strip, let it scroll horizontally like .tb-seg-scroll rather than wrap, or drop the '↓' glyph and set the four items in a 2×2 grid so a wrap is a decision.
+**Fix.** Add an invisible `::before` hit area (`position:absolute; inset:-8px`) to `.frail__sec-btn`, `.fmini` and `.frail__close` under a `(hover: none)` query. That gets them to 40–44 px without touching the visual rhythm of the rail.
 
-#### [major] The cast wall shows four of twenty people at laptop height
-`src/components/Gallery.css`
+### [minor] The cold band turns inside out when the language changes
 
-**Wrong:** Measured live at 1280x800: .gallery__sheet is 752px, of which .gallery__head (104px) + .gallery__note (117px) = 221px is pinned outside the scroller, leaving .gallery__scroll 529px for a 355px group. One season group — four people — is on screen, and 29% of a wall of faces is a paragraph of prose that never moves. The bottom row is also hard-cut through the romanised name line (shots/24: 'Ha Seung-jin' bisected; shots/25: the challenger names reduced to a sliver of ascender).
-
-**Matters:** 'The cast wall' is a promise about seeing the cast. Four at a time, with a permanent 220px explanatory header, makes it a scrolling list with a preamble. The same explanation is already in the About sheet's HOW TO READ tab, twice over.
-
-**Fix:** Move .gallery__note inside .gallery__scroll so it scrolls away after the first group, and keep only the eyebrow + '20 players' + close pinned (that is 104px, 14% not 29%). Then apply the same full-row-height tail fade as the filter rail so the bottom row is cut between cards, not through a name.
-
-#### [major] On mobile the cold band's caption and labels swap sides relative to desktop
 `src/graph/render.ts`
 
-**Wrong:** On desktop (shots/02) the band reads top-to-bottom: dashed boundary, caption '아직 아무와도 얽히지 않은 사람들 / NO VERIFIED TIE · 3', the three discs, their captions, closing boundary. On mobile (shots/21-mobile-graph.png, reproduced live) it reads: boundary, the three CAPTIONS, the three discs, then the caption block underneath. The three names now sit between the band's upper rule and the discs, closer to 김남희's node above than to the discs they belong to, and the band's own explanatory caption has fallen below the group it explains.
+**What is wrong.** `capBelow` at render.ts:504 decides the caption's seat from how much clearance the mesh happened to leave, and `coldSide` (render.ts:1832) then gives the three names the other side. At the identical 1600×1000 frame with identical data, shots/02-graph-default.png (KO) seats the caption above the row with the names below, and shots/26-en-graph.png (EN) seats the caption below with the names above — the whole band mirrors, because the EN mesh settles a few units lower.
 
-**Matters:** The band is a labelled region; putting the region's label after its contents inverts the one reading order the desktop version establishes, and floating the three names above the discs is a milder version of the misattribution defect above — on the small screen, 강지후's name sits nearer the boundary rule than his own face.
+**Why it matters.** A reader who toggles 한국어/EN sees a composed element flip its internal order for no reason they can perceive. The flip is a good idea as a fallback; it should not be the ordinary case.
 
-**Fix:** Pin the band caption to the band's top edge in both breakpoints (it is already a region caption, not a solved label), and exclude cold-band members from the generic above/below label flip — their discs are on a fixed row with guaranteed clearance below, so force seat 'below' for all three.
+**Fix.** Make `capBelow` sticky: keep the seat chosen on the first frame the band forms and only flip when the clearance is violated by more than a hysteresis margin (say 20 world units), rather than re-solving it every frame from a value that drifts.
 
-#### [minor] The About sheet's HOW TO READ tab is cut through the middle of a card row
+### [minor] Field-guide legend grid: two row heights and ~190 px of dead space under the short tiles
+
 `src/components/AboutSheet.css`
 
-**Wrong:** In shots/13-about-legend.png the third row of key tiles is bisected by the sheet's bottom edge at ~y1132 — the arrow, node-and-panel, edge and cold-band illustrations are all sliced horizontally with no scrim, no visible scrollbar and no 'more below' affordance. The same hard cut appears in shots/30-en-about.png. Separately, the row-2 tiles stretch to the tallest sibling and leave 70px of dead space under the shorter captions ('점선 시즌 고리' ends at y951, card bottom at y1022) because the captions are top-aligned in a stretched grid item.
+**What is wrong.** In shots/13-about-legend.png the eight visible tiles form a 2×4 grid, but row 1 is ~250 px tall and row 2 is ~380 px, because `about.tileHostRing` runs four Korean lines plus four English lines (구슬 점선 호 = … 플레이어가 아닌 자리로 참여한 적이 있는 사람) while its three row-mates run two and two. The result is roughly 190 px of empty tile beneath the two-line caption of 가는 회색 테두리 and beneath 점선 = 하우스 밖에서 생긴 인연.
 
-**Matters:** The one tab that teaches the encoding gives no signal that a third of it exists. And on a sheet this considered, a half-drawn illustration reads as a paint bug rather than as a scroll.
+**Why it matters.** It is a key — eight peers that should read as one system. Two row heights and three tiles that are mostly hollow make it read as a grid that ran out of copy.
 
-**Fix:** Add the .scroll--faded tail mask the filter rail and gallery already use, sized to one full tile row, and give the card grid `align-content: start` with the caption block `margin-top: auto` so short captions bottom-align to a shared baseline instead of leaving a ragged void.
+**Fix.** Either split `about.tileHostRing` into two tiles (구슬 점선 호 and 바깥 실선 고리 are two facts sharing one caption), or pin the caption block to the bottom of the tile with `justify-content: space-between` on the tile's flex column so the empty space falls between illustration and caption rather than below it.
 
-#### [minor] Portrait discs change size inside a single row of the cast wall
-`src/components/Gallery.css`
+### [nit] Nine duplicated top-level selector blocks across the stylesheets
 
-**Wrong:** Measured at 1280x800, .gallery__plate is 118px for Lee Sang-min and Park Ji-min but ~85px for Jung Keun-woo and ~95px for Lee Tae-gyun, in the same row (shots/24, shots/29). The wall inherits the graph's degree-driven radius, but the gallery's own note explains only the rings ('the length of a season ring is how far they got that year… every tick on the rim is one verified connection') and never says the portrait itself is scaled by tie count. The cards are a fixed-height grid, so the smaller discs float in their boxes with unequal optical spacing above the name.
+`src/components/CommandPalette.css`
 
-**Matters:** On a graph, size-encodes-degree is legible because neighbours are adjacent and the encoding is in the node key. On a four-up grid with aligned name baselines it just reads as inconsistent cropping — some cast members look like they got a smaller photograph.
+**What is wrong.** The same selector is declared twice at file top level in nine places, e.g. `.cp__empty-q .mono` at CommandPalette.css:707 and :712 (adjacent, and trivially mergeable), `.tb-actions` at TopBar.css:64 and :485, `.dsr-rep__badge` at Dossier.css:696 and :1771, `.dossier` at app.css:96 and :112, plus `.abt-keys__ko`, `.abt-rec__h--s`, `.edgecard__tag`, `.intro__stage`, `.pathcard__degree-en`. None is inside a media query — they are layered patches.
 
-**Fix:** Either normalise .gallery__plate to one diameter across the wall and let the tick ring alone carry degree, or keep the scaling and add one clause to gallery.note ('and the disc's size is how many of those connections they have'). The first is better: the wall's job is faces, and the tick ring is already the honest count.
+**Why it matters.** None of it renders wrong today, but it means the next person changing `.tb-actions` has to know there are two places 420 lines apart that set it, which is how a border starts appearing and disappearing.
 
-#### [minor] The fallback mark drops the hyphen the rest of the app uses
-`src/graph/plateGeometry.ts`
+**Fix.** Merge each pair into the primary block. The `.cp__empty-q .mono` pair is two lines apart and should be one rule.
 
-**Wrong:** When the mark is drawn (shots/26-en-graph.png, and my 1280x800 reproduction) it wraps the given name across two lines with no hyphen and no join: 'Gwan / hee', 'Seung / yong', 'Yeon / cheong', 'Nam / hee', 'Ji / hoo'. Everywhere else in the app the same names are set 'Kang Ji-hoo', 'Shin Seung-yong' — with the hyphen — including the caption sitting eight pixels below the disc, so the two are visible simultaneously and disagree.
+### [nit] Two different focus-ring colours
 
-**Matters:** The two-word setting reads as two syllables of a family name rather than one given name, and an English reader is being asked to match 'Seung yong' to 'Shin Seung-yong' at a glance. The mark is a fallback now, but it is the fallback the app ships in its own English screenshot.
+`src/styles/base.css`
 
-**Fix:** Break on the hyphen and keep it as a trailing soft hyphen on line one: 'Seung-' / 'yong'. markLines() already owns the split; pass the hyphenated romanisation rather than a space-joined one and render the hyphen at the end of the first line.
+**What is wrong.** Walking Tab through the live app and reading `getComputedStyle().outline`: the canvas focuses with `rgb(230, 192, 122) solid 2px` (amber) while every button — segment tabs, search, language, the four icon buttons, the lineage chips — focuses with `rgb(240, 231, 212) solid 2px` (bone).
 
-#### [minor] The by-season layout draws its region ellipses through the discs they contain
+**Why it matters.** The ring is the one thing a keyboard user tracks continuously, and it changes colour on the app's largest and most important stop.
+
+**Fix.** Pick one and route both through the same token. If the canvas genuinely needs a warmer ring for contrast against the near-black field, make that a named token (`--focus-on-canvas`) rather than a second hardcoded value.
+
+### [nit] A leader line that touches neither end
+
+`src/graph/render.ts`
+
+**What is wrong.** In shots/17-zoomed-out.png 하승진's label at (1345,745) is joined to its disc by a faint dotted vertical leader running y≈675 to y≈735 — which leaves a ~35 px gap to the bottom of the disc at y≈640 and a ~10 px gap to the label. It is the only leader in the frame, so it reads as an artefact rather than a callout.
+
+**Why it matters.** A connector that connects nothing is worse than no connector: the reader spends a beat deciding whether it is a very short edge.
+
+**Fix.** Draw the leader from the plate's extent to the label's cap-height with no gap at either end, and give it the same dash rhythm and weight everywhere it fires so it reads as a deliberate device.
+
+### [nit] Comments describe a data state that stopped being true when the cold band fired
+
 `src/graph/layout.ts`
 
-**Wrong:** In shots/08-seasons.png the '이전 시즌 없음 · 8명' ellipse's lower boundary passes straight through 곽범's and 김남희's discs, leaving both half in and half out of the region that is supposed to contain them. The four region captions also use three different anchor conventions in one frame: '시즌 2 · 7명' top-centre outside, '이전 시즌 없음 · 8명' top-centre outside, '시즌 1 · 4명' bottom-LEFT outside, '시즌 3 · 5명' bottom-RIGHT outside. Node captions inside the bottom group alternate above and below with no visible rule (강지후 above, 김경훈 below, 이관희 80px above versus everyone else's ~40px).
+**What is wrong.** layout.ts:505–510 states 'The cold branch below is dormant: every person in the cast now has at least one verified tie, so `cold` is empty and nothing here reserves the row's band' — the validator reports 'no verified tie: 3 (강지후, 신승용, 최연청)' and the branch runs on every relayout. layout.ts:777 says 'These four have no links pulling them anywhere' where there are three; render.ts:1926 says 'The cold-tray four count as important'; GraphCanvas.tsx:1452 says 'four cold nodes drifting free'.
 
-**Matters:** The containment is the entire encoding of this layout — 'this person belongs to this season'. A disc straddling the boundary makes the one claim the view exists to make ambiguous.
+**Why it matters.** This codebase's comments are unusually good and are clearly meant to be load-bearing documentation. A comment that confidently asserts the opposite of the current data is the one kind of comment worse than none — the next maintainer will read 'dormant' and skip the branch that is actually producing the row.
 
-**Fix:** Solve the ellipse from the member discs' bounding circle plus rPhoto plus a fixed pad, after positions settle, rather than from the seed radius. Pick one caption anchor (top-left of the ellipse's bounding box reads best against a dark field) and use it for all four.
+**Fix.** Rewrite the block at 505–510 to describe the live state, and replace the three 'four' counts with 'the cold row' so they cannot go stale again when the edge list moves.
 
-#### [minor] The gallery note is bilingual in Korean and monolingual in English
-`src/data/i18n`
+### [nit] The status hint tells you to do the thing you have already done
 
-**Wrong:** shots/24-gallery.png sets the Korean explanation and then the full English gloss beneath it at lower opacity — three lines plus five. shots/29-en-gallery.png sets only the English, with no Korean gloss. Everywhere else the pattern holds in both directions: the dossier in EN carries '前 프로게이머 · 프로 포커 플레이어' under the English occupation line (shots/27), the cold band caption carries '확인된 인연 없음 · 3명' under 'No prior tie on record', and the gallery cards themselves carry '이상민' under 'Lee Sang-min'.
+`src/components/StatusBar.tsx`
 
-**Matters:** It is the one place the bilingual contract silently breaks, and it breaks in the direction that reads as 'Korean is the translation' — the opposite of the stated position that Korean is the source of record.
+**What is wrong.** In shots/23-path-trace.png a path is traced, the PathCard is open showing 홍진호 → 이상민 → 정근우, and the status bar still reads '홍진호 선택됨 · Shift+클릭으로 두 사람 사이 경로 추적 · Esc로 해제'.
 
-**Fix:** Give gallery.note the same two-line treatment in EN that it has in KO: English primary, Korean gloss at the secondary opacity, matching the dossier's occupation block.
+**Why it matters.** Small, but the status bar is the app's one running commentary on state, and here it is describing the state before last.
 
-#### [nit] Orbit's locked keycap reads as a stray clipped ring on mobile
-`src/components/TopBar.css`
-
-**Wrong:** At 390px the .tb-seg-slot for the locked Orbit tab is absolutely positioned at right:9px / top:6px as a 9px dashed ring with no digit (the .tb-seg-key text is invisible at that size). In my crop of the mode strip it sits above and right of the 'Orbit' label, unlabelled, its right arcs disappearing into the strip's 999px corner curve. The CSS comment records that this was already moved from 3px to 9px because 'the ring sat on the curve of the outermost tab and read as a stray dot floating outside the control' — at 9px it still does.
-
-**Matters:** An unexplained dashed fragment in the primary navigation is the kind of thing a reader reads as a rendering error, and its meaning ('press 4' / 'not yet available') is unguessable at 9px with no glyph in it.
-
-**Fix:** Drop the slot entirely below 640px — the keycap is a keyboard hint and there is no keyboard. Signal the locked state the way the rest of the app does: dash the Orbit tab's own outline, which is already the app's 'not yet' language for a franchise newcomer's node.
-
-#### [nit] Six dead design tokens the file itself asks to be deleted
-`src/styles/tokens.css`
-
-**Wrong:** Lines 444–450 define --r-xs, --r-sm, --r-md, --r-lg, --r-xl and --r-full as aliases of the --rad-* scale under the comment 'deprecated — mechanical find/replace to --rad-*, then delete these'. The find/replace has already happened: there are zero `var(--r-*)` references anywhere in src. Related: two hard-coded radii survive the system at CommandPalette.css:545 (border-radius: 2px) and PathCard.css:225 (border-radius: 1px), both below --rad-xs.
-
-**Matters:** Six live aliases for a scale nothing uses is exactly the ambiguity the rename was performed to remove — the next person to add a radius has two equally-valid-looking names to pick from, and autocomplete offers both.
-
-**Fix:** Delete lines 444–450. Add --rad-hair: 2px (or accept the two 1–2px cases as sub-token hairlines and note it) so the two stragglers have a home.
-
-#### [nit] Two of the delivered captures do not show the state they are named for
-`shots/23-path-trace.png`
-
-**Wrong:** shots/23-path-trace.png is pixel-for-pixel the default view: no PathCard, no highlighted chain, no selection, and the status bar shows the resting hint ('노드를 클릭해 인물 정보 · 선을 클릭해 그 인연 읽기…') rather than a selected-node string. shots/16-zoomed-in.png shows a search-filtered graph (14/20, '시즌' in the search field) at roughly default zoom, not a zoomed-in view.
-
-**Matters:** Shift-click path tracing and PathCard are named as new in this release and there is no evidence in the capture set that either renders. Whether the feature failed or the capture script did, the one artefact a reviewer or stakeholder has for it shows nothing.
-
-**Fix:** Re-run the capture for 23 with an explicit wait on the PathCard element rather than a fixed timeout, and re-shoot 16 from a scripted camera scale rather than a wheel gesture. If the trace genuinely does not fire on shift-click, that is a separate blocker in src/state/findPath.ts.
-
+**Fix.** Swap the hint while a path is live to name the current chain and the way out — '경로: 홍진호 → 정근우 · Esc로 해제' — and restore the shift-click invitation when the path clears.
 
 ---
 
-## reviewer 5 — 6/10
+## INFORMATION DEPTH & EDITORIAL QUALITY — 8/10
 
-**Verdict:** The reading model, the copy and the accessibility groundwork are genuinely strong, but three of the app's primary surfaces are broken in ways a user hits in the first minute — the cast wall hides the photographs it exists to show, opening the dossier orphans a name and clips the cold band, and the headline "47 connections" counts three things the app elsewhere insists are not connections.
+> The writing, sourcing discipline and derived-record machinery are flagship-grade, but the app still prints "Host" over a studio panellist, renders none of the 46 citations behind its most claim-dense prose, and leaves an authored English field dead — three failures of exactly the accuracy it markets.
 
-**Biggest single win:** Cut the cast wall's pinned masthead from ~300px to a ~72px title bar and let the section headers be the sticky element instead. That single change restores the photographs of every row after the first — the entire payload of this release — recovers a quarter of the modal, and makes the seven-line explainer read once rather than permanently. It is a CSS change in one file and it fixes the only defect here that makes a primary surface fail at what it was built to do.
+**Biggest single win.** Kill the word "Host". Split `dossier.roleHost` / `hover.host` / `dossier.hosted` by `Role` so a `panel` run reads "Studio panel / 스튜디오 패널" and a `crew` run reads "Not playing / 비참가" — the neutral strings already exist in `gallery.hosted` and `gallery.hostShort` — and fix Park Ji-min's bio and notableFor in both languages to match her own record. This is the one place in the atlas that asserts something untrue about a named real person, it fires on the two surfaces every reader touches, types.ts already documents it as a known and supposedly-fixed defect, and it costs about six string edits and two branches.
 
-### Working
-- Keyboard operation of the canvas is real, not theatre: role=application with a visually-hidden <li> per person, arrow keys move a cursor, Enter opens the dossier and moves focus to its heading, Esc returns focus to the canvas AND clears the hash. Verified end-to-end with Playwright.
-- Deep linking is unusually complete — p/m/q/l/a/e/r/path/tie/lang all round-trip. #p=park-ji-min&m=seasons&e=alliance,betrayal&lang=ko restores the person, the layout, the edge filter and the language exactly, and the hash survives untouched.
-- The filter-everything-out state is properly designed: a centred dashed ghost node, '조건에 맞는 사람이 없습니다 / 필터를 해제하면 20명이 모두 돌아옵니다', and a clear-filters chip that appears in the status bar. Most graph apps ship a blank canvas here.
-- The cold band is the best idea in the product — a titled, counted enclosure for the three people with zero verified ties, rather than three unexplained orphans drifting at the rim. The gallery card even prints '0 건 · 평행 이력 1' per person, which makes the never-met distinction legible at the individual level.
+<details><summary>What is working</summary>
 
-### Defects
+- The 52 edges are not filler. The shortest description is 169 Korean characters and the median is 314 KO / 680 EN; even the seven `co-season` lines — the obvious place for "both were in season 2" — are argued rather than asserted (홍진호×허성범 ends "진영이 갈렸다는 사실과 두 사람이 부딪쳤다는 주장은 다른 말이고, 이 선은 앞의 것만 말한다"), and edges.ts carries a written record of pairs searched and deliberately NOT drawn (이진형×김남희, 정근우×하승진, 하승진×곽범) so "no edge" cannot be read as "nobody looked".
+- The season arcs name moments, not tendencies: 최혜선 winning a Death Match 58 chips to 12 and being sent down anyway; 이태균 climbing the boiler-room shaft to the key inside the television and taking 108 million won on 러닝 퍼즐; 현성주 losing 미스터리 넘버 17–24 with the closer "예측은 좋았고 암기가 발목을 잡았다". Sixteen runs, none hedged.
+- The Sources tab volunteers its own weakness in numbers rather than in adjectives — 241 of 309 citations (78%) are namu.wiki, 31 of 52 ties stand on wiki alone, fifteen of those are ties the app does not stamp Unverified — and pins the fifteen in the build check so it can only fall. I have not seen a fan reference work disclose against itself at that resolution.
+- The cold band is genuinely editorial, not a null state: 강지후's panel reads "Walks in cold — No shared credit and no documented working relationship with any of the other nineteen turned up in public sources. A shared school or a shared credential was not counted as a tie on its own", with the parallel record listed separately under "The records rhyme; the two have never been in the same room. Not counted in the verified total."
+- headToHead.ts derives the whole franchise ledger — duels, same-field finishes, `unadjudicated` shared appearances, and a career `share` (players outlasted over field size) that makes 3rd-of-13 and 4th-of-18 comparable — and the About sheet renders it as a sortable table with a season timeline. Almost everything a fan would ask for is already built.
 
-#### [blocker] The cast wall's sticky masthead decapitates every row scrolled under it
-`src/components/Gallery.tsx / Gallery.css`
+</details>
 
-**Wrong:** The modal's header block — '20명' plus a seven-line bilingual explainer — is pinned and occupies ~300px of a ~1080px modal. It is opaque, so as you scroll, each row's portrait discs slide under it and vanish while that row's names, roles, archetype and stats stay visible below. In my own capture (scratchpad/gal3.png, G then scroll 1400px) the 김경훈 / 김유현 / 김남희 / 강지후 row shows four card bodies with four empty holes where the faces should be — only faint slivers of ring survive at the block's lower edge. shots/25-gallery-scrolled.png shows the same 300px block still pinned. Net usable scroll area is ~780px, which fits roughly one row.
+### [blocker] The app calls a studio panellist and a casino dealer "Host" — a false credit about two named real people, on the two most-read surfaces
 
-**Matters:** This is the release whose stated headline is 'every cast member now has a real photograph', and the surface built to show all twenty of them hides the faces of every row after the first. A user scrolling the wall reads a list of decapitated cards. It also wastes 28% of the modal on prose that is read once.
+`src/data/i18n/ui.ts` · Live capture of the English dossier for Lee Sang-min: "ACROSS THE FRANCHISE · 프랜차이즈 통산 / S1 Host / 1 season" followed by a chip reading "Hosted". Same strip drives 박지민's S3 cell ("S3 Host"). `hover.host` fires the same word on the hover card.
 
-**Fix:** Make only the title line sticky (~72px: '20명 · THE CAST' plus a one-line summary). Move the seven-line explainer into normal scroll flow at the top, or behind a '읽는 법' disclosure that links to the About sheet's HOW TO READ tab. Then set the season section headers to position:sticky; top:72px so the reader always knows which bloc they are in — which is what the sticky region should have been carrying all along.
+**What is wrong.** `dossier.roleHost` = '진행' / 'Host', `hover.host` = '진행자' / 'Host' and `dossier.hosted` = '진행 경력' / 'Hosted' are selected by `watched(run)` (src/data/types.ts:72), which is true for BOTH non-playing roles — `panel` and `crew`. Lee Sang-min sat on season 1's 브레인 군단 studio panel and never entered the house; his own arc, four inches lower in the same panel, says he is "routinely miscredited" and that the panel "had no power to touch the game". 박지민's season-3 run is filed 보조 출연, a twist held back until episode 6. Neither hosted anything. types.ts:36–47 documents this exact falsehood being caught by a reader once already and splits `Role` into panel/crew specifically to stop it — the union landed, the copy did not. The correct neutral vocabulary already exists two files away and is used by the gallery: `gallery.hosted` = '플레이어가 아닌 자리로 참여' / 'In a season, not playing', `gallery.hostShort` = '비참가' / 'Not playing'.
 
-#### [major] Opening the dossier leaves 곽범's name floating with no disc, and clips the cold band off the bottom
-`src/graph/render.ts (drawLabels) + src/graph/GraphCanvas.tsx (camera fit)`
+**Why it matters.** This is the only place in the atlas that states something untrue about an identifiable person, and it does so on the primary panel and on hover — the two surfaces every reader hits. A fan who knows season 1 sees the app assert Lee Sang-min hosted it and reasonably stops trusting the other 51 ties. It also collides head-on with the product's loudest claim ("every tick is a verified connection") and with its own schema comment.
 
-**Wrong:** With the dossier open the 530px panel covers part of the graph, but the label painter does not know that. In shots/04-dossier.png, 05, 06 and 19-laptop-dossier.png the caption '곽범' is painted at x≈1410 (KO) / x≈1265 (laptop) with no disc anywhere near it — his plate is entirely behind the panel and only his name leaks into the uncovered strip. Simultaneously the camera reframes on the selected node without accounting for the cold band, so 강지후 / 신승용 / 최연청's discs are cut in half by the bottom edge (19-laptop-dossier.png, 신승용's disc at y≈1147 is ~40% visible). This is a re-file: CRITIQUE.md line 155 reports both symptoms and neither has landed.
+**Fix.** Split the key by role. Add `dossier.rolePanel` ('스튜디오 패널' / 'Studio panel') and `dossier.roleCrew` ('진행 밖 출연' / 'On the board, not playing'), or simply reuse `gallery.hostShort` for both; branch on `run.role` at src/components/Dossier.tsx:438 and :528 instead of on `watched()`. For the aggregate tag at HoverCard.tsx:217 and CommandPalette.tsx:320, `some(watched)` is fine but the label must become 'Not playing' / '비참가'. Rename `dossier.hosted` to `dossier.offBoard` with 'In a season, not playing'. Then add a validator assertion that no UI key containing 'host' is reachable from a run whose role is 'panel'.
 
-**Matters:** A name attached to nothing is the single most confusing thing a node-link diagram can paint — the reader's first assumption is that the label belongs to the nearest visible disc, which is somebody else. And the cold band is the app's own editorial invention; clipping it the moment anyone clicks a person means the three-people story is only visible in the untouched default view.
+### [major] Park Ji-min's own dossier contradicts itself about season 3 — bio says host, record says supporting cast
 
-**Fix:** drawLabels already receives the uncovered viewport rect (the layout uses it via worldBox/view). Reject any label whose owning plate centre is outside that rect, exactly as the cold-band clip already rejects link segments. For the camera: after a selection, fit the union of {selected node, its ring-1 neighbours, the cold band's flat cluster bounds} into the uncovered rect rather than centring on the node alone (GraphCanvas.tsx:2236-2242 currently holds k and only re-centres x/y).
+`src/data/people.ts` · people.ts:117 vs records.ts:137; people.en.ts:29 vs records.en.ts:48; Korean gallery card (shots/24-gallery.png) "S3 유령 카지노 딜러" vs English gallery card (shots/29-en-gallery.png) "S3 Host".
 
-#### [major] '47 connections' counts three records the app says are not connections
-`src/components/Intro.tsx:225 (and src/components/StatusBar.tsx:54-62, src/components/FilterRail.tsx)`
+**What is wrong.** Three surfaces say she hosted season 3 — bio "시즌3에서는 판을 굴리는 진행자 자리로 옮겨 앉았다", notableFor "시즌3 진행자" / "host in season 3" and "Broadcasting award for hosting Bloody Game", and seasons.ts franchise.reception "진행을 맡은 박지민". Two say she was not — her own season-3 record, "참가자가 아니라 잔해 유령 카지노의 딜러 겸 연옥 집사 — 보조 출연" whose first appearance was episode 6 as a production twist, and types.ts:37 which names her as a case where the host claim is untrue. Separately, the English placement string is 'Host — dealer and butler' while the Korean is '유령 카지노 딜러 · 연옥 집사'; because the gallery card splits on the first separator, the two languages print different claims on the same card.
 
-**Wrong:** Intro.tsx prints count(dataset.edges) = 47 under the label CONNECTIONS / 관계, and the status bar prints '관계 47'. 47 = 13 alliance + 5 betrayal + 7 rivalry + 12 outside + 6 same-season + 1 mentorship + 3 PARALLEL. But the cold band in the same screenshot says '아직 아무와도 얽히지 않은 사람들 · NO VERIFIED TIE · 3', the gallery note says a parallel record 'gets no tick' and 'is not counted', ui.ts:258 says '확인된 인연 수에는 넣지 않습니다', and the validator prints 'no verified tie: 3'. Worse, the filter rail lists 평행 이력 as the sixth row under a section header that reads literally '관계 / RELATIONSHIPS 7'. Verified against `npx tsx tools/validate-data.mjs` (edges 47, no verified tie 3).
+**Why it matters.** She is the franchise's most-embedded figure — the one person in all three seasons — so her file is the one a knowledgeable fan will read hardest, and it disagrees with itself within one scroll. The bilingual split is worse: an English reader is told she hosted the season while a Korean reader is told she dealt cards in the ruins, from the same dataset.
 
-**Matters:** The brief asks whether the parallel/verified distinction is legible or merely correct. It is merely correct: the app makes the distinction in prose in three places and then contradicts it in the two biggest numbers on screen, on the splash and in the persistent status bar. A reader who counts — and this app invites counting — concludes the arithmetic is unreliable, which undermines every other number in it.
+**Fix.** Pick the version the records file and the validator already enforce. Rewrite the bio clause to "시즌3에서는 참가자가 아니라 잔해의 딜러 겸 집사로 판을 굴렸다" / "…moved behind the table as the dealer and butler of the ruins", change notableFor to '시즌1·2 참가자, 시즌3 잔해 딜러' / 'Contestant in seasons 1 and 2, dealer in season 3', and either date the broadcasting award to the season it was actually given for or drop it. Change records.en.ts:48 `placement` to 'Dealer and butler — the phantom casino' so the head of the string matches the Korean head. Move seasons.ts franchise.reception's "진행을 맡은 박지민" to whichever season she actually presented.
 
-**Fix:** Intro: show 44 under CONNECTIONS and add the parallels as a footnote line, or relabel to '관계선 47' with a sub-line '확인된 인연 44 · 평행 이력 3'. StatusBar: same split. FilterRail: retitle the section '인연 · TIES 6' and move 평행 이력 out into its own single row beneath, headed '이력만 겹침 · NOT A TIE' — the row is already a different colour and a different dash rhythm, it just needs to stop living under a heading that calls it a relationship.
+### [major] 46 season-run citations are authored, build-enforced and counted in the public total — and rendered nowhere
 
-#### [major] By-archetype region captions are not attached to the regions they name
-`src/graph/layout.ts (archetypeLayout) + src/graph/render.ts:2749 (drawCaptions)`
+`src/components/Dossier.tsx` · `grep -n '\.sources' src/components/Dossier.tsx` returns only `e.sources` (priorElsewhere, line 641) and `p.sources` (line 1324) — never `run.sources`. Live capture of Ha Seung-jin and Jung Keun-woo: the Franchise record plate ends at the beats with no Sources affordance, while the "record elsewhere" plate directly beneath it has one.
 
-**Wrong:** Nothing sets Cluster.bare any more (layout.ts:126 says so explicitly), and drawCaptions only draws a leader for bare regions — so no archetype caption gets a leader line at all. In shots/09-archetype.png and my scratchpad/arch.png six of ten captions sit 150–250px out in empty black with nothing tying them to a hull: '배우 · 1명' and '크리에이터 · 1명' are two near-identical pink-dotted captions 220px apart with two pink circles between them, and it is genuinely ambiguous which belongs to 최연청 and which to 최혜선. '포커 플레이어 · 2명' and '기타 · 1명' sit stacked in the empty lower-left and read as a colour legend rather than as two region names; their hulls are up-and-right of them. Separately, the file's own opening rule — 'two enclosures that mean different things may not intersect at all' — is visibly violated where the five-person 전문직 hull runs into the 뮤지션 and e스포츠 hulls.
+**What is wrong.** records.ts opens with a paragraph explaining that every run now carries its own citations because "the longest and most argued-over prose in the app was the only text in it with no source list", and tools/validate-data.mjs:628 fails the build for any run without them. Sixteen runs carry 46 references. The Dossier never reads the field. The Sources tab meanwhile tells the reader there are 309 citations and that "every season run in this atlas carries the pages it was written from" — 15% of that total is unreachable, and the sentence is true of the data and false of the app.
 
-**Matters:** This is one of four top-level layout modes, and its entire payload is 'which archetype is this person'. If the reader has to guess which caption names which circle, the mode delivers nothing that hovering a node would not, and it delivers a hairball of 47 cross-cluster edges on top. It is the weakest of the four and the one most at risk of being redundant.
+**Why it matters.** The season arcs are where the hard numbers live — 58칩 대 12칩, 17:24, 4:1, 8:17, 상금 1억 800만 원, 5,000만 원, 자금 2,000만 원. They are the most disputable text in the product and the only long-form text a reader cannot check. The asymmetry is worse than a uniform absence: the shorter 바깥에서의 기록 paragraph beside it does show its working, which reads as "we sourced the easy one".
 
-**Fix:** Drop the `slot >= NEAR_SLOTS || strayed` gate for cluster captions and stroke the CAPTION_GAP leader hairline for every non-flat region, using markR for singletons (the code at render.ts:2749 already does this for bare — just widen the condition). Then either grow the inter-hull spacing until no two archetype hulls intersect, or attenuate cross-cluster links to near-zero in this mode so the enclosures are the only strong figure on screen.
+**Fix.** Lift the disclosure block from `ElsewherePlate` (Dossier.tsx:667–692) into a small shared `<SourceList>` and render it at the foot of `SeasonPlate` (Dossier.tsx:526) from `run.sources`. It is the same markup, the same `dossier.sources` key and the same fold-away behaviour; nothing new needs designing. Then add a validator assertion that every array the sourcing paragraph counts is reachable from a component.
 
-#### [major] Portraits are struck at 300px and upscaled ~2× at working zoom; the softness is conspicuous against razor-sharp vector rings
-`src/graph/portraits.ts:327-330 (cap = Math.min(512, src)) / src/graph/plate.ts:376`
+### [major] The authored English `aka` never renders, and English search cannot find English names
 
-**Wrong:** The graded buffer is capped at the source's own square — 300px — then drawImage scales it to the device diameter. At maximum zoom the disc reaches ~560-600 device px (my scratchpad/maxzoom2.png, 박지민 at 1600×1000 DPR 2): the hair edge dissolves into flat blobs, the lash line and lip edge have no defined boundary, and skin has the plastic smear of a bicubic upscale. The plate's own furniture — the blue archetype ring, the beaded S3 arc, the rim ticks — is vector and pin-sharp in the same 8px of screen, so the face reads as the low-fidelity element in its own medallion. This is a re-file: CRITIQUE.md lines 186-192 measured the same files at 0.358-0.572 bpp and asked for 600×600; nothing changed.
+`src/components/Dossier.tsx` · Live English dossier for Hong Jin-ho: "Known as 콩 · 폭풍저그" (also visible in shots/27-en-dossier.png). src/data/i18n/people.en.ts:112 holds `aka: ['Kong (콩)', 'Storm Zerg (폭풍저그)']`.
 
-**Matters:** The photograph is now the default presentation and is meant to be the reason to look. Zooming in is the natural gesture for 'who is that' and it is the gesture that most degrades the answer. The contrast with the crisp rings makes it read as a bug rather than as a compression budget.
+**What is wrong.** Dossier.tsx:1325 does `const aka = (p.aka ?? [])` unconditionally, so the Korean array is printed in both languages and `peopleEn[id].aka` is dead code. Four people have authored English aliases that no reader ever sees: Hong Jin-ho ('Kong', 'Storm Zerg'), Hyun Seong-joo ('Komong', 'Koreanmonkey'), Kwak Beom ("Mad Monster's Tan"), Lee Sang-min ("Sang-min of Roo'Ra"). CommandPalette.tsx:140 has the same bug in search: occupation (line 147), category (150), notableFor (158) and otherShows (163) are all deliberately matched across both languages, and `aka` is the one field matched in Korean only — so typing "Kong", "Storm Zerg" or "Koreanmonkey" returns nothing.
 
-**Fix:** Ship 600×600 at quality ~78 (≈25-35 KB each, ~600 KB for twenty — trivial next to the two variable fonts already loading) and let tools/vite-plugin-portraits.mjs emit both sizes; pick by devicePixelRatio × k in photoKeyOf. If the owner cannot resupply, clamp the camera's max k so the plate diameter never exceeds `src` device px — a slightly less zoomy graph is better than a mushy one.
+**Why it matters.** The product's stated position is that an English reader must not have to read Hangul off the interface — that is why the medallion mark is romanised. The alias line breaks that rule in the one place where the nickname IS the identity: 폭풍저그 and 콩 are how Korean e-sports fans refer to Hong Jin-ho, and an English reader is shown glyphs instead of the translation that was already written for them. Search failing on "Kong" is the same gap made worse, because the reader has no way to discover the alias exists.
 
-#### [major] The twenty read as two shoots: exposure is corrected, background luminance is not
-`src/graph/portraits.ts (the exposure pass)`
+**Fix.** Add an `aka` case to the i18n accessor next to `personOccupation` / `personNotableFor` in src/data/i18n/index.ts, use it at Dossier.tsx:1325, and extend the CommandPalette loop at line 140 to iterate both `p.aka` and `peopleEn[p.id]?.aka` the way `notableKo` / `notableEn` are already zipped at lines 155–162.
 
-**Wrong:** The measured per-image correction normalises mean exposure but leaves the field behind the head alone, so the annulus between the face and the disc rim varies by shoot. On the cast wall (shots/24-gallery.png, 25-gallery-scrolled.png, my scratchpad/gal3.png) 이상민, 박지민 and 최혜선 carry a clearly readable mid-grey studio backdrop inside the disc, while 허성범, 정근우 and 신승용 sit on near-black. Side by side in the same four-up row that is the most visible tell in the set — the eye reads it as two different lighting setups before it reads any of the ring encoding.
+### [minor] Seven of the 22 "record elsewhere" essays carry no citation, and the sourcing disclosure does not mention them
 
-**Matters:** The brief asks whether the wall reads as one set. It does not, and the failure is in the one place the app has full control (the annulus, which is pure background) rather than in the faces, where variation is unavoidable and forgivable.
+`src/data/people.ts` · Uncited priorElsewhere blocks: 박지민, 정근우, 이태균, 윤비, 서출구, 최혜선, 허성범. people.ts:231 carries the comment "SOURCES PENDING, DELIBERATELY". Dossier.tsx:667 wraps the Sources button in `sources.length > 0 &&`.
 
-**Fix:** After the exposure pass, multiply a radial matte keyed to the disc: unity inside ~0.55r, ramping to a fixed target value at the rim, with the ramp strength solved per-image from that image's own measured rim luminance so every plate's outer annulus lands on the same value. That normalises the shoot without touching the face, and it doubles as the 'seat' the brief asks about — the photograph would then visibly bed into the plate instead of sitting on it as a circular sticker.
+**What is wrong.** Seven multi-hundred-word biographical accounts — 정근우's Olympic gold and five post-retirement shows, 이태균's police-university-to-bar route, 서출구's two Netflix series, 최혜선's Durham MSc and London hospital, 윤비's 생존남녀 win, 허성범's KAIST record, 박지민's day job — render with no citation surface at all, while the fifteen beside them have one. Because the button is conditionally hidden rather than showing an empty state, the reader gets no signal that anything is missing. The Sources tab's honesty paragraph accounts for season runs and for the 52 relationship lines by name and is silent about this section.
 
-#### [major] The one legend-free graphic the build invented — a line that stops short and ends in an open circle — is never explained
-`src/graph/render.ts:764-793 (coldCrossing, COLD_STOP_PX / COLD_CAP_PX) + src/data/i18n/ui.ts (about.tile* keys)`
+**Why it matters.** It is the one incomplete disclosure in a product whose distinguishing quality is that it counts what it cannot prove. A reader who has just been told "31 of the 52 relationship lines still stand on namu.wiki alone" is entitled to assume the same accounting covers the biography, and it does not.
 
-**Wrong:** Parallel-record edges are clipped at the cold band's rail and capped with a small open circle. Those three caps are in the default view of every desktop and mobile capture (shots/02 at ≈846/1034/1188 × 858; shots/21-mobile-graph.png at y≈1400). There is no legend tile for it — the HOW TO READ grid's twelve about.tile* keys cover plate, size, ring, arcs, halo, dashed season, beaded, no-ties rim, dashed line, arrow, edge click and the cold band, and none covers this — and no note in the rail beside 평행 이력. On mobile the reading order is worse: the open circle sits directly above the '강지후' caption, so it reads as part of his stack.
+**Fix.** Either attach the citations (each of these blocks is written from pages already listed in that person's own `sources` array, so it is a copy, not new research — plus the matching arithmetic edit to `dataset.meta.sourcing` in the same commit, which is what the comment says is blocking it), or render an explicit "출처 없음 / Not separately cited" line where the button would be, and add one sentence to the Sources tab stating how many of the 22 accounts are cited.
 
-**Matters:** The reasoning in the code is excellent — a non-meeting should visibly refuse to enter the band. But an invented symbol with no key is decoration. The user sees three teal dashes terminating in empty rings that point at nobody, which is exactly the 'broken/dangling edge' reading the device was meant to prevent.
+### [minor] The franchise strip counts non-playing seasons as seasons played
 
-**Fix:** Add an about.tileParallelStop card to the HOW TO READ grid showing the clipped line and its cap with the copy that already exists at ui.ts:258 ('기록은 겹치지만 만난 적은 없는 관계입니다'), and add a one-line foot under the 평행 이력 row in the FilterRail alongside the existing 'dashed = history from outside the house' note. Also nudge the three stub x-positions so each lines up with the person it points at — they currently land at 846/1034/1188 against band members at 827/1080/1352.
+`src/components/Dossier.tsx` · Live capture: Park Ji-min reads "Best No. 4 · 3 seasons · Outlasted 29%"; Lee Sang-min reads "1 season".
 
-#### [major] Shift+Enter path tracing is documented in the Shortcuts tab and does not work as documented
-`src/graph/GraphCanvas.tsx:3204-3207 (and src/components/Dossier.tsx:918)`
+**What is wrong.** Dossier.tsx:425 computes `played = new Set(runs.map(r => r.season)).size` over every run regardless of role. Park Ji-min played two seasons and dealt in a third; Lee Sang-min has never played one. headToHead.ts:292 already computes this correctly (`runs.filter(r => r.role === 'contestant')`) and the strip does not use it. The wording is neutral enough on its own ('개 시즌' / 'seasons'), but the strip is headed 프랜차이즈 통산 / ACROSS THE FRANCHISE and the number sits between "Best" and "Outlasted %", both of which are play metrics.
 
-**Wrong:** The Shortcuts tab (shots/13c-about-shortcuts.png) prints 'Enter — 커서가 놓인 인물 열기' immediately followed by 'Shift Enter — 선택한 인물과 커서가 놓인 인물 사이의 경로 추적'. But Enter opens the dossier and the dossier focuses its own heading, so the canvas no longer has focus and Shift+Enter goes to the panel. Verified: canvas.focus() → ArrowRight → Enter → ArrowRight ×2 → Shift+Enter produced zero path elements and no change to the hash; the identical sequence with an explicit canvas.focus() re-inserted after Enter produced #path=hong-jin-ho,kim-yoo-hyun immediately. The source comment at GraphCanvas.tsx:3204 already admits 'the SHORTCUTS tab's documented Enter, then Shift+Enter to trace fails as written'.
+**Why it matters.** It puts a play count on a man who has never played, immediately under a chip that already (wrongly) says he hosted — the two errors compound into a franchise record he does not have.
 
-**Matters:** Path tracing is one of the two headline interactions in this build and it is keyboard-unreachable by the only route the app documents. A keyboard user follows the printed instructions, gets nothing, and has no way to discover that an undocumented Shift+Tab back to the canvas is required. Documented-but-false shortcuts are worse than absent ones.
+**Fix.** Read `career[personId].seasons.length` instead, and print the non-playing seasons separately as their own clause ("1 season on the panel" / "패널 1개 시즌") so the record stays complete without being counted as competition.
 
-**Fix:** Either keep focus on the canvas when Enter opens the dossier (move focus into the panel only on an explicit Tab, and announce the open via the existing role=status live region), or register the Shift+Enter binding at document level whenever atlas.selectedId is set so it fires regardless of which of the two surfaces holds focus. The second is a three-line change in App.tsx's existing key handler.
+### [minor] Two edges tell materially different stories in Korean and English
 
-#### [major] The dossier stays open on a person the filters have removed, over an empty graph
-`src/state/useAtlas.ts / src/App.tsx / src/components/StatusBar.tsx`
+`src/data/i18n/edges.en.ts` · edges.en.ts:214 (`lee-sang-min--park-ji-min`) against its Korean counterpart in edges.ts; edges.en.ts entry for `park-ji-min--heo-seong-beom`.
 
-**Wrong:** Turn every lineage chip off (my scratchpad/B-empty.png). The canvas correctly says '조건에 맞는 사람이 없습니다 · 필터를 해제하면 20명이 모두 돌아옵니다' and the rail reads 0/20 — but the right panel still shows 홍진호's complete file with '관계 12' and '이미 마주친 사이 11', and the status bar still reads '홍진호 선택됨 · Shift+클릭으로 두 사람 사이 경로 추적 · Esc로 해제' over a canvas containing zero nodes.
+**What is wrong.** The English file's header states that "every name, day number, score, placement and sum of money is carried across unchanged, and only the prose is authored fresh". On the 이상민×박지민 line the Korean names three specific season-1 plays (selling out the King who made her Queen on day two, the staged tears on day four, the only contestant to reach the finale without drawing a vote); the English drops all three and instead adds a characterisation with no Korean source — "billed as the chief of a corps that lives and dies on instinct". On 박지민×허성범 the English dates the raid to "day three" where the Korean gives no day. Related: hong-jin-ho's season-3 arc renders "passing off her win as his own" for 최혜선을 이긴 척 위장한 채, which is a different assertion (claiming credit vs. faking a result).
 
-**Matters:** Three surfaces disagree about whether anyone is on screen, and the status bar instructs an action (Shift+click a second person) that is impossible in the current state. It also undermines the otherwise excellent empty state next to it — the empty-state copy reads as a bug report when a full dossier is sitting beside it.
+**Why it matters.** Korean is declared the source of record. Two readers looking at the same tie card get different facts, and in one direction the English is the only place a claim appears at all — which is precisely the drift the file headers throughout this repo exist to prevent.
 
-**Fix:** When !visible.has(selectedId): either drop the selection (and say so — 'filters removed 홍진호'), or keep the panel and badge it '현재 필터에서 제외됨 / hidden by current filters' under the name, greying the 관계 chips. Either way swap the status hint back to the idle string when relationCount is 0.
+**Fix.** Re-zip these two entries against the Korean: restore the three named plays to the 이상민×박지민 English (or, better, cut them from the Korean too, since edges.ts's own rule says placements and elimination order belong in records.ts), delete the unsourced "lives and dies on instinct" clause, drop "on day three", and change "passing off her win as his own" to "passing himself off as the one who had beaten her". Then extend the validator to flag any English description containing a day number, score or year absent from its Korean pair.
 
-#### [minor] A cold load can paint monogram plates where photographs belong — a mixed wall of faces and initials
-`src/graph/plate.ts (mark fallback) / src/graph/portraits.ts`
+### [nit] Stale counts in the data-file headers
 
-**Wrong:** In shots/26-en-graph.png seven of twenty nodes are drawn as name-monogram discs while thirteen carry photographs: Lee Gwan-hee ('Gwan hee'), Kim Yoo-hyun, Kwak Beom, Kim Nam-hee, Kang Ji-hoo, Shin Seung-yong, Choi Yeon-cheong — exactly the seven lowest-degree, smallest-radius nodes. The same file in Korean (02) shows all twenty with photos. It did not reproduce on my warm 3s reload or on a live language switch, so it is a decode race won by the large plates and lost by the small ones, not a missing asset (0 failed requests either way).
+`src/data/i18n/edges.en.ts` · edges.en.ts:4 "English accounts of the forty connections in `edges.ts`"; the validator reports 52. Dossier.tsx:580 "Eight of the twenty have never played this franchise, and until this section existed…" now sits above a section that people.ts:606 says covers 20 of 20.
 
-**Matters:** The brief states the monogram is 'never drawn anywhere' and only reachable by deleting a file. In practice a first visit on a cold cache paints a wall that is half photographs and half initials — visibly inconsistent, and it makes the size-encodes-degree channel read as 'small nodes are different in kind' rather than 'small nodes have fewer ties'.
+**What is wrong.** Two header comments quote counts the data has since moved past.
 
-**Fix:** Do not composite the mark as an eager fallback. Draw the plate with an empty seated disc (the vignette alone) and cross-fade the photo in when the decode resolves, so the medallion never changes kind mid-load. Reserve the mark strictly for the case where the file genuinely does not exist — which the vite plugin already knows at build time, so it can be a static per-person boolean rather than a runtime race.
+**Why it matters.** In this repo the headers are the specification — three separate bugs above were caught by reading them against the code. A header that has drifted is a specification that has stopped being checkable, and it is the first thing the next reviewer or contributor reads.
 
-#### [minor] Orbit is a quarter of the primary nav and is dead on every fresh load
-`src/App.tsx:372 / src/components/TopBar.tsx:637 (aria-disabled) / src/graph/layout.ts:2086`
+**Fix.** Replace the hard-coded numbers with the invariant they stand for ("one entry per edge in edges.ts, keyed by id"), and have tools/validate-data.mjs assert that any digit-bearing count in a data-file header matches the live figure.
 
-**Wrong:** The fourth mode tab is aria-disabled until a person is selected; pressing 4 is a silent no-op; clicking it only flashes '인물을 먼저 선택하세요'. The layout's own handoff note at layout.ts:2086-2094 says the mode now composes fine for an empty selection and asks for one string — an eyebrow naming the auto-chosen subject — which was never written. Circumstantial evidence that this trips even the project's own tooling: shots/07-orbit.png and shots/23-path-trace.png are byte-identical (7,102,189 bytes) and both show the Web tab active, i.e. the capture script asked for orbit and got web; shots/14-filtered.png does not exist at all.
+---
 
-**Matters:** A newcomer's exploration of a four-item nav includes clicking the fourth item. Getting a refusal there in the first ten seconds teaches that the chrome is unreliable, and the refusal is unnecessary — orbitLayout already falls back to the highest-weight node.
+## UI/UX & INTERACTION DESIGN — 6/10
 
-**Fix:** Enable the tab. On entry with no selection, centre the highest-weight person (홍진호) and paint the eyebrow the layout note asks for: '{name} 중심 / centred on {name}'. Two string keys and deleting the isLocked guard.
+> The information architecture, copy, legend and keyboard/ARIA work are genuinely flagship-grade, but the app's single most common gesture — hovering a node — blacks out that person's photograph, picking someone from the search palette silently filters the atlas down to 2 of 20 people, and the browser Back button is a dead key; three primary-surface failures on the most-travelled paths.
 
-#### [minor] The HoverCard covers the ties it exists to explain
-`src/components/HoverCard.tsx / HoverCard.css`
+**Biggest single win.** Stop the caption from destroying the face it names. Suppress the canvas caption for the node the HoverCard is already describing, and clip the own-face wash to the glyph box with a ceiling around 0.68 instead of painting a 109px-radius 94%-opaque disc from a 200px caption box. That is a handful of lines in one function of src/graph/render.ts, and it repairs the release's entire headline feature at the exact moment of attention — hover, select and the orbit centre all currently render the subject as a black silhouette, in four of the supplied screenshots and permanently on a Korean phone.
 
-**Wrong:** The card is always placed down-and-right of the pointer. In shots/03-hover.png, hovering 홍진호 — the hub, twelve ties — puts a ~280×400 card squarely over 이태균, 정근우 and the lower half of 박지민, and clips 이태균's caption to '…태균'. Those are three of the nodes whose links have just been lit by the hover.
+<details><summary>What is working</summary>
 
-**Matters:** The hover is the shortest path from 'I see a blob' to 'I understand a relationship', and on the densest node in the graph the readout hides a quarter of the answer. The card's own content ('가장 강한 인연 · 서출구') points at a node the card is not covering, which makes the occlusion feel arbitrary.
+- Keyboard operation of the canvas is real and better than most commercial graph tools: the canvas is role="application" with tabindex=0 as the FIRST tab stop, arrow keys move a cursor between nodes inside a 100° cone, Enter opens, and every cursor move writes one sentence into a polite live region that matches the sr-only fallback list verbatim. The custom widgets are correct too — roving-tabindex radiogroups for mode and language, a proper combobox/listbox palette with aria-activedescendant, tablist/tabpanel in the help sheet, and `inert` rather than aria-hidden on leaving dialogs.
+- The empty state is the best-written screen in the app: 'Nobody matches these filters' with a bilingual second line and an explicit recovery sentence naming the number (20) that comes back. Almost nobody writes this screen at all.
+- The honesty coupling holds up under inspection. The gallery note and about.tilePlate genuinely switch on whether the portraits folder has content, and the cast wall prints '0 건 · 평행 이력 1' for 강지후 — the verified/parallel distinction is legible as a number, not just correct in the data model.
+- The relationship encoding is discoverable without help: the filter rail is a live legend (colour swatch + name + count, all clickable as filters), so 'what does teal mean' and 'show me only teal' are the same control. That is the right answer to 'is the encoding discoverable'.
 
-**Fix:** Score the four quadrants around the pointer by how many highlighted (focus > 0) link segments and lit node discs each would cover, and place the card in the cheapest one, falling back to down-right on a tie. The renderer already computes per-link focus, so the count is available for free.
+</details>
 
-#### [minor] Caption leader hairlines use the same visual channel as the 'same season' edge
-`src/graph/render.ts:2352 (strokeStyle alpha(INK_LOW, 0.7), lineWidth 1)`
+### [blocker] Hovering a node wipes out that person's photograph — the caption scrim reaches 0.94 alpha over the face
 
-**Wrong:** Strayed captions get a solid 1px INK_LOW hairline from plate rim to text box. The 같은 시즌 / Same season edge type is a solid grey-lavender line at roughly 2px. In shots/16-zoomed-in.png and 17-zoomed-out.png, 하승진's and 홍진호's names hang on long near-vertical grey lines that are indistinguishable at a glance from a same-season tie running off into empty space — in 16 홍진호's leader is ~110px long and terminates in text, which is exactly what a mis-drawn edge would look like.
+`src/graph/render.ts`
 
-**Matters:** This app's whole premise is that every stroke on the canvas means something specific. A typographic tether painted in the relationship language is the one place where a stroke means nothing and looks like it does — and it fires most on the zoomed and filtered views, where the reader is already working harder.
+**What is wrong.** When a node is hovered, the caption is promoted to the two-line name+role form and the label solver frequently seats it on the own-face slot of last resort. The plate wash is then `min(0.94, (onOwnFace ? 0.9 : …) + 0.25 * max(n.focus*2, useSub ? 1 : 0))` (render.ts ~2915) and it is painted as a radial gradient of radius `(boxW + 18) / 2`. For a two-line Korean caption boxW is ~200px, so a 109px-radius, 94%-opaque black disc is painted over a node whose photo radius is ~31px. I drove this live at 1600×1000 dpr2: before hover 홍진호's face is fully visible; on hover it is a black silhouette with the caption printed on it. It is in the supplied screenshots too — 03-hover, 04-dossier, 05, 06 and 07-orbit all show 홍진호 as a black disc, and 07 has it as the CENTRE of the orbit layout. On a 390px phone in Korean it is at rest and permanent: 이진형 stays a black disc with his name across it after 8 seconds of settling.
 
-**Fix:** Give the leader a channel no edge uses: dash it [2/k, 3/k] and drop the width to 0.75, or terminate it in a 1.5px dot at the plate rim. It only has to survive as an attachment cue; it must not survive as a line.
+**Why it matters.** The headline of this release is that all twenty people now have a real photograph and the mark is never drawn. The app deletes the photograph at exactly the moment the reader asks who someone is, and the code comment beside the seat argues the opposite ('it is painted with a heavier scrim so the type sits ON the photograph rather than in it') — 0.94 is not 'on', it is 'instead of'. It also makes the hover redundant twice over: the HoverCard already shows the same name, the same role and a thumbnail, so the canvas is destroying the portrait to repeat text that is already on screen 40px away.
 
-#### [minor] The graph's key is a ghost in the default desktop view
-`src/components/FilterRail.tsx / FilterRail.css (section order and scroll mask)`
+**Fix.** Three independent fixes, any of which lands it. (1) Suppress the canvas caption entirely for the node the HoverCard is currently describing — the card is the readout. (2) Never promote to the two-line `useSub` form when the chosen slot is the own-face seat; a one-line name needs a ~70px box, not 200px. (3) Clip the wash to the glyph box (`boxW+18 × boxH+14` rounded-rect) instead of a circle of radius (boxW+18)/2, and cap `onOwnFace` at ~0.68 — the knockout stroke at rgba(10,7,6,0.9)/3px already carries most of the legibility. Assert it: sample mean luma inside r = rPhoto*0.6 before and after hover; it must not drop by more than 25%.
 
-**Wrong:** '노드 읽는 법 / NODE KEY' is the only place the plate encoding is explained without opening the field guide. At 1600×1000 (shots/02, 03, 07, 08, 09, 14) exactly one of its five rows is visible — '크기 = 연결 수' — and it sits inside the rail's bottom scroll mask, rendered at an alpha that reads as disabled rather than as scrollable. The other four rows (ring colour, outer arcs, brass halo, remaining marks) are below the fold with no scrollbar and no affordance beyond a jump-link strip.
+### [blocker] Opening a person from the search palette leaves a hidden query filter that guts the atlas
 
-**Matters:** The brief asks whether the encoding is discoverable without opening help. It is not: the one on-screen key is faded to the point of looking switched off, while a 7-row relationship filter that the reader has no reason to touch yet occupies the space above it.
+`src/state/useAtlas.ts`
 
-**Fix:** Reorder: Lineage → Node key → Relationships, and ship Relationships collapsed by default (the section is already a <button> with a chevron). Or raise the mask's floor so a half-visible row still reads as live type rather than as a disabled control.
+**What is wrong.** Typing '홍진호' into the command palette and pressing Enter opens his dossier AND leaves `q=홍진호` set. Pressing Escape closes the dossier and leaves the graph at 2 of 20 people and 1 of 52 ties (verified live: status bar reads '인물 2/20 · 관계 1', hash `#q=%ED%99%8D%EC%A7%84%ED%98%B8&lang=ko`). The only trace is a small count chip inside the top-bar search button, and that chip is `aria-hidden="true"` (TopBar.tsx:721). Screenshot 14-filtered shows the same trap in the shipped set: the rail says 10/20, the search chip says 14, and nothing on screen explains the difference.
 
-#### [minor] Mobile: primary navigation sits below the utility icons, and section headers are at the WCAG target-size floor
-`src/components/TopBar.css / FilterRail.css (mobile breakpoints)`
+**Why it matters.** The reader asked to LOOK AT a person, not to filter the atlas down to them. They then close the panel and are staring at an atlas that has lost 90% of itself, with no visible cause and no obvious undo — 'clear filters' in the status bar is the only exit and it is 1100px away from where the action happened. This is the single fastest way for a first-time user to break the app and not know why.
 
-**Wrong:** At 390×844 (shots/21-mobile-graph.png, my scratchpad/m-lock.png) row one is search / language / fit / rail / gallery / help and row two is the four layout modes — the least-used controls above the most-used. Measured target sizes in the same viewport: the rail's section-header buttons (관계, 노드 읽는 법, 직업군, 가장 얽힌 인물) are exactly 24px tall, i.e. sitting on the WCAG 2.5.8 minimum with zero margin; the filter-panel close button is 30×30; the lineage chips are 30px tall; language buttons 44×38. Also, the three cold-band captions take three different placements in one three-node row (강지후 above its disc, 신승용 to the right, 최연청 above), with the band's own caption below all of them.
+**Fix.** Separate 'search to navigate' from 'search to filter'. Committing a person from the palette (Enter / click on a People row) should clear the query — the selection is the outcome, the filter was scaffolding. Keep the live graph-filtering while the palette is OPEN, since that is what the 'closing keeps this' note promises, but clear `q` on commit-to-person. If the persistent filter must stay, the top-bar chip must be a visible dismissible token showing the query string ('홍진호 ✕'), not an aria-hidden count.
 
-**Matters:** On the device where thumb reach and target size matter most, the four things a user switches between constantly are one row further from the thumb than the six things they touch once, and four controls are at the legal floor rather than the comfortable one.
+### [blocker] The browser Back button does nothing, and one Escape can push two history entries
 
-**Fix:** Swap the two rows at the mobile breakpoint. Raise the section-header buttons to 36px min-height and the chips to 36px (the type does not need to grow — pad the hit area). For the cold row, force a single caption side for all band members: the renderer already solves coldSide for the band's own caption, so pass the same answer to the three member labels.
+`src/state/useDeepLink.ts`
 
-#### [nit] A switched-off relationship type keeps its count at full brightness
-`src/components/FilterRail.css`
+**What is wrong.** Traced live: start `#lang=ko` (history.length 2) → select 홍진호 (len 3) → press 4 for orbit (len 4) → press Escape (len **6** — one keypress, two pushes, because clearing the selection also reverts the locked orbit mode in a second commit). Then three consecutive `history.back()` calls leave the hash unchanged at `#q=…&lang=ko` and history.length pinned at 6 — the app re-writes the hash forward on every popstate, so Back is a no-op. The user cannot even leave the page with it.
 
-**Wrong:** In the off state (my scratchpad/rail-off.png, #e=alliance,betrayal) the swatch dims and takes a diagonal strike and the label dims — but the trailing count (7, 12, 6, 3, 1) stays at the same value as the two live rows. Separately, 같은 시즌's swatch is itself grey, so grey line + grey strike collapse into an illegible smudge at 13px, making it the one row whose state cannot be read from the swatch at all.
+**Why it matters.** On Android the hardware/gesture Back is the primary 'close this panel' gesture, and this app is a phone-first companion to a Korean variety show. Back either does nothing or, once the trap is escaped, jumps two steps. The file's own comments argue carefully about which changes are navigations and which are refinements — that reasoning is sound and the implementation does not deliver it.
 
-**Matters:** The number is the brightest thing in a disabled row, which reads as 'this filter is on and matches 6' rather than 'this filter is off'.
+**Fix.** Two fixes. (a) Coalesce the Escape commit: clearing the selection and reverting the orbit lock must land in one state write, so batch them (a single `atlas.select(null)` that also normalises mode) before the deep-link effect runs. (b) Fix the popstate loop: when `onNav` applies an incoming hash, set `selfWrite.current = true` for the whole apply-and-rebuild cycle, not just one macrotask — the `setTimeout(…, 0)` at line 341 fires before React has committed the applied state, so the rebuild reads as a fresh user change and re-pushes. Regression test: select → Escape → history.back() must restore the person.
 
-**Fix:** Dim the count to --ink-low in the off state alongside the label. For 같은 시즌 specifically, strike in --ink-hi rather than in the swatch's own family so the two marks separate.
+### [major] Four of twenty people are unnamed on an English phone — with no mark drawn, they are anonymous faces
+
+`src/graph/render.ts`
+
+**What is wrong.** At 390×844 dpr3 with `lang=en`, the default view inks 17 captions and drops four — lee-sang-min, jung-keun-woo, lee-jin-hyung, choi-hye-sun — all with reason 'stray' (read from `window.__atlasPaint.frame.dropped`). The same viewport in Korean names all twenty. Confirmed visually in my capture: four discs on the first screen carry no text of any kind. Separately, at 1600×1000 pressing '=' three times drops ha-seung-jin, hyun-seong-joo and seo-chul-gu as 'unseen' while their discs are still inside the viewport.
+
+**Why it matters.** The brief's own premise is that the caption is now the WHOLE of a node's identification. An English reader on a phone — the exact user the romanised mark exists for — cannot identify 20% of the cast on the first screen without tapping each one. The two failure modes are also inconsistent with each other: Korean takes the own-face seat and destroys a photo, English refuses the seat and produces an anonymous face. One of those two policies is wrong.
+
+**Fix.** Give the solver a shorter fallback string before it gives up. English romanisations are 2–3× the pixel width of the Hangul ('Choi Yeon-cheong' vs '최연청'), so add a surname-dropped or given-name-only variant ('Yeon-cheong') to `buildSpots` as a second pass when every slot at full width is priced above MISSEAT, and only then fall through to drop. Also raise the seen-fraction floor's grace at k > 2 so a disc whose centre is on screen keeps its name. Assert: `paintedFrame.dropped` must be empty for every node whose centre is inside the uncovered rect, at 390/1280/1600 × {ko, en}.
+
+### [major] Single-letter shortcuts fire while Ctrl/Cmd is held, so browser chrome and the graph both react
+
+`src/App.tsx`
+
+**What is wrong.** The global keydown handler (App.tsx:418–464) switches on `e.key` with no check on `e.ctrlKey`/`e.metaKey`/`e.altKey` — the only guard is whether focus is in an input. So Ctrl+F opens the browser's find bar AND refits the graph; Ctrl+- and Ctrl+= zoom the browser AND zoom the graph (compounding, so the reader ends up at an unintended scale in two coordinate systems); Cmd+[ on macOS is browser-back and also toggles the filter rail; Ctrl+G (find-next) toggles the cast wall.
+
+**Why it matters.** These are among the most-used browser shortcuts. A reader who reaches for Ctrl+F to find a name — the single most likely keystroke on a page of twenty names — gets the find bar plus an unexplained camera move, and cannot tell which of the two things they did. Ctrl+- is worse because the two zooms compound and there is no single control that undoes both.
+
+**Fix.** Add `if (e.metaKey || e.ctrlKey || e.altKey) return;` immediately after the existing Ctrl+K branch and before the switch. The Ctrl+K palette toggle already handles its own modifier case above it, so nothing else in the handler wants a modifier.
+
+### [major] Filtering never refits the camera, so the graph shrinks into the top-left of a mostly-empty canvas
+
+`src/graph/GraphCanvas.tsx`
+
+**What is wrong.** In 14-filtered (10 of 20 shown) the blob occupies roughly x 860–1520 of a 390–2000 canvas and is centred at y≈440 of a 80–1245 box — the bottom half and both side thirds are dead black. 17-zoomed-out is the same 14-person filter with more dead space. The cause is that the vertical space reserved for the cold band is still reserved when the filter has removed everyone in it, so the surviving graph is pushed permanently above centre and never rescaled.
+
+**Why it matters.** Filtering is the app's main analytical gesture and it makes the result harder to read, not easier — the ten remaining people are drawn at the same small radius as twenty, in 40% of the width, and the reader has to press F (undiscoverable) or scroll-zoom to recover. It also makes the filter feel like it removed the wrong thing.
+
+**Fix.** Include `visible` in the coalescing camera effect that already keys on (selection, filters, insets) and call `fit(96)` when the visible set's bounding box changes by more than ~15% in either dimension. And make `coldBounds` return null height when `coldCount(s) === 0` so the reserved band collapses. Assert: after any filter change, the visible nodes' bbox must fill ≥ 55% of the uncovered rect's shorter axis.
+
+### [major] By-archetype does not earn its place: six of ten groups are singletons and bubble radius encodes nothing
+
+`src/graph/layout.ts`
+
+**What is wrong.** In 09-archetype, six of the ten hulls contain exactly one person (배우, 크리에이터, 코미디언, e스포츠, 기타, and 최혜선's), and the hull radii are near-identical regardless of membership — the 1-person e스포츠 bubble around 홍진호 is the same size as the 5-person 전문직 bubble. The captions sit 150–250px out in empty black with no leaders, so '배우 · 1명' and '크리에이터 · 1명' are two near-identical pink-dotted labels 220px apart with two pink circles between them and it is genuinely ambiguous which is 최연청 and which is 최혜선. Hulls also intersect (전문직 into 뮤지션 and e스포츠) which for set membership implies an overlap that cannot exist.
+
+**Why it matters.** You asked whether one of the four layouts is redundant. This is it. Web already encodes archetype as ring colour on every disc, so this mode adds only the grouping — and with 6/10 groups of one, there is no grouping to show. Meanwhile it costs the reader a mode slot, a keyboard number and a line in the help sheet, and it is the one screen where a viewer cannot reliably tell which label goes with which shape.
+
+**Fix.** Either merge singletons into a single '기타 · 6명' hull so the mode shows three or four real blocs, or drop the mode to three and give the number 3 to something the data supports. If it stays: make hull radius a function of member count, forbid intersection outright (the file's own opening rule says so), and draw a leader hairline from every caption to its hull — Cluster.bare is never set any more (layout.ts:126), so no archetype caption gets one today.
+
+### [minor] The clipped parallel-record line and its open-circle terminator are explained nowhere
+
+`src/components/AboutSheet.tsx`
+
+**What is wrong.** Three teal dash-dot lines run down toward the cold band, stop ~11px short of it and terminate in an unfilled circle floating in black (visible in 02, 21, 26). This is a careful, deliberate device — `coldCrossing` binary-searches the crossing point and the comment explains the reasoning well — but there is no legend card for it. The HOW TO READ grid has tiles for size, ring colour, arcs, halo, dashed rim, beaded arc, grey rim, dashed line, arrowhead, bead, brass collar, cold band, plate, rim ticks and shift-click; none covers the stop-and-cap. The FilterRail's only footnote is about dashed lines.
+
+**Why it matters.** You asked whether the parallel/verified distinction is legible or merely correct. This is precisely where it is only correct. A reader sees a band captioned 'nobody here is entangled with anybody' with three lines visibly running into it and stopping — the picture and the caption contradict each other, and the resolution exists only in a code comment. Every other graphic in this app is taught.
+
+**Fix.** Add an `about.tileParallelStop` card to the HOW TO READ grid showing the clipped line and its open cap, with the copy that already exists at ui.ts:258 ('기록은 겹치지만 만난 적은 없는 관계입니다' / 'records that rhyme, a meeting that never happened'). Add a one-line foot under the 평행 이력 row in FilterRail beside the existing dashed-line note. Also align the three stub x-positions with the people they point at — they land at 846/1034/1188 against band members at 827/1080/1352.
+
+### [minor] The empty state tells the reader what to do but gives them nothing to click
+
+`src/graph/render.ts`
+
+**What is wrong.** With every lineage chip off, the canvas paints 'Nobody matches these filters / 조건에 맞는 사람이 없습니다 / Clear the filters to bring all 20 of them back'. It is canvas text, so it is not clickable, not focusable and not in the accessibility tree. The two real recovery controls are 'Reset' at the top of the filter rail and 'clear filters' in the status bar — and on a phone the rail defaults closed, so the status-bar link is the only exit.
+
+**Why it matters.** An empty state that names the action but does not offer it makes the reader hunt. It is also the one screen where a keyboard or screen-reader user has nothing at all: the canvas's aria-label still says 'use the arrow keys to move between people' when there are no people.
+
+**Fix.** Render the empty state as a DOM overlay instead of canvas text, with the recovery as a real `<button>` wired to `atlas.resetFilters`. Swap the canvas aria-label to the empty message while `visible.size === 0`.
+
+### [minor] Mobile: no wordmark on the graph screen, and the language switch is the loudest control on it
+
+`src/components/TopBar.tsx`
+
+**What is wrong.** At 390×844 (21-mobile-graph, 22-mobile-dossier, and my own capture) the '피의 게임X / CAST ATLAS' wordmark is gone entirely and the top two rows are search-icon, a full-value bone-filled 한국어|EN pill, and four icon buttons, above the four layout tabs. The language toggle is the largest and brightest object on the screen — larger than search, heavier than the four mode tabs beneath it.
+
+**Why it matters.** You asked what a newcomer knows in the first ten seconds. On a phone, after the intro is dismissed, nothing on the screen says what this is — the title exists only in the cold open, which a deep link skips entirely (`hasDeepLink()` sets introDone true). A shared link on a phone lands on twenty unexplained faces. Meanwhile the loudest pixel is a setting almost nobody changes twice.
+
+**Fix.** Put a compact wordmark ('피의 게임X · CAST ATLAS' at ~13px) in row one on mobile, taking the space the language pill currently occupies. Demote the language switch to a globe icon that opens a two-item menu, matching the weight of the other five icon buttons.
+
+### [nit] The filter rail's Node key section renders its first row at ~35% opacity, so it reads as disabled rather than scrollable
+
+`src/components/FilterRail.tsx`
+
+**What is wrong.** In every desktop screenshot (02, 04, 07, 08, 09, 14, 17) the '노드 읽는 법 NODE KEY' header is followed by exactly one row — '크기 = 연결 수' — already inside the bottom scroll-fade at roughly 35% opacity, then the section-jump strip. The fade begins on the very first item of the section rather than a row or two later.
+
+**Why it matters.** A dimmed first row under a live header reads as a disabled control, not as 'there is more below'. The reader's model of the rail is that dim = filtered out, which is exactly what that opacity means seven rows above it in the relationship list.
+
+**Fix.** Start the mask ~48px lower so at least one full row of the section sits at full opacity, or put the fade only on the last 24px and add a caret. The section-jump strip below already provides the affordance; the fade is fighting it.
+
+### [nit] In English the canvas prints a Hangul second line while the rest of the UI is English-only
+
+`src/data/i18n/ui.ts`
+
+**What is wrong.** With lang=en the canvas paints 'No prior tie on record / 확인된 인연 없음 · 3명' and the empty state paints 'Nobody matches these filters / 조건에 맞는 사람이 없습니다'. Everything else in EN mode is monolingual — the rail says 'Season 1' and 'Alliance' with no Korean, the top bar is English-only. In KO mode the rail IS bilingual ('동맹 Alliance').
+
+**Why it matters.** The bilingual pairing is a deliberate and good editorial device, but it is applied to the canvas in both languages and to the chrome in only one. The result is that the only Hangul an English reader ever sees is painted on the canvas, where it reads as a leak rather than as the register choice it is elsewhere.
+
+**Fix.** Pick one rule and apply it to both surfaces: either mirror the KO pattern (English primary + Korean secondary throughout the EN chrome), or drop the Korean second line from the canvas strings when lang === 'en', keeping it only where it names a Korean proper noun.
+
+---
+
+## MOTION & ANIMATION — 6/10
+
+> The motion system is reasoned at flagship level and holds a clean 16.7ms median almost everywhere, but the app's two most-used moments — the first unobstructed frame of the graph and the first click on a person — are both measurably broken: the mesh has not started drawing when the curtain clears, and the first dossier open costs ~450ms of long tasks and leaves an empty panel on screen for a third of a second.
+
+**Biggest single win.** Warm the Dossier behind the cold open the way CommandPalette (`.cp--warm`, opacity 0.008 for two frames) and HoverCard (`.is-warming`) already warm themselves. First-mount currently costs ~450ms across five long tasks on the production build with a real GPU, which turns the app's core interaction into an empty panel for a third of a second and a document that is not complete until 1.05s; the 240ms slide and the 90+65×4ms section cascade are never actually seen by anyone. Warming it under the curtain moves that cost to where GraphCanvas already spends WARM_PASSES and lets the choreography that is already written finally run — and it would then let the three-commit `bodyReady`/tail split be deleted rather than tuned a fourth time.
+
+<details><summary>What is working</summary>
+
+- The canvas genuinely sleeps at rest and every wake-up is derived (visibilitychange, portrait load, focus change) rather than polled — 0.5 paints/s idle is rare and it is the reason mode changes, the palette and the gallery all measure a flat 16.7ms median on a real GPU.
+- Reduced motion is properly implemented rather than blanket-disabled: measured, the reveal ramps 0→1 in ~70ms, the intro unmounts at ~57ms, anchored layouts teleport (rest=true, mean error 5.3px) and the auto-advance timer is switched off per WCAG 2.2.1.
+- The cold open's countdown hairline reads `currentTime` off the Web Animation instead of keeping a parallel setTimeout — the bar IS the timer, so a hover pause pauses the same quantity. That is the correct solution, not a compensated one.
+- Transitions land and stay landed. After a node drag the mesh reaches rest in 161ms; after a mode change anchor error is 0.2px at ~950ms and `rest` latches true. No creep, no re-acceleration, no infinite jiggle.
+- The command palette's split of surface-opacity (90ms) from lift (180ms), and the removal of both backdrop-filters with the measurement that justified it, is exactly right and measurably works: 42 frames in 900ms, p90 16.9ms.
+
+</details>
+
+### [blocker] First dossier open delivers 6–11 frames in 900ms and shows an empty panel for ~350ms
+
+`src/components/Dossier.tsx`
+
+**What is wrong.** Measured on the PRODUCTION build, headed, real GPU (localhost:4319), clicking the hub: 11 rAF frames in 1000ms with inter-frame gaps of 150, 300, 83, 200, 100ms and five longtasks of 132/66/105/87/61ms — ~450ms of blocked main thread. Per-frame DOM sampling across three runs: `aside.dossier` exists and is opaque at 175–232ms (x: 1028→1000, so the 240ms slide is delivered in 3 samples), `.dsr-id` is still at opacity 0 until 320–349ms, `.dsr-sec` count is 0 until ~350ms and only reaches 8 at 730–930ms, and no section reaches full opacity until ~1050ms (run0 had none at 888ms). Captured in the screencast frames inter/dossier_001_491.jpg and inter/dossier_002_565.jpg: an opaque panel with the DOSSIER header bar, the Focus-orbit/Sources footer pinned to the bottom, and nothing in between. This is the exact symptom the file's own comment says was fixed — "an identity header floating over 370px of black with the footer pinned to the bottom of nothing" and "last section did not finish until 1.06–1.72s after the click". Isolation proves it is FIRST-mount only: clicking a second node with the panel already open measured 53 frames in 1000ms at a flat 17ms with zero longtasks, and Escape measured 48 frames at a flat 17ms.
+
+**Why it matters.** Clicking a person is the product's core interaction and every reader pays this exactly once, on their first click. The 240ms entrance and the 90ms lead + 65ms × 4 section cascade — all of it carefully tuned — are delivered in two or three frames, so none of the choreography is ever seen; what is seen is a one-second hollow rectangle that reads as a failed load. It also means the 64ms rAF-race caps in `bodyReady`/the tail commit are not buying what they claim: they bound the WAIT, not the WORK, and the work is 450ms.
+
+**Fix.** Warm the Dossier behind the cold open the same way this codebase already warms the other two heavy surfaces. CommandPalette.tsx renders `.cp--warm` (pointer-events:none, opacity 0.008) for two frames on mount, and HoverCard.css does the same via `.is-warming`, for exactly this reason ("an element at visibility:hidden and opacity 0 is never PAINTED… the whole cost was simply deferred to first paint"). Render one hidden Dossier for a real person at opacity 0.008 / aria-hidden for two frames while the intro is still up — it will pay the module init, the Pretendard/Inter metrics at the dossier's own sizes, the Portrait plate geometry for the relation rows and the eight section subtrees under the curtain, where GraphCanvas already spends WARM_PASSES. Then delete the three-commit split in Dossier.tsx (bodyReady + the tail flag): once first mount is cheap it is pure added latency, and it is what is currently pushing the section count from 2 to 8 at 730–930ms.
+
+### [major] The curtain clears before the relationship mesh has started drawing — 0 of 52 lines in 2 of 3 runs
+
+`src/graph/GraphCanvas.tsx`
+
+**What is wrong.** Sampling `__atlasDebug.linkDraw()` per frame on the production build, headed, at the frame `.intro` leaves the DOM: run0 — curtain gone at 656ms with 0/52 links begun; run1 — 545ms with 16/52 begun and 4 complete; run2 — 526ms with 0/52 begun. All 52 lines are complete only at 930 / 1063 / 1351ms. The screencast corroborates independently: reveal/f055 (525ms after ENTER) shows twenty fully lit portraits and no lines, f057 (611ms) still none, f060 (744ms) roughly 40%. The cause is the schedule: SWEEP_AT=0.8 puts the first line's start 267ms into the 700ms reveal, DRAW_SPAN=420 puts the LAST line's start 687ms in, and DRAW_DUR=220 puts its completion at ~907ms after reveal start — against a curtain that is gone by ~500ms.
+
+**Why it matters.** The product's entire thesis is the relationships; the nodes are the axis, the lines are the content. The reader's first unobstructed look at the atlas is twenty disconnected faces sitting above a caption that says three of them have no verified tie — which asserts the opposite of the app's claim, for 200–500ms, on the one frame everyone sees. The file's own comment says this was fixed ("for the first ~700ms of the product the canvas asserted the exact opposite of its thesis"); it has been shortened, not fixed.
+
+**Fix.** Move the sweep to complete WITH the curtain rather than after it. Drop SWEEP_AT from 0.8 to ~0.55 (≈115ms into the reveal on the measured EASE_REVEAL, where the intro is ~99% opaque so nothing is exposed early) and cut DRAW_SPAN from 420 to ~240 and DRAW_DUR from 220 to ~180. Last line then completes at ~535ms after reveal start, i.e. within a frame or two of the curtain clearing, and the mesh is still visibly growing under the last third of the black instead of being drawn onto an already-revealed empty scene. Verify by re-running the same probe: the target is ≥40 of 52 lines complete on the frame `.intro` unmounts.
+
+### [major] The cold open is removed from the DOM while still 15–28% opaque — the last beat is a cut
+
+`src/components/Intro.tsx`
+
+**What is wrong.** Per-frame `getComputedStyle('.intro').opacity` on the production build, headed: run A — 0.674, 0.597, 0.507, 0.401, 0.281 at 494ms, element gone at 512ms; run B — 0.281 at 494, 0.146 at 512, gone at 530; a third run had it gone while the last sampled value was 0.832. The race is structural: `EXIT_MS = 500` is used BOTH as the inline `transitionDuration` on `.intro` and as the `setTimeout` that calls `onDone` and unmounts it, but the CSS transition cannot begin until the commit after `setExiting(true)` — measured 20–40ms later — so the unmount is always at least one frame early. The exit curve `cubic-bezier(0.64, 0, 0.78, 0)` has y1=y2=0, i.e. it is a pure t³ ease-in, so the last 6% of the timeline carries ~28% of the opacity: a 30ms shortfall costs a quarter of the screen's brightness.
+
+**Why it matters.** It is the final frame of the app's first impression, and it is the one frame in a 2.6s choreography that is a hard cut. On a file whose comments argue about a 0.15 alpha crossing between two ring ramps, ending the entrance with a 15–28% brightness step is the loudest thing on screen.
+
+**Fix.** Stop racing them. Either (a) set the inline `transitionDuration` to `EXIT_MS - 80` while keeping the 500ms unmount timer, so the curtain reaches 0 at ~420ms and has 80ms of headroom for the commit and any dropped frame; or (b) better, drive the unmount off `transitionend` on `.intro`'s opacity with the existing 500ms timer as a backstop, which removes the assumption entirely. Independently, the curve deserves a less punishing tail — `cubic-bezier(0.55, 0, 0.9, 0.35)` still holds the black opaque through the first third but reaches ~0.05 at 88% of the window, so a one-frame error costs 5% instead of 28%.
+
+### [major] Anchored layout changes implode 17–31% before they arrange; node paths run 1.23–1.44× the straight line
+
+`src/graph/GraphCanvas.tsx`
+
+**What is wrong.** Tracing every node's screen position per frame on the production build and computing the mean distance from the cast's centroid: web→by-season goes 199 → 166px at 79ms (−17%) before recovering to 214; by-season→by-background goes 194 → 134px at 62ms (−31%) before settling at 177. Path straightness (total travelled distance ÷ straight-line displacement, movers only): web→season mean 1.23 with the hub at 2.52; orbit→web mean 1.44 with 10 of 20 nodes above 1.3 and a worst of 2.28. The cause is in the layout effect: `held` is set to a hard 1 the instant the mode changes, so charge collapses from −260−16r to −70−4r and link strength drops to 15% in one frame, while `anchorStrengthRef` ramps in on its own clock. For the first ~4 frames nothing is holding the mesh apart and nothing is yet pulling it to the new seats. Corroborated in modes/season2arch_003 and web2season_006, where the cast is an unreadable central heap with captions stacked on each other. (Note: the 150–167ms frame gaps I measured for the same transitions headless do NOT reproduce on a real GPU — median 16.7, p90 33.4 — so the stutter is software rasterisation, not a defect. The implosion reproduces on both.)
+
+**Why it matters.** The brief for a layout switch is that the eye can follow one person from one arrangement to the next. A 31% collapse toward the centre followed by a bloom outward is not a translation; it is two moves, and during the first one every plate and caption is stacked on every other. A 1.44 mean path ratio on the return to Web means the average person travels 44% further than they needed to, along a route that reverses.
+
+**Fix.** Cross-fade the two force régimes on the SAME clock as the anchor ramp instead of switching them instantly. Make `held` a per-tick value — `held = anchorStrengthRef.current / Math.max(1e-6, anchorTargetRef.current)` — and re-apply the charge/link/x/y strengths from it inside the render loop rather than once in the layout effect (d3 re-initialises a force when its strength is set, so do it on a coarse step, e.g. whenever `held` moves by more than 0.1, not every frame). Repulsion then decays exactly as the anchors take over and no frame has neither. Target: centroid spread monotone across the whole transition, and mean path ratio ≤1.15.
+
+### [minor] HoverCard survives the click that opens the dossier and cross-fades over it
+
+`src/components/HoverCard.css`
+
+**What is wrong.** In inter/dossier_001_491.jpg the hover card for Hong Jin-ho is at full opacity, overlapping the left edge of the dossier that has just opened for Hong Jin-ho — two cards for the same person on screen at once. In inter/dossier_002_565.jpg it is mid-exit and the canvas labels 'Lee Sang-min' and 'Kim Nam-hee' are legible straight through its body, with the card's own type on top of them. The exit is `opacity var(--hover-d) var(--ease-out)` with no delay and no surface guarantee — the same double-exposure that CommandPalette.css and Dossier.css each argued their way out of (the palette by finishing surface opacity in 90ms, the dossier by never fading the surface at all), and that this very file's own surface note is about ("'이상민' and '김경훈' were legible THROUGH the card").
+
+**Why it matters.** It is a 150ms window, but it lands on the frame after the app's most important click, and it duplicates the information the panel is arriving to give. The card is also the one surface whose opacity guarantee this file spends 40 lines defending — and the guarantee is exactly what the fade suspends.
+
+**Fix.** Two lines. Drop `.is-shown` the instant a node is selected (the card has been superseded by the panel showing the same record), so there is no cross-fade at all; and shorten the exit to ~90ms so that even when it does fade over the mesh the half-alpha window is under three frames. If a fade is wanted, fade the CONTENT and cut the surface, mirroring the palette.
+
+### [minor] The entrance's two most important curves are unnamed one-offs outside the design system
+
+`src/styles/tokens.css`
+
+**What is wrong.** tokens.css defines exactly three curves (--ease-out, --ease-in-out, --ease-spring) and GraphCanvas evaluates two of them numerically so canvas and DOM share a personality. But the master reveal runs on `EASE_REVEAL = cubicBezier(1/3, 1, 2/3, 1)`, declared as a literal in src/App.tsx with its own HANDOFF note saying it wants a name in tokens.css; and the curtain's exit runs on `cubic-bezier(0.64, 0, 0.78, 0)`, a literal in src/components/Intro.css that appears nowhere else. Both are on the single animation this codebase has re-tuned across five rounds.
+
+**Why it matters.** App.tsx's own comment states the rule it is breaking — 'an easeOutCubic that appears nowhere in tokens.css. One curve, one place.' Two unnamed curves on the entrance means the next person tuning it has to discover them by reading three files, and the CSS half and the JS half of the same handoff can drift without anything catching it.
+
+**Fix.** Add `--ease-reveal: cubic-bezier(0.333, 1, 0.667, 1)` and `--ease-curtain: cubic-bezier(0.55, 0, 0.9, 0.35)` to tokens.css with the reasoning that currently lives in App.tsx, have Intro.css use the token, and have App.tsx read it the way GraphCanvas already reads --ease-out.
+
+### [minor] Orbit (key 4) with nothing selected produces no motion, no camera move and no chip change
+
+`src/App.tsx`
+
+**What is wrong.** On the production build with no person selected, pressing 4 leaves everything untouched: node path tracing measured movers=0 and centroid spread pinned at 177px for the full 1.5s window; `__atlasDebug.geometry().clusters` returns only ['cold'] (no orbit rings); `anchorError()` reports anchored=false, rest=true; and the screenshot orbit-after.png shows the TopBar still highlighting 'Web 1'. Every other mode key produces a 1.0–1.2s arrangement change.
+
+**Why it matters.** A pressed control that produces literally zero pixels of change is indistinguishable from a dropped keystroke. Three of the four mode shortcuts move the whole cast; the fourth silently does nothing until an unrelated precondition is met, and nothing on screen says so.
+
+**Fix.** Either make 4 with no selection focus the hub automatically (the mobile build already focuses the hub on entry, so the arrangement is well defined), or give the rejection a motion: pulse the Orbit chip on --ease-spring at --d-fast and put the one-line reason in the StatusBar. Silence is the one response a keyboard shortcut may not give.
+
+### [nit] The cast wall's twenty tiles arrive as one block while the palette's eleven rows cascade
+
+`src/components/Gallery.css`
+
+**What is wrong.** Gallery.css animates the sheet as a single object (`gal-in` over --d-slow with a scrim) and has no per-tile delay. Measured per frame: 41 of 42 tile elements are already above 0.9 opacity at the first sample after G (193ms) and all 42 by 400ms. CommandPalette.css by contrast gives its rows `animation-delay: calc(var(--cp-lead) + var(--i) * var(--cp-stagger))` at 22ms per row, and Intro.css staggers its three stat columns at 26ms.
+
+**Why it matters.** It is the app's only grid of twenty faces — the surface where an ordering would read most clearly — and it is the one collection with none, while a short vertical list has one. The inconsistency is visible if you open G then Ctrl+K back to back.
+
+**Fix.** Give the tiles the same treatment as the palette rows: `--i` from the map index, `animation-delay: calc(120ms + var(--i) * 18ms)`, capped so the last tile starts no later than ~360ms (20 × 18 = 342ms, which fits inside the sheet's own 420ms). Reading order across the grid, not by index within a column.
+
+---
