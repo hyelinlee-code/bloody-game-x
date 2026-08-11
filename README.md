@@ -27,7 +27,7 @@ Anyone editing `src/data/` must hold that line. When in doubt, leave it out.
 | Encoding | Meaning |
 | --- | --- |
 | Node size | How connected that person is, blended with how much franchise history they carry |
-| Ring colour | Archetype — comedian, athlete, esports, poker, creator… |
+| Ring colour | Background — comedian, athlete, esports, poker, creator… |
 | Arcs around a node | Which prior seasons of 피의 게임 they played |
 | Brass halo | Won a previous season |
 | Dashed rim | Franchise newcomer — no 피의 게임 history yet |
@@ -63,7 +63,7 @@ facts; where an English string is genuinely missing, the Korean shows rather tha
 | --- | --- | --- |
 | `1` | 관계망 · Web | Pure force-directed. The natural shape of the cast. |
 | `2` | 시즌별 · By season | Bands by prior season; crossover players fall into the gaps. |
-| `3` | 직업별 · By archetype | Clusters by profession. |
+| `3` | 직업군별 · By background | Clusters by what they do for a living. |
 | `4` | 인물 중심 · Orbit | Ego network of the selected person, ringed by tie strength. |
 
 ## Shortcuts

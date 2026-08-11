@@ -53,8 +53,8 @@ export const ui = {
     'mode.webHint': '관계 밀도대로 자유 배치',
     'mode.seasons': '시즌별',
     'mode.seasonsHint': '시즌 1–3 출신으로 묶기',
-    'mode.archetype': '직업별',
-    'mode.archetypeHint': '직업군·유형으로 묶기',
+    'mode.archetype': '직업군별',
+    'mode.archetypeHint': '직업군으로 묶기',
     'mode.orbit': '인물 중심',
     'mode.orbitHint': '선택한 인물 중심으로 배치',
     'mode.orbitHintNamed': '중심으로 배치',
@@ -94,7 +94,9 @@ export const ui = {
        relationship legend below the fold. Four of these are byte-identical to
        the `about.tile*` strings so the two cannot drift into two grammars;
        `링 색` uses the rail's own noun for the concept (`rail.secArchetype`)
-       rather than the sheet's 아키타입. */
+       and the sheet now uses the same word. 직업별 / 직업군 / 아키타입
+       were three nouns for one concept; 아키타입 was a transliteration of the
+       English term this round retires, so 직업군 is the survivor. */
     'rail.secNodeKey': '노드 읽는 법',
     'rail.nodeSize': '크기 = 연결 수',
     'rail.nodeRing': '링 색 = 직업군',
@@ -418,7 +420,7 @@ export const ui = {
     'about.readHeading': '읽는 법',
     'about.readBody': '모든 부호에는 뜻이 있습니다. 색은 보조 수단이고, 크기 · 테두리 · 화살표가 함께 의미를 나릅니다.',
     'about.tileSize': '크기 = 연결 수',
-    'about.tileRing': '링 색 = 아키타입',
+    'about.tileRing': '링 색 = 직업군',
     'about.tileArcs': '바깥 호 = 출연한 이전 시즌',
     'about.tileHalo': '황동 후광 = 이전 시즌 우승',
     /* Three different dashed circles are drawn on the plates and the key used
@@ -442,7 +444,7 @@ export const ui = {
     'about.tileShiftClick': 'Shift + 클릭 = 두 사람 사이 최단 경로',
     'about.lineColourHeading': '선 색 = 관계의 종류',
     'about.dashedNote': '선이 점선이면 하우스 밖의 인연입니다 — 색과 관계없이.',
-    'about.archetypesHeading': '아키타입',
+    'about.archetypesHeading': '직업군',
     'about.seasonArcsHeading': '시즌 색',
 
     /* ── about sheet: seasons, glossary, franchise ────────────────────── */
@@ -536,7 +538,7 @@ export const ui = {
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': '검색 열기',
     'shortcut.gallery': '출연진 갤러리 열고 닫기',
-    'shortcut.layouts': '레이아웃 — 관계망 · 시즌 · 직업 · 인물 중심',
+    'shortcut.layouts': '레이아웃 — 관계망 · 시즌 · 직업군 · 인물 중심',
     'shortcut.fit': '화면에 맞추기',
     'shortcut.zoom': '확대 · 축소',
     'shortcut.rail': '왼쪽 필터 레일 접기',
@@ -711,7 +713,7 @@ export const ui = {
     'mode.webHint': 'Free layout, spaced by how densely people are tied together',
     'mode.seasons': 'By season',
     'mode.seasonsHint': 'Grouped by which of seasons 1–3 they came from',
-    'mode.archetype': 'By archetype',
+    'mode.archetype': 'By background',
     'mode.archetypeHint': 'Grouped by what they do for a living',
     'mode.orbit': 'Orbit',
     'mode.orbitHint': 'Everyone arranged around the person you picked',
@@ -733,9 +735,9 @@ export const ui = {
     'rail.secLineageFoot': 'three blocs drawn from earlier seasons, plus challengers and rookies',
     'rail.lineageGroupAria': 'Filter by lineage',
     'rail.onlyReturning': 'Has franchise history',
-    'rail.secArchetype': 'Archetype',
-    'rail.archetypeBulkLabel': 'archetypes',
-    'rail.archetypeGroupAria': 'Filter by archetype',
+    'rail.secArchetype': 'Background',
+    'rail.archetypeBulkLabel': 'backgrounds',
+    'rail.archetypeGroupAria': 'Filter by background',
     'rail.secArchetypeFoot': 'the dot colour is that person’s ring colour on the graph',
     'rail.secRelationships': 'Relationships',
     'rail.relationshipsBulkLabel': 'relationship types',
@@ -744,7 +746,7 @@ export const ui = {
     /* The node key — see the Korean entry for why these are short. */
     'rail.secNodeKey': 'Node key',
     'rail.nodeSize': 'Size = number of ties',
-    'rail.nodeRing': 'Ring colour = archetype',
+    'rail.nodeRing': 'Ring colour = background',
     'rail.nodeArcs': 'Outer arcs = prior seasons',
     'rail.nodeHalo': 'Brass halo = won a past season',
     'rail.nodeKeyMore': 'The rest of the marks — field guide',
@@ -998,7 +1000,7 @@ export const ui = {
     'about.tileShiftClick': 'Shift-click a second person to trace the chain between them',
     'about.lineColourHeading': 'Line colour = relationship type',
     'about.dashedNote': 'A dashed line happened outside the Bloody Game house, whatever its colour.',
-    'about.archetypesHeading': 'Archetypes',
+    'about.archetypesHeading': 'Backgrounds',
     'about.seasonArcsHeading': 'Season arcs',
 
     /* ── about sheet: seasons, glossary, franchise ────────────────────── */
@@ -1056,7 +1058,7 @@ export const ui = {
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': 'Open search',
     'shortcut.gallery': 'Open and close the cast wall',
-    'shortcut.layouts': 'Layout modes — web, by season, by archetype, orbit',
+    'shortcut.layouts': 'Layout modes — web, by season, by background, orbit',
     'shortcut.fit': 'Fit the graph to the screen',
     'shortcut.zoom': 'Zoom in and out',
     'shortcut.rail': 'Toggle the filter rail',

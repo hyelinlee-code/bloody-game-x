@@ -439,12 +439,21 @@ export function CommandPalette({
         glyph: '3',
         terms: [
           ...bothOf('mode.archetypeHint'),
+          /* The retired vocabulary stays searchable. 'archetype' was the
+             label for four rounds and '아키타입' was the About sheet's
+             word for it; somebody who learned either should still find the
+             view by typing it. Adding, never replacing. */
           '직업별',
+          '직업군',
+          '직업군별',
           '분야별',
           '분야',
           '직업',
           '유형',
+          '아키타입',
+          '배경',
           'archetype',
+          'background',
           'category',
         ],
       },
