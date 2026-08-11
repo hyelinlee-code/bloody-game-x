@@ -591,13 +591,25 @@ export default function App() {
         /* Same three readings as `path`: absent leaves the pin alone, null takes
            it down — which is what Back out of an open card looks like — and a
            request is resolved against the live edge list. `tieMatches` is what
-           makes the resolution order-insensitive, so a hand-written
-           `tie=b~a~rivalry` finds the same line. A pair that names nothing
-           degrades to no pinned line, exactly as an unknown `p=` degrades to no
-           selection. */
+           makes the resolution order-insensitive, so a hand-written `tie=b~a`
+           finds the same line. A pair that names nothing degrades to no pinned
+           line, exactly as an unknown `p=` degrades to no selection.
+
+           The address is the pair plus an ordinal, never the relationship type
+           — see TieRequest. So the ordinal has to be counted here, against the
+           links this pair actually carries, in edge-file order: `graph.links`
+           preserves that order because buildGraph maps over `data.edges`. */
         if (s.tie !== undefined) {
           const want = s.tie;
-          const hit = want ? graph.links.find((l) => tieMatches(want, l.source.id, l.target.id, l.type)) : null;
+          let seen = 0;
+          const hit = want
+            ? graph.links.find((l) => {
+                const samePair =
+                  (want.a === l.source.id && want.b === l.target.id) ||
+                  (want.a === l.target.id && want.b === l.source.id);
+                return samePair && tieMatches(want, l.source.id, l.target.id, seen++);
+              })
+            : null;
           setPinnedLinkId(hit?.id ?? null);
         }
       },

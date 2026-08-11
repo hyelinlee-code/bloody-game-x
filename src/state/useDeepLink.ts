@@ -55,13 +55,29 @@ export interface PathRequest {
 /**
  * A pinned relationship, as an address.
  *
- * The pair plus the type rather than the edge id, for two reasons. The id is
- * `hong-jin-ho--seo-chul-gu--alliance-s2-0` — a pair, a type and a serial
- * number that exists only to keep the file's keys unique, and pinning a link
- * to that serial makes every shared URL a hostage to an edge being renumbered.
- * And a pair may legitimately carry two ties (the validator allows exactly
- * two), so the pair alone does not identify a line; the type is what tells
- * them apart, and it is the thing the reader can see in the card's own chip.
+ * The pair, and an ordinal only when the pair carries more than one line.
+ *
+ * It used to be `a~b~type`, and the argument for the type was that a pair may
+ * legitimately carry two ties (the validator allows exactly two), so the pair
+ * alone does not identify a line — "and it is the thing the reader can see in
+ * the card's own chip".
+ *
+ * That last clause stopped being true. `#tie=park-ji-min~jung-keun-woo~betrayal`
+ * is a sentence: it names two real people and states what one did to the other,
+ * in the address bar, in browser history and autocomplete, in the recipient's
+ * tab restore, in link previews, and in every analytics `$current_url`. None of
+ * those are reachable by a redaction that renders the page — a reader who has
+ * hidden season 2 still gets the verdict from the URL of a link a friend sent.
+ * So the type comes out and an ordinal goes in: `a~b`, or `a~b~1` for the
+ * second of a pair's two lines. It carries no claim.
+ *
+ * The edge id is still not used, for its original reason: the id is
+ * `hong-jin-ho--seo-chul-gu--alliance-s2-0`, whose trailing serial exists only
+ * to keep the file's keys unique, and pinning a URL to it makes every shared
+ * link a hostage to an edge being renumbered.
+ *
+ * A legacy `a~b~betrayal` address still resolves — to the pair's first line —
+ * so links already in the wild keep working.
  *
  * RESOLUTION IS ORDER-INSENSITIVE. A hand-written `tie=b~a~rivalry` names the
  * same line as `tie=a~b~rivalry`; direction is a property of the edge, not of
@@ -71,12 +87,14 @@ export interface PathRequest {
 export interface TieRequest {
   a: string;
   b: string;
-  type: EdgeType;
+  /** Which of the pair's lines, in edge-file order. Absent means the first. */
+  n?: number;
 }
 
-/** Does this address name that line, in either order? */
-export function tieMatches(tie: TieRequest, source: string, target: string, type: EdgeType): boolean {
-  if (tie.type !== type) return false;
+/** Does this address name that line, in either order? `index` is the line's
+    position among the ties this pair carries, so the caller supplies it. */
+export function tieMatches(tie: TieRequest, source: string, target: string, index: number): boolean {
+  if ((tie.n ?? 0) !== index) return false;
   return (tie.a === source && tie.b === target) || (tie.a === target && tie.b === source);
 }
 
@@ -160,12 +178,15 @@ function parsePath(raw: string | null): PathRequest | null {
  *  is the graph's call, and an unknown id degrades to no pinned line rather
  *  than to a throw. The type IS checked against the vocabulary, because it is a
  *  closed set and a typo in it would otherwise pin nothing with no clue why. */
-function parseTie(raw: string | null, valid: readonly EdgeType[]): TieRequest | null {
+function parseTie(raw: string | null): TieRequest | null {
   if (!raw) return null;
-  const [a, b, type] = raw.split('~').map((s) => s.trim());
-  if (!a || !b || !type || a === b) return null;
-  if (!(valid as readonly string[]).includes(type)) return null;
-  return { a, b, type: type as EdgeType };
+  const [a, b, third] = raw.split('~').map((s) => s.trim());
+  if (!a || !b || a === b) return null;
+  /* A bare integer is the ordinal. Anything else in that slot is a legacy
+     address that named an edge type; it resolves to the pair's first line
+     rather than failing, so links shared before this changed still open. */
+  const n = third && /^\d+$/.test(third) ? Number(third) : 0;
+  return { a, b, n };
 }
 
 export function readHash(opts: DeepLinkOptions): Partial<DeepLinkState> {
@@ -183,7 +204,7 @@ export function readHash(opts: DeepLinkOptions): Partial<DeepLinkState> {
   if (lang && (LANGS as string[]).includes(lang)) out.lang = lang as Lang;
   const path = parsePath(p.get('path'));
   if (path) out.path = path;
-  const tie = parseTie(p.get('tie'), opts.allEdgeTypes);
+  const tie = parseTie(p.get('tie'));
   if (tie) out.tie = tie;
 
   const l = parseSet(p.get('l'), opts.allRepresents);
@@ -203,7 +224,7 @@ function buildHash(s: DeepLinkState, opts: DeepLinkOptions): string {
   if (s.mode !== 'web') p.set('m', s.mode);
   if (s.query.trim()) p.set('q', s.query.trim());
   if (s.path) p.set('path', `${s.path.from},${s.path.to}`);
-  if (s.tie) p.set('tie', `${s.tie.a}~${s.tie.b}~${s.tie.type}`);
+  if (s.tie) p.set('tie', s.tie.n ? `${s.tie.a}~${s.tie.b}~${s.tie.n}` : `${s.tie.a}~${s.tie.b}`);
 
   /* Only serialise a filter that is actually doing something — but "switched
      entirely off" IS something, and it is the state a reader is most likely to
@@ -310,7 +331,7 @@ export function useDeepLink(
       prev.get('p') !== (state.personId ?? null) ||
       prev.get('m') !== (state.mode === 'web' ? null : state.mode) ||
       prev.get('path') !== (state.path ? `${state.path.from},${state.path.to}` : null) ||
-      prev.get('tie') !== (state.tie ? `${state.tie.a}~${state.tie.b}~${state.tie.type}` : null);
+      prev.get('tie') !== (state.tie ? (state.tie.n ? `${state.tie.a}~${state.tie.b}~${state.tie.n}` : `${state.tie.a}~${state.tie.b}`) : null);
 
     lastHash.current = next;
     selfWrite.current = true;
