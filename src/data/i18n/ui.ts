@@ -26,9 +26,9 @@ export const ui = {
     'app.subtitleLong': '출연진 관계도',
 
     /* ── top bar ──────────────────────────────────────────────────────── */
-    'topbar.spoilerBadge': '스포일러 없음',
+    'topbar.spoilerBadge': '시즌 X 없음',
     'topbar.spoilerTooltip': '시즌 X 내용 없음',
-    'topbar.spoilerAria': '스포일러 없음 — 시즌 X 내용은 어디에도 없습니다. 이 아틀라스의 범위 설명 열기',
+    'topbar.spoilerAria': '시즌 X 내용은 어디에도 없습니다. 다만 시즌 1–3의 결과는 그대로 들어 있습니다. 이 아틀라스의 범위 설명 열기',
     'topbar.modeGroupLabel': '레이아웃 모드',
     'topbar.orbitLocked': '인물을 먼저 선택하세요',
     'topbar.orbitLockedAria': '사용 불가 — 인물을 먼저 선택하세요',
@@ -374,7 +374,7 @@ export const ui = {
       '초상은 사진이 아니라 각자의 기록으로 그린 도형입니다 — 시즌 고리의 길이는 그 시즌 성적, 구슬 점선은 순위 없이 진행·패널로 함께한 시즌, 테두리 눈금은 확인된 인연의 수입니다. 만난 적 없이 이력만 겹치는 평행 이력은 눈금으로 세지 않고, 확인된 인연이 없는 사람은 가는 회색 테두리로 표시합니다.',
     'gallery.notePhotos':
       '초상을 둘러싼 고리는 각자의 기록으로 그렸습니다 — 시즌 고리의 길이는 그 시즌 성적, 구슬 점선은 순위 없이 진행·패널로 함께한 시즌, 테두리 눈금은 확인된 인연의 수입니다. 만난 적 없이 이력만 겹치는 평행 이력은 눈금으로 세지 않고, 확인된 인연이 없는 사람은 가는 회색 테두리로 표시합니다.',
-    'gallery.hosted': '진행으로 참여',
+    'gallery.hosted': '플레이어가 아닌 자리로 참여',
     /* The per-card tie count is counted with common.tie / common.ties — the
        counter the rail, the status bar and the hover card already share.
 
@@ -383,7 +383,7 @@ export const ui = {
        is 11px and prints one notation per UI language. */
     'gallery.rankUnit': '위',
     'gallery.winnerShort': '우승',
-    'gallery.hostShort': '진행',
+    'gallery.hostShort': '비참가',
     'gallery.filteredOut': '현재 필터에서 제외된 인물',
 
     /* ── about sheet: chrome ──────────────────────────────────────────── */
@@ -404,7 +404,7 @@ export const ui = {
     'about.whatHeading': '이 앱은',
     'about.whatBody':
       '피의 게임X에 출연하는 사람들의 관계도입니다. 점 하나가 공개된 X 라인업의 한 사람이고, 점을 잇는 선은 모두 X가 시작되기 전에 이미 존재하던 관계 — 시즌 1–3에서 맺은 동맹과 배신, 다른 프로그램에서 쌓인 인연, 그리고 실제 관계 — 입니다.',
-    'about.spoilerFlag': '스포일러 없음',
+    'about.spoilerFlag': '시즌 X 없음',
     'about.spoilerBody':
       '시즌 X의 결과, 탈락, 미션, 전개는 이 앱 어디에도 없습니다. 여기 보이는 모든 기록은 시즌 1–3과 다른 프로그램에서 가져온, 방영 전에 이미 공개된 사실뿐입니다.',
     'about.nowHeading': '지금',
@@ -426,7 +426,7 @@ export const ui = {
        own inverse — the two host plates presented as franchise newcomers. Each
        ring is now named by the ring it actually is. */
     'about.tileDashedRim': '점선 시즌 고리 = 이전 시즌에 출연한 적 없음',
-    'about.tileHostRing': '구슬 점선 호 = 그 시즌은 진행·패널석 (순위 없음), 바깥 실선 고리 = 진행을 맡았던 사람',
+    'about.tileHostRing': '구슬 점선 호 = 그 시즌은 경쟁하지 않았다 (순위 없음), 바깥 실선 고리 = 플레이어가 아닌 자리로 참여한 적이 있는 사람',
     'about.tileNoTies': '가는 회색 테두리 = 확인된 인연이 아직 없음',
     'about.tileDashedLine': '점선 = 하우스 밖에서 생긴 인연',
     'about.tileArrow': '화살표 = 방향 — 누가 누구를 배신했는지',
@@ -683,10 +683,10 @@ export const ui = {
     'app.subtitleLong': 'An atlas of who knew whom before season X',
 
     /* ── top bar ──────────────────────────────────────────────────────── */
-    'topbar.spoilerBadge': 'Spoiler-free',
+    'topbar.spoilerBadge': 'No season X',
     'topbar.spoilerTooltip': 'No season X story',
     'topbar.spoilerAria':
-      "Spoiler-free — nothing from inside season X appears anywhere. Open the note on this atlas's scope",
+      "Nothing from inside season X appears anywhere. Seasons 1–3 are shown in full, results included. Open the note on this atlas's scope",
     'topbar.modeGroupLabel': 'Layout mode',
     'topbar.orbitLocked': 'Select someone first',
     'topbar.orbitLockedAria': 'Unavailable — select someone first',
@@ -935,16 +935,16 @@ export const ui = {
     /* See the Korean entry: the closing clauses are the tick rule's own
        sentence, and the two marks it now has to cover. */
     'gallery.note':
-      "Nobody here was photographed. Each plate is drawn from that person's own record: the length of a season ring is how far they got that year, a beaded ring is a season they presided over rather than played, and every tick on the rim is one verified connection. A parallel record — two people whose histories rhyme and who have never met — gets no tick, and a fine grey rim means no verified connection at all.",
+      "Nobody here was photographed. Each plate is drawn from that person's own record: the length of a season ring is how far they got that year, a beaded ring is a season they were in without competing, and every tick on the rim is one verified connection. A parallel record — two people whose histories rhyme and who have never met — gets no tick, and a fine grey rim means no verified connection at all.",
     'gallery.notePhotos':
-      "The rings around each portrait are drawn from that person's own record: the length of a season ring is how far they got that year, a beaded ring is a season they presided over rather than played, and every tick on the rim is one verified connection. A parallel record — two people whose histories rhyme and who have never met — gets no tick, and a fine grey rim means no verified connection at all.",
-    'gallery.hosted': 'Hosted a season',
+      "The rings around each portrait are drawn from that person's own record: the length of a season ring is how far they got that year, a beaded ring is a season they were in without competing, and every tick on the rim is one verified connection. A parallel record — two people whose histories rhyme and who have never met — gets no tick, and a fine grey rim means no verified connection at all.",
+    'gallery.hosted': 'In a season, not playing',
     /* The per-card tie count is counted with common.tie / common.ties. */
     /* Latin ordinals are built from the rank in the component; this is the
        suffix the Korean side needs and the two words that are not a number. */
     'gallery.rankUnit': '',
     'gallery.winnerShort': 'Winner',
-    'gallery.hostShort': 'Host',
+    'gallery.hostShort': 'Not playing',
     'gallery.filteredOut': 'Hidden by the current filters',
 
     /* ── about sheet: chrome ──────────────────────────────────────────── */
@@ -965,7 +965,7 @@ export const ui = {
     'about.whatHeading': 'What this is',
     'about.whatBody':
       "A map of the people in Bloody Game X (피의 게임X) and what already stood between them. Each node is one announced member of the lineup; every line joining two of them is a relationship that existed before the season started — alliances and betrayals struck in seasons 1–3, stages shared on other programmes, and ties from ordinary life.",
-    'about.spoilerFlag': 'No spoilers',
+    'about.spoilerFlag': 'No season X',
     'about.spoilerBody':
       'Nothing from inside season X appears here: no results, no eliminations, no missions, no story. Everything on the graph was already public before the premiere, drawn from seasons 1–3 and from work done elsewhere.',
     'about.nowHeading': 'The season in question',
@@ -984,7 +984,7 @@ export const ui = {
     'about.tileArcs': 'Arcs around a node = the prior seasons they played',
     'about.tileHalo': 'Brass halo = won a past season',
     'about.tileDashedRim': 'Dashed season ring = never played a prior season',
-    'about.tileHostRing': 'Beaded arc = presided that season, no placing; solid outer ring = has hosted',
+    'about.tileHostRing': 'Beaded arc = there that season without competing, no placing; solid outer ring = has been in a season off the board',
     'about.tileNoTies': 'Fine grey rim = no verified tie yet',
     'about.tileDashedLine': 'Dashed line = history from outside the house',
     'about.tileArrow': 'Arrowhead = direction: who did it to whom',
