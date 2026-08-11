@@ -525,6 +525,37 @@ export function GraphCanvas({
   const reducedRef = useRef(prefersReduced());
   const restRef = useRef(false);
   const lastPaintRef = useRef(0);
+  /**
+   * The curtain value the canvas is currently HOLDING, or -1 when it holds
+   * nothing. Not "what reveal was on the last frame" — what the reader can see.
+   *
+   * THIS IS THE REDUCED-MOTION BLANK-CANVAS DEFECT. The idle gate woke for the
+   * curtain on `reveal > 0.0001 && reveal < 1`, i.e. on the fade being MID-FLIGHT,
+   * which is a fact about a 700ms animation rather than about the picture. Under
+   * `prefers-reduced-motion` App runs that fade at `dur = 1` (App.tsx), so
+   * `reveal` steps 0 → 1 between two frames and is never once observed inside the
+   * interval. Nothing else woke the loop either: the graph is at rest by then, so
+   * `rested` had already lifted the 2000ms self-heal floor to Infinity, and the
+   * forced `fit(96, 0, true)` that arms the entrance sets a zero-length tween
+   * whose `motion = 1` is spent on a frame that returns at the pre-reveal gate
+   * above the paint gate. So the last thing to touch the canvas was the warm
+   * pass — which ERASES ITSELF — and the loop then slept forever on an empty
+   * rectangle. Traced on the production build at 1600×1000, dpr 1: warm paint at
+   * t=3030 (cleared), reveal 0 → 1 at t=3097 with motion 0, and 358 consecutive
+   * idle returns after it.
+   *
+   * The one thing that hid it is an accident: below dpr 2 the frame at reveal 1
+   * has to rescale the backing store off REVEAL_DPR, and `rescaling` forces
+   * `motion = 1`. A reader on a 1× display — most desktop monitors — got the
+   * empty rectangle; a reader on a retina display got the picture, and the
+   * harness runs at dpr 2 and 3.
+   *
+   * So the gate asks the question it actually means: is what the canvas is
+   * holding still the curtain we are supposed to be showing? A step of any size,
+   * in either direction, is a repaint. One paint, and then the loop sleeps
+   * exactly as before — nothing here shortens the idle path.
+   */
+  const paintedRevealRef = useRef(-1);
   const revealStartRef = useRef(0);
   /**
    * …and when the mesh started drawing itself onto it — the frame the master
@@ -2600,6 +2631,17 @@ export function GraphCanvas({
          median frame time over that window was 66.6ms — 15fps — against 16.7ms
          once the intro was gone. */
       if (st.reveal.current > 0.0001 && st.reveal.current < 1) motion = 1;
+      /* …and the same question asked of the PICTURE rather than of the fade, so
+         a curtain that arrives in one step is still a curtain that arrived.
+         `> 0.0001` because the pre-reveal frames are already handled by the gate
+         below — they are the cold open, and their answer is "paint nothing once",
+         not "paint every frame". See paintedRevealRef for the defect. */
+      if (
+        st.reveal.current > 0.0001 &&
+        Math.abs(st.reveal.current - paintedRevealRef.current) > 0.0008
+      ) {
+        motion = 1;
+      }
 
       // Nothing to paint into.
       if (typeof document !== 'undefined' && document.hidden) return;
@@ -2705,6 +2747,11 @@ export function GraphCanvas({
       const idle = motion < 0.0008 && now - lastPaintRef.current < floor;
       if (idle && !warming) return;
       lastPaintRef.current = now;
+      /* …and what this frame is about to leave ON the canvas. A warm pass leaves
+         nothing — it erases itself a few lines below — so it records -1, which is
+         the value that guarantees the next real frame reads as a change. See
+         paintedRevealRef. */
+      paintedRevealRef.current = warming ? -1 : st.reveal.current;
       if (rescaling) {
         cv.width = wantW;
         cv.height = wantH;

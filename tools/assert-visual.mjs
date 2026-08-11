@@ -1210,6 +1210,19 @@ async function faceCores(page, n = 3, gap = 160) {
  *  therefore grows 3.8%. */
 const FOCUS_GREW = 1.05;
 
+/**
+ * The floor a face's REST reading has to clear before a drop measured from it
+ * means anything. See the denominator note in the suite below.
+ *
+ * A blank canvas reads exactly 0. A dimmed disc reads 5–15 L* over the inner
+ * 75% (DISC_BANDS's calibration) and the faces in this suite are undimmed by
+ * construction — nothing is hovered or selected when the baseline is taken —
+ * so measured rest values sit far above this. 3 is the empty middle: nothing a
+ * painter can put on screen lands there, and nothing that is not painted at all
+ * can clear it.
+ */
+const REST_FACE_L_MIN = 3;
+
 /** Whoever the app put the focus on, and what happened to their face. */
 function attentionTook(rest, hot) {
   let best = null;
@@ -1230,6 +1243,22 @@ async function suiteHover(browser, base) {
     ['desktop', 'en', {}],
     ['mobile', 'ko', {}],
     ['mobile', 'en', {}],
+    /* AND WHAT THIS STATE IS NOT. It is the reader's preference applied to a
+       HOVER, and for years it was also the only reduced-motion coverage in this
+       file — which is how the reduced-motion blank-canvas defect shipped past a
+       green gate. Two reasons, both worth keeping written down:
+
+         · every reading here is taken with the pointer ON A FACE, and a pointer
+           on a face wakes the render loop. A canvas that is blank AT REST is
+           invisible to a probe that only ever looks at it after touching it.
+         · this state runs at dpr 2, like the rest of the suite, and the defect
+           did not reproduce above dpr 1 — the curtain paints at REVEAL_DPR = 1
+           and the rescale back to the display's own scale forced the missing
+           repaint by accident. Measured on the re-armed defect: at dpr 2 these
+           twenty faces read L* 26.8–37.9 at rest, at dpr 1 they read L* 0.
+
+       The rest-state question belongs to suiteReduced, which asks it at dpr 1.
+       This state stays as it is, and stays honest about which half it owns. */
     ['desktop', 'ko', { reduced: true }],
     ['desktop', 'ko', { cursor: true }],
   ];
@@ -1317,16 +1346,33 @@ async function suiteHover(browser, base) {
     });
 
     /* 1 · the reviewer's shape, kept as filed. Necessary, not sufficient — see
-     *     the table at the top of this suite. */
+     *     the table at the top of this suite.
+     *
+     *     AND ITS DENOMINATOR, which is not decoration. This check is a RATIO
+     *     against the face at rest, and it used to score a dark baseline as a
+     *     drop of ZERO — `p.L0 > 0 ? … : 0` — i.e. as a pass. That is exactly
+     *     what it reported for the whole life of the reduced-motion blank-canvas
+     *     defect: the rest read came off an empty canvas, every L0 was 0, and
+     *     the worst face in the state "lost 0.0% of its brightness". A ratio
+     *     whose denominator is missing has no value; reporting one is the
+     *     failure mode this file's header calls theatre. Faces with no baseline
+     *     are counted and asserted separately, and if none survive, the check
+     *     below reports NO DATA and fails rather than passing on an empty set. */
     let luma = null;
+    let dark = 0;
     for (const p of probed) {
-      const drop = p.L0 > 0 ? ((p.L0 - p.L1) / p.L0) * 100 : 0;
+      if (!(p.L0 > REST_FACE_L_MIN)) { dark++; continue; }
+      const drop = ((p.L0 - p.L1) / p.L0) * 100;
       if (luma === null || drop > luma.drop) luma = { ...p, drop };
     }
+    check(`hover.restFaceUnlit.${tag}`, dark, {
+      max: 0,
+      note: `faces reading under L* ${REST_FACE_L_MIN} at rest, of ${probed.length} probed — the denominator of the drop below`,
+    });
     check(`hover.faceLumaDropPct.${tag}`, luma ? +luma.drop.toFixed(1) : null, {
       max: 25,
       unit: '%',
-      note: luma ? `worst: ${luma.id} — L* ${luma.L0} → ${luma.L1} inside r = 0.6·rPhoto` : 'nothing measured',
+      note: luma ? `worst: ${luma.id} — L* ${luma.L0} → ${luma.L1} inside r = 0.6·rPhoto` : 'no face had a baseline to drop from',
     });
 
     /* 2 · …and the one that fails when the face is replaced rather than merely
@@ -1401,7 +1447,186 @@ async function suiteReveal(browser, base) {
   }
 }
 
-/* ── suite 3: chrome that animates ─────────────────────────────────────────*/
+/* ── suite 3: the reader who asked for less motion ─────────────────────────
+ *
+ * THE DEFECT THIS SUITE EXISTS FOR. Under `prefers-reduced-motion: reduce` the
+ * scene canvas was BLANK AT REST — not degraded, not static, empty — and it
+ * stayed empty until a pointer nudge woke the loop. The chrome painted
+ * normally, so the app read as "this cast atlas has no cast" rather than as a
+ * fault, to exactly the readers least likely to fling a pointer at it.
+ *
+ * Everything about how this shipped is a lesson about assertions:
+ *
+ *  · The harness HAD a reduced-motion state (suiteHover's `desktop.ko.reduced`)
+ *    and it went green through the whole life of the defect. Every reading in it
+ *    is taken WHILE THE POINTER IS ON A FACE, which is the one condition that
+ *    wakes the loop, so a canvas that is blank at rest is not a thing it can
+ *    see. Nothing anywhere asked the only question that mattered: with nobody
+ *    touching it, is there a picture on the canvas at all?
+ *
+ *  · And its one check that reads the scene at rest — `hover.faceLumaDropPct`,
+ *    a ratio against the resting face — scored a dark baseline as a drop of 0%,
+ *    i.e. as a pass. Re-armed and measured at dpr 1: twenty faces at L* 0 and
+ *    the check reporting 0.0% against a ceiling of 25. It could not have caught
+ *    this in any configuration. It has a denominator guard now.
+ *
+ *  · What hid it in the other direction is device scale. The curtain paints at
+ *    REVEAL_DPR = 1 and the frame at reveal 1 rescales the backing store back to
+ *    the display's dpr; that rescale forces a repaint, which by pure accident
+ *    delivered the missing frame — but only where dpr > 1. Every other suite
+ *    here runs at dpr 2 or 3. The defect was live at dpr 1, i.e. on most desktop
+ *    monitors, and invisible to a harness that only ever asked a retina.
+ *
+ * So this suite measures PIXELS ON THE CANVAS AT REST, at dpr 1 as well as 2,
+ * in three viewports and both languages, and it measures the same states with
+ * the preference off so the floor is derived from what this build actually
+ * paints rather than from a number somebody liked. It also counts paints across
+ * a rest window, because the wrong fix for a blank canvas — pinning the loop
+ * awake — would pass a lit-pixel check and cost the reader their battery.
+ */
+
+/**
+ * Lit fraction of the SCENE canvas's own backing store.
+ *
+ * The scene canvas is transparent — the gradients and the vignette are a
+ * separate layer below it — so "how much of this surface did the painter put
+ * anything on" is `alpha > 0` and a low value floor, and an empty canvas scores
+ * a hard 0.0000 rather than a small number. That is what makes this measurable
+ * at all: there is no threshold-tuning argument to have.
+ *
+ * A screenshot cannot answer it. The backdrop layer and the chrome are behind
+ * and over this surface and both paint fine, which is precisely why the defect
+ * read as an empty diagram rather than as a broken page.
+ */
+const CANVAS_LIT = () => {
+  const c = document.querySelector('canvas.graph-canvas');
+  if (!c) return null;
+  const img = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  const n = c.width * c.height;
+  let lit = 0;
+  for (let i = 0; i < n; i++) {
+    const o = i * 4;
+    const a = img[o + 3];
+    if (a < 8) continue;
+    // Premultiplied against alpha: a disc at 3% opacity is not a lit pixel.
+    if (Math.max(img[o], img[o + 1], img[o + 2]) * (a / 255) > 10) lit++;
+  }
+  const P = window.__atlasPaint;
+  return {
+    frac: +(lit / n).toFixed(4),
+    px: `${c.width}x${c.height}`,
+    /* Null-safe to the FIELD, not merely to the probe. `frame.n` and
+       `frame.alpha` were added by the same change that added this suite, so
+       an older bundle — or a future probe regression — has `P` but not
+       those fields, and an unguarded read throws inside page.evaluate and
+       aborts the entire harness instead of failing one check. A gate that
+       crashes rather than reports is worse than the defect it exists for. */
+    paints: typeof P?.frame?.n === 'number' ? P.frame.n : null,
+    alpha: typeof P?.frame?.alpha === 'number' ? +P.frame.alpha.toFixed(3) : null,
+    discs: Array.isArray(P?.frame?.discs) ? P.frame.discs.length : null,
+  };
+};
+
+/**
+ * How much of the normal build's ink the reduced-motion build has to reach.
+ *
+ * The two are not pixel-identical and must not be asserted as if they were: the
+ * free layout settles from a different integration under the preference (the
+ * mode effect teleports and pre-ticks instead of flying), so the mesh lands in a
+ * slightly different arrangement and the fit lands at a slightly different k.
+ * Measured on this build across the six states below, reduced ran 1.00–1.49× the
+ * normal build's lit fraction — i.e. never lower. 0.6 is well under the worst
+ * honest ratio and nowhere near the failure, which is 0.0000.
+ */
+const REDUCED_LIT_OF_NORMAL = 0.6;
+/**
+ * …and the floor under the CONTROL, which is what stops the ratio above being
+ * vacuous. A relative check between two blank canvases passes. This is the
+ * denominator guard, the same shape as `hover.facesProbed`: the normal build
+ * paints 4.8–10.5% of the scene canvas across these states, so 2% is a floor
+ * that only a genuinely broken picture can fail.
+ */
+const LIT_FLOOR = 0.02;
+/** Rest window for the paint count. Long enough that the 2000ms self-heal floor
+ *  would show up in it twice if the loop were still on it. */
+const REST_MS = 4500;
+
+async function suiteReduced(browser, base) {
+  console.log('\n── the reduced-motion reader ─────────────────────────────────────────');
+  /* dpr is part of the matrix, not a detail of it — see the header. The mobile
+     row is the one state here that runs at a scale the other suites also use,
+     so a failure that is specific to dpr 1 is distinguishable from one that is
+     not. */
+  const matrix = [
+    ['desktop', 'ko', 1, false],
+    ['desktop', 'en', 1, false],
+    ['laptop', 'ko', 1, false],
+    ['mobile', 'en', 2, true],
+  ];
+
+  /** One state, one preference: settle it, read the canvas, wait, read again. */
+  const read = async (vpName, lang, dpr, mobile, reduced) => {
+    const { ctx, page } = await openPage(browser, base, {
+      viewport: VIEWPORTS[vpName], lang, dpr, mobile, reduced,
+    });
+    await enterAndSettle(page);
+    /* Nothing is hovered, nothing is selected, the pointer is parked off the
+       graph by enterAndSettle. This is the state a reader is left in by the
+       entrance and it is the state that was empty. */
+    const at = await page.evaluate(CANVAS_LIT);
+    await page.waitForTimeout(REST_MS);
+    const after = await page.evaluate(CANVAS_LIT);
+    await ctx.close();
+    if (!at || !after) return null;
+    return { ...at, restPaints: after.paints - at.paints, restFrac: after.frac };
+  };
+
+  for (const [vpName, lang, dpr, mobile] of matrix) {
+    const tag = `${vpName}.${lang}.dpr${dpr}`;
+    const norm = await read(vpName, lang, dpr, mobile, false);
+    const red = await read(vpName, lang, dpr, mobile, true);
+
+    /* 1 · the control, and it is a real assertion rather than a baseline. If
+     *     THIS is dark the app is broken for everybody and the ratio below
+     *     would have reported it green. */
+    check(`motion.normal.litFraction.${tag}`, norm ? norm.frac : null, {
+      min: LIT_FLOOR,
+      note: norm ? `${norm.px} backing store, ${norm.discs} discs, curtain ${norm.alpha}` : 'probe absent',
+    });
+
+    /* 2 · THE ONE THIS SUITE IS FOR. Same states, preference on, floor derived
+     *     from what the control just painted. Measured 0.0000 before the fix at
+     *     every dpr-1 state here. */
+    check(`motion.reduced.litFraction.${tag}`, red ? red.frac : null, {
+      min: norm ? +(norm.frac * REDUCED_LIT_OF_NORMAL).toFixed(4) : LIT_FLOOR,
+      note: red
+        ? `reduced ${red.frac} vs normal ${norm ? norm.frac : '?'} — ${red.discs} discs, curtain ${red.alpha}`
+        : 'probe absent',
+    });
+
+    /* 3 · …and it must still be there four and a half seconds later. A frame
+     *     that lands and is then cleared by the next thing the loop does would
+     *     pass check 2 on the read that caught it. */
+    check(`motion.reduced.litFractionHeld.${tag}`, red ? red.restFrac : null, {
+      min: norm ? +(norm.frac * REDUCED_LIT_OF_NORMAL).toFixed(4) : LIT_FLOOR,
+      note: `after ${REST_MS}ms of nothing happening`,
+    });
+
+    /* 4 · and the canvas is still ASLEEP, which is the invariant the fix was
+     *     not allowed to spend. Zero is the expected number: `rested` lifts the
+     *     repaint floor entirely, so an idle scene asks for no frames at all.
+     *     Two is room for a late self-heal or a portrait decoding, not for a
+     *     loop that has been pinned awake — that would read ~270. */
+    check(`motion.reduced.paintsAtRest.${tag}`, red ? red.restPaints : null, {
+      max: 2, note: `full-scene passes over ${REST_MS}ms with nobody touching it`,
+    });
+    check(`motion.normal.paintsAtRest.${tag}`, norm ? norm.restPaints : null, {
+      max: 2, note: `the same, with the preference off`,
+    });
+  }
+}
+
+/* ── suite 4: chrome that animates ─────────────────────────────────────────*/
 async function suiteChrome(browser, base) {
   console.log('\n── chrome entrances ──────────────────────────────────────────────────');
 
@@ -1924,6 +2149,7 @@ async function main() {
     await suitePaint(browser, base);
     await suiteHover(browser, base);
     await suiteReveal(browser, base);
+    await suiteReduced(browser, base);
     await suiteChrome(browser, base);
     await suiteWall(browser, base);
     await suiteSystem(browser, base);

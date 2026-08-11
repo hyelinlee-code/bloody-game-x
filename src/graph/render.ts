@@ -196,6 +196,10 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderState): void {
    * duration changed no pixel while still forcing a repaint every frame. The
    * curtain and the number are now the same thing. */
   const sceneAlpha = Math.max(0, Math.min(1, s.reveal));
+  // See paintedFrame.n: counted here, on the far side of the clear above and
+  // the near side of the early-out below.
+  paintedFrame.n++;
+  paintedFrame.alpha = sceneAlpha;
 
   /* Nothing below this is visible. Painting it anyway — the whole label
      collision solve and 40+ fillText calls at alpha 0 behind an opaque cold
@@ -1406,6 +1410,25 @@ export const paintedLabels: PaintedLabel[] = [];
 export const paintedFrame = {
   k: 0,
   visible: 0,
+  /**
+   * How many times the painter has run, and the curtain alpha the last run
+   * composed at.
+   *
+   * This file and GraphCanvas are full of measured paint RATES — "0.5 paints/s
+   * with nothing selected", "43.7 full-scene paints/s with the hub selected" —
+   * and until now every one of them was a number somebody took once with a
+   * profiler and wrote into a comment. Nothing on the page published it, so the
+   * idle gate's two opposite failure modes were both invisible from outside: a
+   * loop that never sleeps costs a reader their battery, and a loop that sleeps
+   * on an empty canvas is the reduced-motion blank-canvas defect. A counter is
+   * one increment per frame and it makes both of them a subtraction.
+   *
+   * Counted BEFORE the `sceneAlpha` early-out, because that path has already
+   * cleared the canvas — a pass that painted nothing is still a pass that
+   * changed what is on screen, and `alpha` is what says which kind it was.
+   */
+  n: 0,
+  alpha: 0,
   /**
    * The rectangle the chrome has left the reader, in screen px.
    *
