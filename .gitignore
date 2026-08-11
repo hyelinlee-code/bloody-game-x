@@ -28,3 +28,7 @@ shots
 *.sw?
 
 .vercel
+
+# Scratch captures at the repo root. A 7 MB debugging PNG once sat here
+# untracked, one `git add -A` away from being permanent in the history.
+/tmp-*

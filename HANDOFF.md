@@ -447,3 +447,59 @@ the history and had to be reverted.
 The camera refit is the highest-value single fix available: it is a blocker, it
 has been open four rounds, it degrades the app's primary interaction, and three
 separate reviewers have now filed it.
+
+---
+
+## UPDATE — the season-2 cohort gap, and the `Role` bug behind it
+
+A reader review caught that 홍진호 and 이진형 had no line between them. They were
+right, and it was not one pair.
+
+**Seven of this lineup played season 2, all as contestants in one field of
+thirteen** — so all twenty-one pairs met by construction. Five had no edge:
+이진형–홍진호 (the season's winner and its third place), 박지민–현성주,
+박지민–윤비, 박지민–서출구, 현성주–윤비. All five are now drawn from namu's
+per-day episode pages, each carrying a dated, named-game fact, and each put
+through an adversarial refutation pass first. That pass corrected four things
+the per-person pages had wrong — the item is 히든 찬스 not 시크릿 찬스
+(시크릿 다이스 is a different day-4 game), 넘버 체인지 uses 숫자 블록 not cards,
+홍진호 spent his own side's hidden chance in the same exchange, and the 서출구
+quote is from the official 일문일답, not his elimination interview.
+
+47 → 52 edges. All three seasons are now internally complete (6/6, 21/21, 10/10).
+
+**The check that should have caught it now exists.** Section 0d asked "were these
+two on the same OTHER programme" and never asked it about this franchise's own
+seasons — the stronger claim by far. `validate-data.mjs` section 0e now fails the
+build on any same-season pair with no edge, with an empty allowlist and the
+reasoning that a dead end is not a possible answer here. Verified to bite by
+deleting an edge and watching the build go red.
+
+### The `Role` union was lying about two real people
+
+Chasing this surfaced a second bug the reader also half-spotted (they doubted
+박지민 was in season 3 at all). She was — namu's 여담 section: "시즌 1, 2 …
+에서는 플레이어로, **시즌 3에서는 보조 출연자로 출연**" as the 유령 카지노 dealer
+and 연옥 집사, and production hid her appearance as a twist until episode 6,
+which is exactly why a viewer would not remember it.
+
+But `Role` was `'contestant' | 'host'`, so **anyone not competing became a host**
+— and neither of the two people it applied to hosted anything. 이상민 sat on
+season 1's studio panel and never entered the house; 박지민 dealt cards. The
+plate drew both with the ring the field guide calls "진행을 맡았던 사람 / has
+hosted", so the app asserted something untrue about two named real people.
+
+Now `'contestant' | 'panel' | 'crew'`, with `played()` / `watched()` exported
+from `types.ts` — eight surfaces had been testing `role === 'host'` inline, which
+is how a two-value union quietly became that assertion. The ring's copy changed
+in both languages too. The distinction is load-bearing, not cosmetic: it decides
+whether someone could have MET the cast. A panellist watched on a monitor from
+another building; a dealer sat at a table players were sent to.
+
+### Note for the next round
+
+`meta.sourcing` in `dataset.ts` states the citation counts as prose and section 9
+asserts the prose against the live histogram — so adding edges fails the build
+until the paragraph is updated. That is working as intended; it is now
+309 citations, 241 namu (78%), 52 lines, 31 wiki-only, 15 of those `high`.
+The `high`+wiki-only ratchet is why all five new edges are `medium`.

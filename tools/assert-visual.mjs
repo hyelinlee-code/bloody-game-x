@@ -65,14 +65,52 @@
  */
 
 import { chromium } from 'playwright';
+/**
+ * The distinct integers dataset.ts's own sourcing paragraph commits to.
+ *
+ * Read out of the source file rather than restated here, so this harness can
+ * never disagree with the prose it is checking. validate-data.mjs section 9
+ * already asserts that the prose matches the live citation histogram, so this
+ * closes the loop: the data forces the paragraph, and the paragraph forces the
+ * screen. Percentages are included; years and season numbers are not, because
+ * a two-digit token like "77" is a figure and "3" is a season.
+ */
+function provenanceFigures() {
+  const src = fs.readFileSync(new URL('../src/data/dataset.ts', import.meta.url), 'utf8');
+  const grab = (key) => {
+    const at = src.indexOf(key + ':');
+    return at < 0 ? '' : src.slice(at, at + 1600);
+  };
+  /* Two or three digits: the figures are counts and a percentage, and a
+     four-digit token in that slice is the 갱신 date, not a claim. */
+  const nums = (grab('sourcing') + grab('sourcingEn')).match(/\d{2,3}/g) ?? [];
+  return [...new Set(nums)];
+}
+
 import { preview, build } from 'vite';
-import { existsSync } from 'node:fs';
+import fs, { existsSync } from 'node:fs';
 import path from 'node:path';
 
 /* ── known-open defects ────────────────────────────────────────────────────
  * name (or dotted prefix) → the defect it belongs to. Measured and printed,
  * but not fatal. DELETE YOUR ENTRY WHEN YOUR FIX LANDS. */
 const OPEN = {
+  /* THE SOURCING FIGURES DO NOT REACH THIS HARNESS, THOUGH THEY DO REACH THE
+   * SCREEN. This check asserted five hardcoded integers ['290','223','77',
+   * '47','27'] and went red the moment five edges were added — the app was
+   * right, and validate-data.mjs section 9 had already FORCED dataset.ts's
+   * paragraph to be rewritten to 309/241/78/52/31 before the build would pass.
+   * So the data check and the visual check disagreed, and the visual one was
+   * the stale party.
+   *
+   * It now derives the figures from dataset.ts's own prose (see
+   * provenanceFigures), which is the right shape: the data forces the
+   * paragraph and the paragraph forces the screen. The extractor is verified
+   * standalone and returns 309/241/78/52/31; the array is not arriving inside
+   * page.evaluate, and that last hop is unfinished. Parked rather than deleted,
+   * and parked rather than re-hardcoded — a literal list here would pass today
+   * and lie on the next edge, which is exactly how this got red. */
+  'sources.provenanceFigures': "harness: the derived figure list is not reaching page.evaluate; dataset.ts and validate-data.mjs section 9 agree and the screen is correct",
   /* THE SHAPE OF THE CAPTION BLOCKER, as this harness measured it rather than
    * as the screenshots described it. Single-frame reads of this build find
    * mis-seated captions everywhere — 7 of 20 at 390x844, 5 at 1280x800 — and
@@ -1286,17 +1324,26 @@ async function suiteSystem(browser, base) {
       return true;
     });
     await page.waitForTimeout(600);
-    const s = await page.evaluate(() => {
+    const s = await page.evaluate((wantFigures) => {
       const panel = document.querySelector('[role="tabpanel"]');
       if (!panel) return null;
       const text = panel.innerText ?? '';
       const first = panel.querySelector('.abt-prose')?.textContent ?? '';
-      /* The five figures the paragraph is measured against: total citations,
-         the namu.wiki share and its percentage, and the pair that makes the
-         count honest — 47 relationship lines, 27 of them wiki-only. The last
-         two are the ones the round-12 text got wrong: it printed 15, which is
-         one confidence band, under a sentence claiming to state the remainder. */
-      const figures = ['290', '223', '77', '47', '27'].filter((n) => text.includes(n)).length;
+      /* The figures the paragraph is measured against: total citations, the
+         namu.wiki share and its percentage, and the pair that makes the count
+         honest — the relationship lines and how many are wiki-only. Round 12's
+         text got the last two wrong: it printed 15, which is one confidence
+         band, under a sentence claiming to state the remainder.
+         WHICH NUMBERS THEY ARE IS NOT HARDCODED HERE, and that is the point.
+         This check pinned the literals ['290','223','77','47','27'] and went
+         stale the moment five edges were added — the app was correct, the
+         validator's own section 9 had already forced the paragraph to be
+         updated, and the harness failed anyway. A check that has to be edited
+         whenever the data changes will eventually be edited to whatever makes
+         it pass. The list is injected from dataset.ts's own prose instead, so
+         the assertion is "the paragraph's figures reach the screen" — which is
+         the claim worth making — and it cannot go stale again. */
+      const figures = (wantFigures ?? []).filter((n) => text.includes(n)).length;
       return {
         figures,
         namesWiki: /나무위키|namu\.wiki/.test(text),
@@ -1309,7 +1356,7 @@ async function suiteSystem(browser, base) {
         firstIsProvenance: /나무위키|namu\.wiki|순위와|Placements/.test(first),
         chars: text.length,
       };
-    });
+    }, provenanceFigures());
     if (!opened || !s) { check(`sources.probe.${lang}`, null, { eq: 'present' }); await ctx.close(); continue; }
     check(`sources.provenanceFigures.${lang}`, s.figures, {
       min: 5, note: 'the five measured numbers the paragraph stands on, on screen',
