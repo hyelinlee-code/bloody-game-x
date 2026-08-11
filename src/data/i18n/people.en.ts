@@ -173,7 +173,7 @@ export const peopleEn: Record<string, PersonEn> = {
   'kim-yoo-hyun': {
     occupation: 'Professional poker player · former English instructor',
     bio:
-      "Educated at international schools in Hong Kong and China, she studied computer engineering at the University of Illinois Urbana-Champaign and left without finishing. She arrived on television as an ordinary-citizen contestant on tvN's The Genius: Black Garnet (더 지니어스: 블랙가넷) and was invited back for Grand Final. She spent a stretch away from the felt working as an English instructor, returned to poker professionally in 2022, and won an APL side event in 2023.",
+      "Educated at international schools in Hong Kong and China, he studied computer engineering at the University of Illinois Urbana-Champaign and left without finishing. He arrived on television as an ordinary-citizen contestant on tvN's The Genius: Black Garnet (더 지니어스: 블랙가넷) and was invited back for Grand Final. He spent a stretch away from the felt working as an English instructor, returned to poker professionally in 2022, and won an APL side event in 2023.",
     notableFor: [
       'The Genius seasons 3 and 4, back to back',
       'Computer engineering at UIUC, left without finishing',

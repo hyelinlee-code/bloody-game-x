@@ -67,6 +67,7 @@ export const people: Person[] = [
     occupationKo: '방송인 · 前 룰라 리더/프로듀서',
     category: 'broadcaster',
     birthYear: '1973',
+    pronouns: 'he',
     bio: '1990년대 그룹 룰라의 리더이자 프로듀서로 출발해 지금은 예능 고정 출연자로 자리 잡은 방송인이다. JTBC 「아는 형님」에 오래 몸담았고, 두뇌 서바이벌 장르에서는 「더 지니어스」 시즌2 우승자로 기억된다. 피의 게임 시즌1에서는 플레이어가 아니라 스튜디오 패널석에 앉아 참가자들을 지켜보던 쪽이었다.',
     notableFor: [
       '「더 지니어스: 룰 브레이커」 우승',
@@ -112,6 +113,7 @@ export const people: Person[] = [
     occupationKo: 'MBC 아나운서',
     category: 'broadcaster',
     birthYear: '1991',
+    pronouns: 'she',
     bio: 'MBC 아나운서로 뉴스와 예능을 오가며 활동해 왔다. 「어서와 한국은 처음이지?」와 「오은영 리포트 – 결혼지옥」 등을 진행했다. 피의 게임 프랜차이즈에 가장 깊이 관여한 인물로, 시즌1과 시즌2에서는 참가자로 뛰었고 시즌3에서는 판을 굴리는 진행자 자리로 옮겨 앉았다.',
     notableFor: [
       '피의 게임 시즌1·2 참가자, 시즌3 진행자',
@@ -159,6 +161,7 @@ export const people: Person[] = [
     occupationKo: '前 프로야구 선수 · 야구 해설위원',
     category: 'athlete',
     birthYear: '1982',
+    pronouns: 'he',
     bio: 'SK 와이번스와 한화 이글스 등에서 뛴 KBO 리그의 대표적인 2루수 출신이다. 2008 베이징 올림픽 야구 금메달 멤버이며 골든글러브를 여러 차례 받았다. 은퇴 후에는 야구 해설위원으로 활동 중이다.',
     notableFor: ['2008 베이징 올림픽 야구 금메달', 'KBO 골든글러브 수상 2루수', 'SK·한화·LG 주전 내야수'],
     /* Three of his four ties are season 1 and the fourth is the panel desk, so
@@ -207,6 +210,7 @@ export const people: Person[] = [
     occupationKo: '경찰관 · 변호사',
     category: 'professional',
     birthYear: '1995',
+    pronouns: 'he',
     bio: '경찰대학을 졸업한 현직 경찰관으로, 이후 로스쿨을 거쳐 변호사 자격까지 취득했다. 피의 게임 시즌1의 최종 우승자이며, 프랜차이즈 첫 번째 챔피언이라는 자리를 갖고 있다.',
     notableFor: ['피의 게임 시즌1 우승 (프랜차이즈 초대 챔피언)', '경찰대 출신 현직 경찰관', '변호사시험 합격'],
     /* Was an empty array, which made the franchise's first champion the one
@@ -264,6 +268,7 @@ export const people: Person[] = [
     occupationKo: '前 프로농구 선수 · 유튜버',
     category: 'athlete',
     birthYear: '1985',
+    pronouns: 'he',
     bio: '2004년 NBA 드래프트에서 포틀랜드 트레일블레이저스에 지명돼 한국인 최초로 NBA 코트를 밟은 221cm 센터다. 이후 KBL 전주 KCC에서 뛰다 2019년 은퇴했고, 지금은 유튜버 겸 방송인으로 활동한다.',
     notableFor: ['한국인 최초 NBA 진출 선수', '한국 농구 역대 최장신 221cm', 'KBL 전주 KCC 센터 출신'],
     otherShows: [
@@ -310,6 +315,7 @@ export const people: Person[] = [
     occupationKo: '프로 포커 플레이어',
     category: 'poker',
     birthYear: '1990',
+    pronouns: 'he',
     bio: "활동명 '코몽'으로 알려진 프로 포커 플레이어다. 2020년 WSOP 온라인 이벤트에서 우승해 한국인으로는 세 번째로 골드 브레이슬릿을 손에 넣었고, WPT 챔피언십 타이틀도 갖고 있다. 한국외국어대학교를 나왔다.",
     notableFor: ['한국인 3번째 WSOP 골드 브레이슬릿 (2020)', 'WPT 챔피언십 우승', '한국외대 졸업', "활동명 '코몽'"],
     otherShows: [
@@ -354,6 +360,7 @@ export const people: Person[] = [
     occupationKo: '래퍼',
     category: 'musician',
     birthYear: '1992',
+    pronouns: 'he',
     bio: '하이라이트 레코즈 소속 래퍼로 뉴욕대학교 철학과를 졸업했다. 태권도 주니어 올림픽 금메달 이력도 있다. 「쇼미더머니」 6·777·8에 출연했고, 카카오TV 웹예능 「생존남녀」에서 우승하며 서바이벌 예능에도 이름을 올렸다.',
     notableFor: ['뉴욕대 철학과 졸업', "웹예능 「생존남녀」 우승", '태권도 주니어 올림픽 금메달', '하이라이트 레코즈'],
     otherShows: [
@@ -404,6 +411,7 @@ export const people: Person[] = [
        he is publicly known for outside the house is the route to the seat: an
        SNU intake he walked away from, and a second one he sat the exam again
        for. All of it is on his own 학력 line and none of it was in the app. */
+    pronouns: 'he',
     bio: '서울과학고를 나와 서울대 자유전공학부에 14학번으로 입학했다가 중퇴했고, 2019학년도 수능 만점자로 서울대 의과대학에 19학번으로 다시 들어가 졸업했다. 지금은 청담동의 피부과에서 진료를 본다. 피의 게임 시즌2에 의대생 신분으로 참가해 최종 우승했다.',
     notableFor: ['피의 게임 시즌2 우승', '2019학년도 수능 만점자', '서울대 의대 졸업 · 피부과 의사', '「문제적 남자」 출연'],
     otherShows: [
@@ -444,6 +452,7 @@ export const people: Person[] = [
     occupationKo: '前 프로게이머 · 프로 포커 플레이어',
     category: 'esports',
     birthYear: '1982',
+    pronouns: 'he',
     bio: "'폭풍저그'로 불린 전설적인 스타크래프트 프로게이머 출신이다. 은퇴 후 포커로 전향해 2022년 WSOP 브레이슬릿을 획득했고, 「더 지니어스」 초대 우승자로 한국 두뇌 서바이벌 장르의 상징적 인물이 됐다. 피의 게임에는 시즌2와 시즌3에 연달아 출연했다.",
     notableFor: [
       '「더 지니어스: 게임의 법칙」 초대 우승',
@@ -498,6 +507,7 @@ export const people: Person[] = [
     occupationKo: '래퍼 · 인터넷 방송인',
     category: 'musician',
     birthYear: '1992',
+    pronouns: 'he',
     bio: '활동명 XITSUH로 활동하는 래퍼 겸 인터넷 방송인이다. 미국 브리검영대학교에 진학했다 중퇴했고, Mnet 「쇼미더머니5」로 이름을 알렸다. 피의 게임에는 시즌2와 시즌3에 연달아 출연했다.',
     notableFor: ['피의 게임 시즌2·3 연속 출연', "기록으로 판을 읽는 '메모광' 플레이", '「쇼미더머니5」 출연'],
     otherShows: [
@@ -545,6 +555,7 @@ export const people: Person[] = [
     occupationKo: '인플루언서 · 연구원',
     category: 'creator',
     birthYear: '1998',
+    pronouns: 'she',
     bio: '이화여자대학교에서 생명과학을 전공하고 영국 더럼대학교에서 석사를 마쳤다. 런던의 대학병원에서 근무한 이력이 있으며 인플루언서로도 활동한다. 넷플릭스 「솔로지옥3」 출연으로 대중에게 알려진 뒤 피의 게임 시즌3에 참가했다.',
     notableFor: ['넷플릭스 「솔로지옥3」 출연', '이화여대 생명과학 → 더럼대 석사', '런던 대학병원 근무 이력'],
     otherShows: [{ show: 'Single’s Inferno 3', showKo: '솔로지옥3', year: '2023–24', result: '출연', resultEn: 'Cast member' }],
@@ -582,6 +593,7 @@ export const people: Person[] = [
     occupationKo: 'AI 연구자 (KAIST) · 모델',
     category: 'professional',
     birthYear: '2000',
+    pronouns: 'he',
     bio: '한국과학영재학교를 거쳐 KAIST 전산학부를 졸업하고 김재철AI대학원 석사 과정을 밟고 있는 AI 연구자다. 쿠팡플레이 「대학전쟁」에서 카이스트팀 리더로 출연하며 이름을 알렸고, 캘빈클라인·LG 그램 모델로도 활동했다.',
     notableFor: ['KAIST 전산학부 → 김재철AI대학원', '「대학전쟁」 카이스트팀 리더', '피의 게임 시즌3 최연소 참가자'],
     otherShows: [
@@ -628,6 +640,7 @@ export const people: Person[] = [
     occupationKo: '사업가 · 브랜드 대표',
     category: 'professional',
     birthYear: '1988',
+    pronouns: 'he',
     bio: '일리노이대 어바나-샴페인에서 재료공학을 전공하고 서울대 대학원에서 화학생물공학을 수학한 뒤 창업했다. 2023년 무카페인 대체커피 브랜드를 론칭했다. 두뇌 서바이벌 팬층에는 tvN 「더 지니어스: 그랜드 파이널」 준우승자로 잘 알려져 있다.',
     notableFor: ['「더 지니어스: 그랜드 파이널」 준우승', '「더 지니어스」 시즌3·4 연속 출연', '대체커피 브랜드 창업'],
     otherShows: [
@@ -668,8 +681,9 @@ export const people: Person[] = [
     category: 'poker',
     birthYear: '1988',
     /* The 김경훈 edge is built on the shared UIUC degree and this bio used to
-       say only "미국에서 수학" — the premise of the line was legible on his
-       page and invisible on hers. */
+       say only "미국에서 수학" — the premise of the line was legible on
+       김경훈's page and invisible on 김유현's. */
+    pronouns: 'he',
     bio: '홍콩·중국 국제학교를 거쳐 일리노이 대학교 어배너-섐페인(UIUC) 컴퓨터공학과를 다니다 중퇴했다. tvN 「더 지니어스: 블랙가넷」에 일반인 참가자로 출연해 이름을 알렸고, 이어 「그랜드 파이널」에도 참가했다. 한때 영어강사로 전업했다가 2022년 포커 플레이어로 복귀했고 2023년 APL 사이드이벤트에서 우승했다.',
     notableFor: ['「더 지니어스」 시즌3·4 연속 출연', 'UIUC 컴퓨터공학 중퇴', '2023 APL 미스터리 바운티 우승', '일반인 참가자로 시작해 프로 전향'],
     otherShows: [
@@ -687,7 +701,7 @@ export const people: Person[] = [
         resultEn: '5th',
         arc: '일반인 선발전을 통해 들어온 참가자였고, 직업은 프로 갬블러로 소개됐다. 2화에서는 “이렇게 된 이상 저희 모여보죠”라며 범죄자 편을 직접 묶어냈고, 4화 검과 방패에서는 있지도 않은 쌍검을 있는 것처럼 밀어붙이는 블러핑으로 판을 가져갔다 — 포커 테이블에서 하던 일을 그대로 보드로 옮겨온 플레이였다. 8화 데스매치를 이기고 살아남았지만, 9화 기억의 미로 데스매치에서 하연주에게 기억력으로 밀려 5위로 마쳤다.',
         arcEn:
-          "She arrived through the open selection, introduced on air as a professional gambler. In episode two she pulled the criminals' side together herself — if this is where we are, she said, let us at least get organised — and in episode four's Sword and Shield she carried the board on a bluff, pushing a pair of swords she did not hold as though she did: her table game, moved intact onto a board. She survived the episode-eight Death Match and then lost the episode-nine one, Memory Maze, to the actor Ha Yeon-joo on pure recall, finishing fifth.",
+          "He arrived through the open selection, introduced on air as a professional gambler. In episode two he pulled the criminals' side together himself — if this is where we are, he said, let us at least get organised — and in episode four's Sword and Shield he carried the board on a bluff, pushing a pair of swords he did not hold as though he did: his table game, moved intact onto a board. He survived the episode-eight Death Match and then lost the episode-nine one, Memory Maze, to the actor Ha Yeon-joo on pure recall, finishing fifth.",
         sources: [NAMU_KYH_GENIUS, NAMU_GENIUS_S3],
       },
       {
@@ -698,7 +712,7 @@ export const people: Person[] = [
         resultEn: '9th',
         arc: '13인 올스타 라인업에 시즌3 대표로 합류했다. 4화 메인매치 생선가게에서는 308원 차이로 우승을 놓쳤고, 5화 충신과 역적에서 데스매치에 몰려 김경란과 인디언 포커로 맞붙었다. 프로 갬블러로 소개된 참가자가 정작 카운팅 전략을 너무 일찍 드러낸 것이 패인이었고, 그 회차의 결론은 팀을 위해 헌신한 쪽이 죽고 배신한 쪽이 살아남았다는 문장으로 정리됐다.',
         arcEn:
-          "She joined the thirteen-player all-star line-up as season 3's representative. In the episode-four main match, the fish shop, she missed the win by 308 won, and in episode five, Loyal Subject and Traitor, she was pushed into the Death Match against the broadcaster Kim Kyung-ran at Indian poker. The professional gambler lost it by showing her counting strategy too early, and the episode closed on the line that the one who gave everything for the team died and the one who betrayed it lived.",
+          "He joined the thirteen-player all-star line-up as season 3's representative. In the episode-four main match, the fish shop, he missed the win by 308 won, and in episode five, Loyal Subject and Traitor, he was pushed into the Death Match against the broadcaster Kim Kyung-ran at Indian poker. The professional gambler lost it by showing his counting strategy too early, and the episode closed on the line that the one who gave everything for the team died and the one who betrayed it lived.",
         sources: [NAMU_KYH_GENIUS, NAMU_GENIUS_S4],
       },
     ],
@@ -707,7 +721,7 @@ export const people: Person[] = [
       teamLabelKo: '챌린저 팀',
       teamLabelEn: 'Challengers',
       billing: '일반인 참가자로 시작해 프로 포커 플레이어가 되어 돌아왔다.',
-      billingEn: 'She arrived on television as an amateur and has come back a professional.',
+      billingEn: 'He arrived on television as an amateur and has come back a professional.',
     },
     confidence: 'high',
     sources: [LINEUP_2, LINEUP_3, NAMU_GENIUS_S3, NAMU_GENIUS_S4, NAMU_KYH_GENIUS, NAMU_PROJECT_GENIUS],
@@ -720,6 +734,7 @@ export const people: Person[] = [
     occupationKo: '방송인 · 前 SBS스포츠 아나운서',
     category: 'broadcaster',
     birthYear: '1989',
+    pronouns: 'she',
     bio: '숙명여대를 졸업하고 2015년 SBS스포츠 아나운서로 입사한 방송인이다. IQ 156의 멘사 코리아 회원으로 tvN 「뇌섹시대 – 문제적 남자」 등에 출연하며 두뇌형 방송인으로 알려졌다. 서바이벌 예능 「더 타임호텔」에도 출연했다.',
     notableFor: ['IQ 156 멘사 코리아 회원', '2014 미스 서울 선(善)', '「더 타임호텔」 출연', '前 SBS스포츠 아나운서'],
     otherShows: [
@@ -762,6 +777,7 @@ export const people: Person[] = [
     occupationKo: 'KAIST 수리과학과 재학생',
     category: 'other',
     birthYear: '2004',
+    pronouns: 'he',
     bio: '경기북과학고를 조기졸업하고 KAIST 수리과학과에 22학번으로 입학한 학생으로, 쿠팡플레이 두뇌 서바이벌 「대학전쟁3」에 카이스트 팀으로 출전해 3위를 기록했다. 이번 라인업에서 유일한 현역 학생 참가자이자 가장 어린 참가자다.',
     notableFor: ['「대학전쟁3」 3위', '경기북과학고 조기졸업 · KAIST 수리과학과 22학번', '라인업 내 유일한 현역 학생'],
     otherShows: [{ show: 'University War 3', showKo: '대학전쟁3 (쿠팡플레이)', year: '2025–26', result: '카이스트팀 3위', resultEn: 'KAIST team, 3rd' }],
@@ -800,6 +816,7 @@ export const people: Person[] = [
     occupationKo: '개그맨',
     category: 'comedian',
     birthYear: '1986',
+    pronouns: 'he',
     bio: '4년간 도전한 끝에 2012년 KBS 공채 27기 개그맨이 됐고 「개그콘서트」 코너로 얼굴을 알렸다. 현재는 메타코미디 소속으로, 이창호와 함께 유튜브 채널 「빵송국」을 운영하며 가상 아이돌 그룹 「매드몬스터」를 만들어 큰 화제를 모았다.',
     notableFor: ['KBS 공채 27기 개그맨', '유튜브 「빵송국」 공동 운영', "가상 아이돌 '매드몬스터' 기획·출연"],
     otherShows: [
@@ -845,6 +862,7 @@ export const people: Person[] = [
     /* The bio used to stop at 원주 DB, which let the 솔로지옥 edge and this page
        disagree about where he plays. The career timeline is owned by the
        priorElsewhere below; the bio names only the club he is at now. */
+    pronouns: 'he',
     bio: '연세대 출신 프로농구 슈팅가드로, 2011년 KBL 드래프트로 서울 삼성 썬더스에 입단한 뒤 창원 LG와 원주 DB를 거쳐 2025년 삼성으로 돌아왔다. 자유투 성공률 리그 1위를 두 차례 기록했다. 넷플릭스 「솔로지옥3」 출연으로 예능 인지도도 얻었다.',
     notableFor: ['KBL 프로농구 선수', '자유투 성공률 리그 1위 2회', '넷플릭스 「솔로지옥3」 출연'],
     otherShows: [
@@ -891,6 +909,7 @@ export const people: Person[] = [
        most wants to make here and the one the source will not carry. It still
        sharpens the 이진형 line, which is now a shared university rather than
        a shared profession alone. */
+    pronouns: 'he',
     bio: '이천고등학교를 거쳐 서울대학교를 졸업한 의사로, 지금은 강남의 피부과 의원 원장으로 피부·모발 쪽 진료를 본다. 인플루언서로도 활동한다. TVING 「환승연애4」에 12화부터 합류하며 대중에게 알려졌고, 피의 게임 시리즈에는 이번이 첫 출연이다.',
     notableFor: ['TVING 「환승연애4」 출연', '서울대학교 졸업', '강남 피부과 의원 원장', '유튜브 「퀸승용」 운영'],
     otherShows: [
@@ -941,6 +960,7 @@ export const people: Person[] = [
        김남희 edge explains why a contested award is left off rather than picked.
        The Mensa card is attested by the casting wire (PRESS_CYC_MENSA) and not
        by her page, which is worth knowing because the 김남희 line rests on it. */
+    pronouns: 'she',
     bio: '국립국악고등학교와 단국대학교 국악과를 나온 배우로, 2013년 만 19세에 미스코리아 전북 대표로 출전한 뒤 2014년 모델로 데뷔했다. IQ 156의 멘사 코리아 회원이며, 드라마 「미스 함무라비」와 영화 등에 출연하며 한국과 중국을 오가며 활동해 왔다.',
     notableFor: [
       'IQ 156 멘사 코리아 회원',

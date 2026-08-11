@@ -73,6 +73,15 @@ export function watched(run: { role: Role }): boolean {
   return !played(run);
 }
 
+/**
+ * The third-person pronoun set the English prose may use for a person.
+ *
+ * `they` is a real answer, not a fallback: for two of this cast the repo holds
+ * no source establishing gender at all, and stating `they` is more honest than
+ * inheriting a guess from a name.
+ */
+export type Pronouns = 'he' | 'she' | 'they';
+
 /** One person's run through one earlier season. */
 export interface SeasonRun {
   season: SeasonNumber;
@@ -214,6 +223,28 @@ export interface Person {
   occupationKo?: string;
   category: Category;
   birthYear?: string;
+  /**
+   * Which third-person pronouns the English prose about this person may use.
+   *
+   * Korean carries no pronouns, so the Korean side — this dataset's declared
+   * source of truth — has nothing to say here. Gender is therefore a fact the
+   * ENGLISH LAYER INVENTS, with no counterpart to check it against. That gap
+   * is not hypothetical: 김유현's entire English dossier was authored on the
+   * premise that he is a woman, consistently, from the initial commit — bio,
+   * two show arcs, his billing line, an edge description and the gendered noun
+   * `alumna` — and it stayed live until a reader reported it.
+   *
+   * Declaring it makes the invention explicit and checkable. Validator section
+   * 0f asserts that no English block about a person uses a pronoun outside
+   * their declared set, so the next occurrence fails the build instead of
+   * reaching the page.
+   *
+   * Required, deliberately. An optional field would be omitted for exactly the
+   * people nobody thought hard about, which is the population the check exists
+   * to protect. Where the repo genuinely cannot establish it, `they` is the
+   * honest answer and is not a placeholder.
+   */
+  pronouns: Pronouns;
   /** 2–3 sentences, factual, pre-X only. */
   bio: string;
   notableFor?: string[];

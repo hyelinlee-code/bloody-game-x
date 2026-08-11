@@ -79,7 +79,7 @@ export const edgesEn: Record<string, EdgeEn> = {
   'hong-jin-ho--kim-yoo-hyun--prior-show-11': {
     label: 'Genius all-stars, both poker pros',
     description:
-      "They were both part of the thirteen-strong all-star cast of The Genius: Grand Final (tvN, 2015), Hong Jin-ho as the champion of season 1 and Kim Yoo-hyun as an alumna of season 3, Black Garnet (블랙가넷). It went beyond sharing a call sheet: in the episode-two main match, 'Horror Racing' (공포 레이싱), Kim worked as Hong's strategist and the two ran that episode together, and her style of play drew comparisons with Hong's own from the early and middle stretch of season 1. Both are professional poker players — Hong won a WSOP bracelet in 2022, and Kim was already being introduced as a professional gambler when she appeared in 2015.",
+      "They were both part of the thirteen-strong all-star cast of The Genius: Grand Final (tvN, 2015), Hong Jin-ho as the champion of season 1 and Kim Yoo-hyun as an alumnus of season 3, Black Garnet (블랙가넷). It went beyond sharing a call sheet: in the episode-two main match, 'Horror Racing' (공포 레이싱), Kim worked as Hong's strategist and the two ran that episode together, and his style of play drew comparisons with Hong's own from the early and middle stretch of season 1. Both are professional poker players — Hong won a WSOP bracelet in 2022, and Kim was already being introduced as a professional gambler when he appeared in 2015.",
   },
 
   'hong-jin-ho--park-ji-min--alliance-s2-12': {

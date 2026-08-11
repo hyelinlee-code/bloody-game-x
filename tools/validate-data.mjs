@@ -392,6 +392,132 @@ const ids = new Set(people.map((p) => p.id));
   openSeams.push(...[...SEASON_OPEN].map(([k, v]) => `${k} — ${v}`));
 }
 
+/* ── 0f. the English layer may not invent a gender ──────────────────────────
+   Korean carries no third-person pronouns, so the Korean side — this file's
+   declared source of truth for every fact — has nothing to say about gender.
+   The English prose therefore INVENTS it, with no counterpart to check against.
+
+   That is not hypothetical. 김유현's entire English dossier was authored on the
+   premise that he is a woman: the bio, both Genius arcs, his billing line, an
+   edge description and the gendered noun `alumna`. Internally consistent, from
+   the initial commit, live for months. No check could see it because there was
+   nothing to compare the prose to — every other invariant in this file works by
+   holding two representations against each other, and this one had only one.
+
+   `Person.pronouns` is the missing second representation. This section holds
+   the prose against it.
+
+   Scope: SINGLE-SUBJECT prose only — a bio, an arc, a billing line. Edge copy
+   describes two people at once, so a pronoun there has two possible referents
+   and flagging it would produce noise rather than findings; the one edge that
+   carried the bug is caught anyway, because it also carried `alumna`, and
+   gendered NOUNS are checked everywhere.
+
+   The check is deliberately dumb: it looks for pronouns that cannot belong to
+   this person and says so. It cannot catch a wrong `pronouns` value — nothing
+   can, short of a source — but it makes the claim explicit, which is the whole
+   point. A field somebody has to fill in is a field somebody has to think
+   about. */
+{
+  const PRONOUNS = {
+    he: ['he', 'him', 'his', 'himself'],
+    she: ['she', 'her', 'hers', 'herself'],
+    they: ['they', 'them', 'their', 'theirs', 'themselves'],
+  };
+  /* Gendered nouns get no pronoun set and no referent ambiguity, so they are
+     checked in EVERY English string including edge copy. `alumna` sat in an
+     edge for months precisely because a pronoun sweep would not have seen it. */
+  const NOUNS = {
+    he: ['alumnus', 'actor', 'host'],
+    she: ['alumna', 'actress', 'hostess'],
+  };
+
+  /* `\\b`, not `\b`. In a template literal `\b` is U+0008, so the pattern
+     becomes <backspace>he<backspace> and matches nothing — the check passes on
+     every input, including the one it was written to catch. It shipped that way
+     for one commit and was found by flipping a pronoun on purpose and watching
+     the build stay green. A check that cannot fail is not a check. */
+  const word = (hay, w) => new RegExp(`\\b${w}\\b`, 'i').test(hay);
+
+  for (const p of people) {
+    const set = p.pronouns;
+    if (!set || !PRONOUNS[set]) {
+      fail(`${p.id}: pronouns must be one of he | she | they`);
+      continue;
+    }
+    const banned = Object.entries(PRONOUNS)
+      .filter(([k]) => k !== set)
+      .flatMap(([, v]) => v)
+      /* `they` is legitimately used as a singular for anybody — "they lost the
+         match" reads as neutral, not as a claim — and as a plural about two
+         people in the same sentence. Only the gendered sets are exclusive. */
+      .filter((w) => !PRONOUNS.they.includes(w));
+
+    const en = peopleEn[p.id] ?? {};
+    const blocks = [
+      ['bio', en.bio],
+      ['occupation', en.occupation],
+      ...(en.notableFor ?? []).map((t, i) => [`notableFor[${i}]`, t]),
+      ...(p.priorElsewhere ?? []).map((r, i) => [`priorElsewhere[${i}].arcEn`, r.arcEn]),
+      ['x.billingEn', p.x?.billingEn],
+      /* `beats` are excluded on purpose. They are one-line fragments whose
+         subject is implied and whose object is usually another player — "staged
+         tears that talked Jung Keun-woo into eliminating himself" is correct
+         prose with one foreign pronoun and none of its own, so dominance has
+         nothing to weigh and it flagged. Nothing is lost: the bug that prompted
+         this section lived in long prose (a bio, two arcs, a billing line), and
+         a one-line beat cannot carry a sustained wrong premise. */
+      ...(recordsEn[p.id] ?? []).map((r, i) => [`records[${i}].arc`, r.arc]),
+    ].filter(([, t]) => typeof t === 'string' && t);
+
+    /* DOMINANCE, not presence.
+       A block about one player legitimately names others: 정근우's season-1 arc
+       turns on 박지민's tears, 홍진호's season-3 arc on 최혜선's win. Failing on
+       the mere presence of "her" flagged all three on the first run — correct
+       prose, wrong test. What actually distinguishes the bug is that 김유현's
+       bio ran she×3 / he×0: when a block is ABOUT someone, their own pronouns
+       win the count. A foreign set that outnumbers the declared one is the
+       signal; a passing mention never does. */
+    const count = (text, list) =>
+      list.reduce((n, w) => n + (text.match(new RegExp(`\\b${w}\\b`, 'gi')) ?? []).length, 0);
+
+    for (const [where, text] of blocks) {
+      const mine = count(text, PRONOUNS[set]);
+      for (const [other, list] of Object.entries(PRONOUNS)) {
+        if (other === set || other === 'they') continue;
+        const theirs = count(text, list);
+        if (theirs > mine) {
+          fail(
+            `${p.id} declares pronouns "${set}" but ${where} uses ${other}/${list[1]} ` +
+              `${theirs}× against ${mine}× of their own — either the prose is wrong or the declaration is`,
+          );
+        }
+      }
+    }
+  }
+
+  /* Gendered nouns, across every English surface including edges. */
+  const nounHay = [
+    ...people.flatMap((p) => [peopleEn[p.id]?.bio, p.x?.billingEn, ...(p.priorElsewhere ?? []).map((r) => r.arcEn)]),
+    ...Object.values(edgesEn).map((e) => e.description),
+    ...Object.values(recordsEn).flat().map((r) => r?.arc),
+  ].filter((t) => typeof t === 'string');
+
+  for (const [gender, list] of Object.entries(NOUNS)) {
+    for (const n of list) {
+      /* `actor` and `host` are the neutral forms this dataset deliberately
+         uses for everyone — 최연청 is "An actor", never "actress" — so only the
+         marked feminine forms are errors on their own. */
+      if (gender === 'he') continue;
+      for (const t of nounHay) {
+        if (word(t, n)) {
+          fail(`English copy uses the gendered noun "${n}" — this dataset uses the unmarked form for everyone`);
+        }
+      }
+    }
+  }
+}
+
 /* ── 0b. the ledger seam ───────────────────────────────────────────────────
    `Edge.outcomes` is the only hand-authored half of the head-to-head ledger;
    everything else in headToHead.ts is derived. So the authored half has to be
