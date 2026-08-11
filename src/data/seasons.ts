@@ -6,7 +6,7 @@ import type { GlossaryTerm, SeasonMeta } from './types';
  */
 export const seasons: SeasonMeta[] = [
   {
-    season: 1,
+    season: 1, scope: ['bg1'], scopes: { prize: ['bg1'], signatureMoment: ['bg1'], winnerNameKo: ['bg1'], winnerNameEn: ['bg1'], winnerId: ['bg1'] },
     titleKo: '피의 게임',
     titleEn: 'Bloody Game',
     network: 'MBC · Wavve',
@@ -29,7 +29,7 @@ export const seasons: SeasonMeta[] = [
     accent: '#4fa563',
   },
   {
-    season: 2,
+    season: 2, scope: ['bg2'], scopes: { prize: ['bg2'], signatureMoment: ['bg2'], winnerNameKo: ['bg2'], winnerNameEn: ['bg2'], winnerId: ['bg2'] },
     titleKo: '피의 게임2',
     titleEn: 'Bloody Game 2',
     network: 'Wavve',
@@ -48,7 +48,7 @@ export const seasons: SeasonMeta[] = [
     accent: '#7c9cff',
   },
   {
-    season: 3,
+    season: 3, scope: ['bg3'], scopes: { prize: ['bg3'], signatureMoment: ['bg3'], winnerNameKo: ['bg3'], winnerNameEn: ['bg3'], winnerId: ['bg3'] },
     titleKo: '피의 게임3',
     titleEn: 'Bloody Game 3',
     network: 'Wavve',
@@ -71,86 +71,86 @@ export const seasons: SeasonMeta[] = [
 /** Vocabulary a viewer needs before the graph makes sense. */
 export const glossary: GlossaryTerm[] = [
   {
-    termKo: '저택',
+    termKo: '저택', scope: [],
     termEn: 'The mansion',
     meaning: '참가자들이 함께 생활하는 위층 공간. 음식과 잠자리가 보장되는 쪽이며, 여기 남는 것 자체가 권력이다.',
   },
   {
-    termKo: '지하실',
+    termKo: '지하실', scope: [],
     termEn: 'The basement',
     meaning: '저택에서 밀려난 참가자들이 내려가는 아래층. 조건이 훨씬 열악하고, 위층과 협상하지 않으면 상황을 뒤집기 어렵다.',
   },
   {
-    termKo: '낙원',
+    termKo: '낙원', scope: [],
     termEn: 'Paradise',
     meaning:
       '시즌3에서 저택 자리를 물려받은 위쪽 거점. 정식 명칭은 ‘피의 낙원’이고, 여기 남아 있는 동안은 생활 조건과 발언권이 함께 보장된다.',
   },
   {
-    termKo: '잔해',
+    termKo: '잔해', scope: [],
     termEn: 'The ruins',
     meaning:
       '낙원에서 밀려난 참가자들이 내려가는 시즌3의 폐허 거점. 지하실과 달리 여기로 내려가는 것이 곧 탈락은 아니어서, 잔해에서 다시 올라오는 경로가 시즌 중반의 이야기를 만든다.',
   },
   {
-    termKo: '데스매치',
+    termKo: '데스매치', scope: [],
     termEn: 'Death match',
     meaning: '탈락자를 가리는 1:1 혹은 소수 대결. 여기에 누구를 올려보낼지 정하는 과정이 시즌 대부분의 갈등을 만든다.',
   },
   {
-    termKo: '머니 챌린지',
+    termKo: '머니 챌린지', scope: [],
     termEn: 'Money challenge',
     meaning:
       '자금과 저택의 권력을 한꺼번에 걸고 벌이는 매 회차의 메인 경쟁. 상위권은 돈과 면제권을 가져가고 최하위권은 그대로 데스매치 후보가 되기 때문에, 한 판의 결과가 그날의 정치 지형을 통째로 바꾼다.',
   },
   {
-    termKo: '면제권',
+    termKo: '면제권', scope: [],
     termEn: 'Immunity',
     meaning:
       '탈락 지명이나 데스매치에서 빠질 수 있는 권리로, 주로 머니 챌린지 보상으로 나온다. 쓰지 않고 쥐고만 있어도 협상력이 되기 때문에 누가 몇 장을 가졌는지가 늘 추적 대상이다.',
   },
   {
-    termKo: '판도라의 상자',
+    termKo: '판도라의 상자', scope: [],
     termEn: "Pandora's box",
     meaning:
       '보상으로 주어지지만 좋은 면만 들어 있지는 않은 무작위 장치. 시즌2에서는 열린 순간 전 참가자의 자금이 균등 재분배됐고, 시즌3에서는 페널티 면이 열려 낙원의 방어 조건 자체가 뒤집혔다.',
   },
   {
-    termKo: '습격의 날',
+    termKo: '습격의 날', scope: [],
     termEn: 'Raid day',
     meaning:
       '바깥에서 시작한 쪽이 저택을 직접 덮치는 시즌2의 분기점. 이날을 기점으로 안팎 구도가 무너지고 그때까지의 연합이 전부 새로 짜인다.',
   },
   {
-    termKo: '상금',
+    termKo: '상금', scope: ['bg1', 'bg2'],
     termEn: 'The prize pool',
     meaning:
       '시간이 지날수록 줄어드는 공동 상금. 버티기만 해서는 손해라는 압박이 판을 계속 움직이게 만든다. 시즌별 숫자가 달라 보이는 것은 계산 방식이 다르기 때문으로, 시즌1의 1억 800만 원은 우승자가 실제로 가져간 금액이고 시즌2의 3억은 판에 걸린 최대치일 뿐 실수령액(5,000만 원)과 다르며, 시즌3은 아예 상금 액수를 공개하지 않았다.',
   },
   {
-    termKo: '개인 자금',
+    termKo: '개인 자금', scope: ['bg2'],
     termEn: 'Personal funds',
     meaning:
       '참가자가 게임 안에서 벌고, 쓰고, 빼앗기는 자기 몫의 돈. 시즌2에서는 우승해야만 이 돈이 실제 상금이 됐기 때문에 최종 잔액 1위였던 서출구는 한 푼도 받지 못했고, 자금이 0원인 채로 이긴 이진형은 우승 상금 5,000만 원만 들고 나왔다.',
   },
   {
-    termKo: '승자독식',
+    termKo: '승자독식', scope: [],
     termEn: 'Winner takes all',
     meaning:
       '상금을 우승자 한 명만 가져가는 원칙. 2등 이하는 아무리 오래 버티고 아무리 많이 모아도 0원이라, 시즌3은 개인 자금이 최종 우승 상금에 영향을 주지 않도록 규칙을 바꿔 돈을 모으는 일과 이기는 일을 아예 분리했다.',
   },
   {
-    termKo: '히든 플레이어',
+    termKo: '히든 플레이어', scope: [],
     termEn: 'Hidden player',
     meaning: '시즌2에서 도입된 장치. 저택 바깥에서 먼저 게임을 시작해 뒤늦게 합류하는 참가자로, 안쪽 사람들이 아는 명단을 무효화한다.',
   },
   {
-    termKo: '연합',
+    termKo: '연합', scope: [],
     termEn: 'Alliance',
     meaning: '표를 몰아 주기로 한 임시 동맹. 피의 게임에서는 거의 예외 없이 깨지며, 깨지는 방식이 그 시즌의 이야기가 된다.',
   },
   {
-    termKo: '올스타전',
+    termKo: '올스타전', scope: [],
     termEn: 'All-star format',
     meaning: '시즌3부터 뚜렷해진 캐스팅 방향. 이미 다른 서바이벌에서 검증된 참가자들을 모아, 서로의 전략을 아는 상태에서 시작하게 만든다.',
   },

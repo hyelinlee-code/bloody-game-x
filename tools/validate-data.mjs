@@ -1118,6 +1118,27 @@ if (warnings.length) {
   for (const e of edges) sweep(e, 'Edge', 'edge ' + e.id, OUTCOME_FIELDS);
   for (const [id, v] of Object.entries(edgesEn)) sweep(v, 'EdgeEn', 'edgesEn.' + id, OUTCOME_FIELDS_EN);
 
+  /* The four kinds the first cut of this sweep forgot. works.ts declares twelve
+     manifests; §10c called eight of them, so seasons.ts and the glossary — which
+     carry every season's winner, prize and signature moment, and the payout
+     reconciliation — were never asked for a scope and passed green anyway.
+     ExternalShow and Duel happened to be fully tagged, which made them latent
+     rather than live. A manifest that is imported and never swept is worse than
+     no manifest: it reads as coverage. */
+  for (const m of seasons) {
+    sweep(m, 'SeasonMeta', 'seasons[' + m.season + ']', OUTCOME_FIELDS);
+    for (const d of m.duels || []) sweep(d, 'Duel', 'seasons[' + m.season + '].duel', OUTCOME_FIELDS);
+  }
+  for (const [k, v] of Object.entries(seasonsEn)) sweep(v, 'SeasonMetaEn', 'seasonsEn.' + k, OUTCOME_FIELDS_EN);
+  for (const g of glossary) sweep(g, 'GlossaryTerm', 'glossary.' + g.termKo, OUTCOME_FIELDS);
+  for (const [k, v] of Object.entries(glossaryEn)) sweep(v, 'GlossaryEn', 'glossaryEn.' + k, OUTCOME_FIELDS_EN);
+  for (const p of people) {
+    (p.otherShows || []).forEach((r, i) => sweep(r, 'ExternalShow', 'people.' + p.id + '.otherShows[' + i + ']', OUTCOME_FIELDS));
+  }
+  for (const e of edges) {
+    (e.outcomes || []).forEach((d, i) => sweep(d, 'Duel', 'edge ' + e.id + '.outcomes[' + i + ']', OUTCOME_FIELDS));
+  }
+
   for (const u of untagged) fail('scope: ' + u);
 
   /* 10d. THE DENOMINATOR. A rank hidden behind a visible field size is not
