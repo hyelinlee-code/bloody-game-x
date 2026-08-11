@@ -128,5 +128,5 @@ export const franchiseEn: FranchiseEn = {
   lineage:
     "In the lineage of Korean brain-survival shows, Bloody Game takes over the board The Genius built and moves it into a living space. Where The Genius engineered an intricately ruled game every week, Bloody Game makes a weapon of the environment rather than the rules — hunger, a place to sleep and the gap between classes are the bargaining chips. The casting has shifted across the seasons too, from members of the public towards players carrying names made on other survival shows, and the result is that the franchise now functions as the crossing point of the genre, the room the whole cast list ends up in.",
   reception:
-    'It settled in as a Wavve original and drew more attention with each season, with community reaction concentrating, reliably, on the episodes where an alliance or a betrayal came into the open. Park Ji-min, who took the hosting chair, won a broadcasting award for presenting it.',
+    'It settled in as a Wavve original and drew more attention with each season, with community reaction concentrating, reliably, on the episodes where an alliance or a betrayal came into the open.',
 };
