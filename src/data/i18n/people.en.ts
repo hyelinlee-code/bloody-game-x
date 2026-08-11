@@ -21,6 +21,13 @@ export const peopleEn: Record<string, PersonEn> = {
       'Bloody Game season 1 studio panellist',
       "Leader and producer of Roo'Ra",
     ],
+    scope: ['genius-2'],
+    scopes: { notableFor: [['genius-2'], [], [], []] },
+    bioParts: [
+      { text: "He started out as the leader and producer of the 1990s group Roo'Ra and has since settled into a second career as a fixture of Korean variety television, most durably as a long-running regular on JTBC's Knowing Bros (아는 형님). ", scope: [] },
+      { text: "Within the brain-survival genre he is remembered as the winner of the second season of The Genius, Rule Breaker (더 지니어스: 룰 브레이커). ", scope: ['genius-2'] },
+      { text: "In Bloody Game season 1 he never entered the house at all: he sat in the studio panel seats and watched the players from outside the game.", scope: [] },
+    ],
   },
 
   'park-ji-min': {
@@ -33,6 +40,12 @@ export const peopleEn: Record<string, PersonEn> = {
       'Broadcasting award for presenting',
       'MBC announcer',
     ],
+    scope: ['bg3'],
+    scopes: { notableFor: [['bg3'], ['bg3'], [], []] },
+    bioParts: [
+      { text: "An MBC announcer who works both the news desk and the variety floor, with hosting credits including Welcome, First Time in Korea? (어서와~ 한국은 처음이지?) and Oh Eun-young Report: Marriage Hell (오은영 리포트 – 결혼지옥). ", scope: [] },
+      { text: "No one is more deeply embedded in the Bloody Game franchise: she played as a contestant in seasons 1 and 2, and returned for season 3 not as a competitor but as the dealer of the 잔해 ghost casino and the butler of its purgatory — a supporting appearance rather than a hosting one, which production held back as a twist until episode 6.", scope: ['bg3'] },
+    ],
   },
 
   'jung-keun-woo': {
@@ -44,6 +57,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Multiple KBO Golden Gloves at second base',
       'Infield regular for SK, Hanwha and LG',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'lee-tae-gyun': {
@@ -54,6 +69,12 @@ export const peopleEn: Record<string, PersonEn> = {
       "Winner, Bloody Game season 1 — the franchise's first champion",
       'Police University graduate, serving officer',
       'Passed the bar examination',
+    ],
+    scope: ['bg1'],
+    scopes: { notableFor: [['bg1'], [], []] },
+    bioParts: [
+      { text: "A serving police officer who graduated from the Korean National Police University and then went through law school to qualify as a lawyer on top of the badge. ", scope: [] },
+      { text: "He won Bloody Game season 1 outright, which leaves him holding the one title nobody else can take: the franchise's first champion.", scope: ['bg1'] },
     ],
   },
 
@@ -67,6 +88,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Tallest player in Korean basketball history, 221cm',
       'Former Jeonju KCC centre, KBL',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'hyun-seong-joo': {
@@ -80,6 +103,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Hankuk University of Foreign Studies',
       "Plays as 'Komong'",
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], [], []] },
   },
 
   'yoon-bi': {
@@ -94,6 +119,12 @@ export const peopleEn: Record<string, PersonEn> = {
       'Junior Olympic taekwondo gold',
       'Hi-Lite Records',
     ],
+    scope: ['survival-men-women'],
+    scopes: { notableFor: [[], ['survival-men-women'], [], []] },
+    bioParts: [
+      { text: "A rapper signed to Hi-Lite Records, a philosophy graduate of New York University, and a junior Olympic gold medallist in taekwondo — a combination that reads like three different people. ", scope: [] },
+      { text: "He appeared on Show Me The Money 6, 777 and 8, and won the Kakao TV web variety survival Survival Men and Women: A Divided World (생존남녀: 갈라진 세상), which put his name in the survival column before Bloody Game ever called.", scope: ['survival-men-women'] },
+    ],
   },
 
   'lee-jin-hyung': {
@@ -104,6 +135,12 @@ export const peopleEn: Record<string, PersonEn> = {
       'Winner, Bloody Game season 2',
       'Perfect score, 2019 CSAT (수능)',
       'Seoul National University medical school',
+    ],
+    scope: ['bg2'],
+    scopes: { notableFor: [['bg2'], [], []] },
+    bioParts: [
+      { text: "He posted a perfect score on the 2019 College Scholastic Ability Test (수능) and went to Seoul National University's medical school on the back of it; he now practises as a dermatologist. ", scope: [] },
+      { text: "He entered Bloody Game season 2 as a medical student and left it as the champion.", scope: ['bg2'] },
     ],
   },
 
@@ -118,6 +155,13 @@ export const peopleEn: Record<string, PersonEn> = {
       'WSOP bracelet, 2022',
       "StarCraft legend, the 'Storm Zerg'",
       'Top-three finishes in Bloody Game 2 and 3',
+    ],
+    scope: ['genius-1'],
+    scopes: { notableFor: [['genius-1'], [], [], ['bg2', 'bg3']] },
+    bioParts: [
+      { text: "A legendary StarCraft professional who played under the name Storm Zerg (폭풍저그). ", scope: [] },
+      { text: "After retiring he turned to poker and won a WSOP bracelet in 2022, and as the inaugural winner of The Genius (더 지니어스: 게임의 법칙) he became the standing symbol of the Korean brain-survival genre. ", scope: ['genius-1'] },
+      { text: "He has been through Bloody Game twice, in seasons 2 and 3 back to back.", scope: [] },
     ],
   },
 
@@ -134,6 +178,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Compulsive note-taker; reads the board off his own records',
       'Show Me The Money 5',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'choi-hye-sun': {
@@ -145,6 +191,8 @@ export const peopleEn: Record<string, PersonEn> = {
       "Life sciences at Ewha, master's at Durham",
       'Worked at a London teaching hospital',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'heo-seong-beom': {
@@ -156,6 +204,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'KAIST team leader, University War',
       'Youngest player in Bloody Game season 3',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   /* ───────────────────────── Challengers ───────────────────────── */
@@ -167,6 +217,12 @@ export const peopleEn: Record<string, PersonEn> = {
       'Runner-up, The Genius: Grand Final',
       'The Genius seasons 3 and 4, back to back',
       'Founded a coffee-substitute brand',
+    ],
+    scope: ['genius-4'],
+    scopes: { notableFor: [['genius-4'], [], []] },
+    bioParts: [
+      { text: "He studied materials engineering at the University of Illinois Urbana-Champaign and chemical and biological engineering at Seoul National University's graduate school before going into business for himself, launching a caffeine-free coffee-substitute brand in 2023. ", scope: [] },
+      { text: "To anyone who follows the brain-survival genre, though, he is the runner-up of tvN's The Genius: Grand Final (더 지니어스: 그랜드 파이널).", scope: ['genius-4'] },
     ],
   },
 
@@ -180,6 +236,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Winner, 2023 APL Mystery Bounty',
       'Amateur contestant turned professional',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], [], []] },
   },
 
   'kim-nam-hee': {
@@ -192,6 +250,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Competed on The Time Hotel',
       'Former SBS Sports announcer',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], [], []] },
   },
 
   'kang-ji-hoo': {
@@ -202,6 +262,12 @@ export const peopleEn: Record<string, PersonEn> = {
       'Third place, University War 3',
       'Mathematical sciences, KAIST',
       'The only current student in the lineup',
+    ],
+    scope: ['university-war-3'],
+    scopes: { notableFor: [['university-war-3'], [], []] },
+    bioParts: [
+      { text: "An undergraduate in mathematical sciences at KAIST, who finished third with the KAIST team on Coupang Play's brain-survival series University War 3 (대학전쟁3). ", scope: ['university-war-3'] },
+      { text: "He is the only currently enrolled student in this lineup.", scope: [] },
     ],
   },
 
@@ -216,6 +282,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Co-runs the YouTube channel Bbangsongguk',
       "Created and performs in the fake idol group 'Mad Monster'",
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'lee-gwan-hee': {
@@ -227,6 +295,8 @@ export const peopleEn: Record<string, PersonEn> = {
       'Led the league in free-throw percentage twice',
       "Netflix's Single's Inferno 3",
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'shin-seung-yong': {
@@ -234,6 +304,8 @@ export const peopleEn: Record<string, PersonEn> = {
     bio:
       "A physician who came through Icheon High School and Seoul National University, and now runs a Gangnam practice doing skin and hair work; he has built an audience as an influencer alongside it. TVING's EXchange 4 (환승연애4) brought him to a general audience when he joined in episode 12. This is his first time inside the Bloody Game franchise.",
     notableFor: ["TVING's EXchange 4", 'Seoul National University graduate', 'Skin and hair practice, Gangnam'],
+    scope: [],
+    scopes: { notableFor: [[], [], []] },
   },
 
   'choi-yeon-cheong': {
@@ -247,5 +319,7 @@ export const peopleEn: Record<string, PersonEn> = {
       'Top award, open division, 2012 Bucheon Boksagol gugak competition',
       'Drama credit: Miss Hammurabi',
     ],
+    scope: [],
+    scopes: { notableFor: [[], [], [], []] },
   },
 };

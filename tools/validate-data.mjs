@@ -17,6 +17,7 @@ import { edgesEn } from '../src/data/i18n/edges.en.ts';
 import { glossaryEn, seasonsEn } from '../src/data/i18n/seasons.en.ts';
 import { ui } from '../src/data/i18n/ui.ts';
 import { ALL_EDGE_TYPES } from '../src/state/useAtlas.ts';
+import { ALL_WORK_IDS, OUTCOME_FIELDS, OUTCOME_FIELDS_EN } from '../src/data/works.ts';
 import { EDGE_LABEL_I18N, EDGE_GLOSS_I18N } from '../src/data/i18n/ui.ts';
 import { EDGE_COLOR, EDGE_DASH } from '../src/graph/palette.ts';
 import { dataset } from '../src/data/dataset.ts';
@@ -991,6 +992,188 @@ if (warnings.length) {
   console.log(`\n${warnings.length} warning(s):`);
   for (const w of warnings) console.log('  ~', w);
 }
+
+/* ── 10. the scope spine ───────────────────────────────────────────────────
+   Phase 1 tagged roughly 250 records with the works whose outcomes they give
+   away, and nothing checked any of it — three authors tagged in parallel while
+   this file did not read the word "scope" once. The guarantee was three
+   people's diligence rather than a property of the build.
+
+   It has to be checked rather than trusted for a reason specific to this
+   design: AN ABSENT SCOPE IS INDISTINGUISHABLE FROM ONE NOBODY HAS WRITTEN
+   YET. Both resolve to hidden at runtime, which is the safe direction — and it
+   is also why a lost tag is silent. That is not hypothetical: during Phase 1 a
+   concurrent write removed the scope from a run mid-pass, and every consumer
+   downstream would have carried on happily over-redacting one field forever.
+
+   The asymmetry orders these checks. An over-tagged safe fact costs a reader
+   one click; a missed outcome is permanent for somebody who asked not to be
+   spoiled. So the untagged sweep FAILS and the over-tagging observations are
+   only reported. */
+{
+  const scopeOf = (o) => (Array.isArray(o?.scope) ? o.scope : null);
+  const known = new Set(ALL_WORK_IDS);
+
+  /* Every id used anywhere has to exist. TypeScript closes the union for
+     hand-written source; this also covers anything merged or generated. */
+  const seenIds = new Set();
+  const walk = (o) => {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) return void o.forEach(walk);
+    for (const [k, v] of Object.entries(o)) {
+      if (k === 'scope' && Array.isArray(v)) v.forEach((id) => seenIds.add(id));
+      else if (k === 'scopes' && v && typeof v === 'object') {
+        for (const arr of Object.values(v)) {
+          if (Array.isArray(arr)) arr.flat().forEach((id) => typeof id === 'string' && seenIds.add(id));
+        }
+      } else walk(v);
+    }
+  };
+  walk({ people, records, edges, seasons, glossary, peopleEn, recordsEn, edgesEn, seasonsEn, glossaryEn });
+  for (const id of seenIds) {
+    if (!known.has(id)) fail('scope names "' + id + '", which is not a WorkId in works.ts');
+  }
+
+  /* 10a. THE BYTE-IDENTITY INVARIANT — what makes phase 1 invisible by
+     construction rather than by promise. A split may not alter one character
+     of what renders today. */
+  const PART_FIELDS = [
+    ['arcParts', 'arc'],
+    ['arcEnParts', 'arcEn'],
+    ['bioParts', 'bio'],
+    ['descriptionParts', 'description'],
+    ['meaningParts', 'meaning'],
+  ];
+  let splits = 0;
+  const checkParts = (obj, where) => {
+    for (const [pf, orig] of PART_FIELDS) {
+      const parts = obj[pf];
+      if (!Array.isArray(parts)) continue;
+      splits++;
+      if (parts.map((x) => (x && x.text) || '').join('') !== obj[orig]) {
+        fail(where + ': ' + pf + ' does not reconstruct ' + orig + ' byte for byte — a split changed what renders');
+      }
+      for (const part of parts) {
+        if (!Array.isArray(part && part.scope)) fail(where + ': a ' + pf + ' entry carries no scope');
+      }
+      /* A part may not reveal a work the whole-string tag omits. Without this a
+         split can widen what a field gives away while the field's own scope
+         still looks right — a leak the join check cannot see. */
+      const fieldScope = (obj.scopes && obj.scopes[orig]) || obj.scope;
+      if (Array.isArray(fieldScope)) {
+        const outside = [...new Set(parts.flatMap((x) => (x && x.scope) || []))].filter((id) => !fieldScope.includes(id));
+        if (outside.length) {
+          fail(where + ': ' + pf + ' names ' + outside.join(', ') + " but " + orig + "'s own scope does not — the split widens the claim");
+        }
+      }
+    }
+  };
+
+  /* 10b. A per-entry scope array has to line up with the prose it scopes. */
+  const checkAligned = (obj, where) => {
+    for (const f of ['beats', 'notableFor']) {
+      const sc = obj.scopes && obj.scopes[f];
+      if (!Array.isArray(sc)) continue;
+      const arr = obj[f];
+      const n = Array.isArray(arr) ? arr.length : 0;
+      if (sc.length !== n) {
+        fail(where + ': scopes.' + f + ' has ' + sc.length + ' entries for ' + n + ' ' + f + ' — they must align one to one');
+      }
+    }
+  };
+
+  /* 10c. THE UNTAGGED-OUTCOME SWEEP — the leak list, and it fails. */
+  const untagged = [];
+  const sweep = (obj, kind, where, manifest) => {
+    if (!obj || typeof obj !== 'object') return;
+    checkParts(obj, where);
+    checkAligned(obj, where);
+    const fields = manifest[kind];
+    if (!fields) return;
+    const present = fields.filter((f) => {
+      const v = obj[f];
+      return v !== undefined && v !== null && (!Array.isArray(v) || v.length > 0);
+    });
+    if (!present.length) return;
+    for (const f of present) {
+      const own = obj.scopes && obj.scopes[f];
+      if (own === undefined && scopeOf(obj) === null) {
+        untagged.push(where + '.' + f + ' is outcome-bearing and carries no scope');
+      }
+    }
+  };
+
+  for (const [id, runs] of Object.entries(records)) {
+    (runs || []).forEach((r, i) => sweep(r, 'SeasonRun', 'records.' + id + '[' + i + ']', OUTCOME_FIELDS));
+  }
+  for (const [id, runs] of Object.entries(recordsEn)) {
+    (runs || []).forEach((r, i) => sweep(r, 'SeasonRunEn', 'recordsEn.' + id + '[' + i + ']', OUTCOME_FIELDS_EN));
+  }
+  for (const p of people) {
+    sweep(p, 'Person', 'people.' + p.id, OUTCOME_FIELDS);
+    (p.priorElsewhere || []).forEach((b, i) => sweep(b, 'PriorElsewhere', 'people.' + p.id + '.priorElsewhere[' + i + ']', OUTCOME_FIELDS));
+    if (p.x) sweep(p.x, 'XBilling', 'people.' + p.id + '.x', OUTCOME_FIELDS);
+  }
+  for (const [id, v] of Object.entries(peopleEn)) sweep(v, 'PersonEn', 'peopleEn.' + id, OUTCOME_FIELDS_EN);
+  for (const e of edges) sweep(e, 'Edge', 'edge ' + e.id, OUTCOME_FIELDS);
+  for (const [id, v] of Object.entries(edgesEn)) sweep(v, 'EdgeEn', 'edgesEn.' + id, OUTCOME_FIELDS_EN);
+
+  for (const u of untagged) fail('scope: ' + u);
+
+  /* 10d. THE DENOMINATOR. A rank hidden behind a visible field size is not
+     hidden — the plate draws an arc at rank/fieldSize, so the denominator and
+     the picture give the numerator back. PLAN-spoilers.md §3. */
+  for (const [id, runs] of Object.entries(records)) {
+    (runs || []).forEach((r, i) => {
+      if (r.rank === undefined || r.fieldSize === undefined) return;
+      const a = JSON.stringify((r.scopes && r.scopes.rank) || r.scope || null);
+      const b = JSON.stringify((r.scopes && r.scopes.fieldSize) || r.scope || null);
+      if (a !== b) {
+        fail('records.' + id + '[' + i + ']: fieldSize scope ' + b + ' differs from rank scope ' + a + ' — the denominator inverts the arc');
+      }
+    });
+  }
+
+  /* 10e. A VERDICT THAT CAME FROM A WORK MUST NAME THE WORK.
+     Narrower than "every betrayal and rivalry", deliberately. The rule is about
+     verdicts a reader could still be walking toward — an in-house betrayal, a
+     directed accusation. It cannot cover verdicts that came from life: 하승진
+     and 이관희 fell out in a 2020 YouTube argument, and there is no work anyone
+     could watch to reach it, so a non-empty scope would seal that line against
+     every reader forever rather than protect anybody. Both Phase 1 authors
+     reached scope [] there independently, working blind of each other. */
+  const VERDICT = new Set(['betrayal', 'rivalry']);
+  for (const e of edges) {
+    if (!VERDICT.has(e.type)) continue;
+    const fromAWork = e.season !== 0;
+    const accuses = Boolean(e.directed) || e.type === 'betrayal';
+    const sc = (e.scopes && e.scopes.description) || e.scope;
+    if ((fromAWork || accuses) && Array.isArray(sc) && sc.length === 0) {
+      fail('edge ' + e.id + ' is a ' + e.type + ' from inside a work and scoped [] — a verdict from a work must name it');
+    }
+  }
+
+  /* 10f. Reported, never enforced as parity. Both languages must be TAGGED;
+     their VALUES may legitimately differ, because they are different prose
+     making different claims — 박지민's English season-3 arc states two exits the
+     Korean does not. Do not "tidy" this into an equality check. */
+  let bothTagged = 0;
+  let runsTotal = 0;
+  for (const [id, runs] of Object.entries(records)) {
+    const en = recordsEn[id] || [];
+    (runs || []).forEach((r, i) => {
+      runsTotal++;
+      if (scopeOf(r) && scopeOf(en[i])) bothTagged++;
+    });
+  }
+
+  console.log(
+    'scope: ' + seenIds.size + ' of ' + ALL_WORK_IDS.length + ' works referenced, ' +
+      splits + ' prose splits reconstruct exactly, ' +
+      bothTagged + '/' + runsTotal + ' runs tagged on both sides',
+  );
+}
+
 if (problems.length) {
   console.log(`\n${problems.length} PROBLEM(S):`);
   for (const p of problems) console.log('  ✗', p);

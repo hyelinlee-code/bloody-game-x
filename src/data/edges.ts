@@ -149,6 +149,12 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://namu.wiki/w/홍진호/포커%20플레이어',
     ],
+    scope: ['bg2', 'bg3'],
+    descriptionParts: [
+      { text: "피의 게임2(2023)에서 홍진호가 속한 야생팀(히든 플레이어 진영)이 3일차에 서출구를 저택에서 '납치'해 영입하면서 둘이 한배를 탔고, 이후 시즌 내내 핵심 2인 축으로 함께 움직였다. 서출구는 스스로를 '홍진호의 계산기'라 부를 만큼 홍진호의 판단을 따르는 파트너였다. ", scope: ['bg2'] },
+      { text: "피의 게임3(2024~2025)에서도 홍진호가 축이 된 연합에 서출구가 합류해 다시 같은 편에 섰다. ", scope: ['bg3'] },
+      { text: "관계는 방송 밖으로도 이어져, 서출구는 시즌2 이후 홍진호의 영향으로 포커를 시작했고 홍진호가 \"하나부터 열까지 조목조목 짚어가며\" 피드백을 해줬다고 밝혔다.", scope: [] },
+    ],
   },
   {
     id: 'hong-jin-ho--hyun-seong-joo--prior-show-1',
@@ -166,6 +172,14 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/현성주',
       'https://namu.wiki/w/포커%20신들의%20전쟁',
       'https://namu.wiki/w/피의%20게임2/참가자',
+    ],
+    scope: [],
+    scopes: { description: ['poker-gods', 'bg2'] },
+    descriptionParts: [
+      { text: "포커 무대에서 오래 겹친 사이다. ", scope: [] },
+      { text: "유튜브 채널 투에이스의 텍사스 홀덤 서바이벌 '포커 신들의 전쟁' 시즌2 인비테이셔널(2021년 8월 16일~9월 30일)에 16인 참가자로 함께 출전했고(현성주는 활동명 '코몽'), 이 대회는 홍진호가 우승했다. ", scope: ['poker-gods'] },
+      { text: "시즌3(2022~2023)에도 홍진호는 팀 마스터로, 현성주는 참가자로 나란히 출연했다. 둘 다 WSOP 브레이슬릿 보유자다. ", scope: [] },
+      { text: "이 인연 덕분에 피의 게임2에서 두 사람이 만났을 때는 '두 포커 플레이어의 맞대결'이 초반 관전 포인트로 홍보됐지만, 정작 시즌 안에서는 서로 반대 진영에 있었을 뿐 개인적 반목이 기록된 바는 없다.", scope: ['bg2'] },
     ],
   },
   {
@@ -186,6 +200,7 @@ export const edges: Edge[] = [
         where: '더 지니어스: 그랜드 파이널 3화 데스매치 ‘베팅 가위바위보’',
         whereEn: 'The Genius: Grand Final, the episode-3 death match at betting rock-paper-scissors',
         score: '22:0',
+        scope: ['genius-4'],
       },
     ],
     confidence: 'high',
@@ -198,6 +213,7 @@ export const edges: Edge[] = [
          scoreline and the "이상민의 개다" line are on the wiki pages above. */
       'https://news.nate.com/view/20150711n20983',
     ],
+    scope: ['genius-4'],
   },
   {
     id: 'lee-gwan-hee--choi-hye-sun--prior-show-3',
@@ -219,6 +235,8 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%EC%86%94%EB%A1%9C%EC%A7%80%EC%98%A5(%EC%8B%9C%EC%A6%8C%203)',
       'https://news.mt.co.kr/mtview.php?no=2024080706041265635',
     ],
+    scope: [],
+    scopes: { label: ['singles-inferno-3'], labelEn: ['singles-inferno-3'], description: ['singles-inferno-3'] },
   },
   {
     id: 'lee-jin-hyung--yoon-bi--betrayal-s2-4',
@@ -237,6 +255,7 @@ export const edges: Edge[] = [
         season: 2,
         where: '피의 게임2 9일차 데스매치',
         whereEn: 'Bloody Game 2, the day-9 death match',
+        scope: ['bg2'],
       },
     ],
     confidence: 'high',
@@ -250,6 +269,7 @@ export const edges: Edge[] = [
          9일차 mechanics, which are on the wiki pages above. */
       'https://www.news1.kr/entertain/interview/5073627',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'lee-jin-hyung--park-ji-min--betrayal-s2-5',
@@ -268,6 +288,7 @@ export const edges: Edge[] = [
         season: 2,
         where: '피의 게임2 7일차 유령 플레이어 대결',
         whereEn: 'Bloody Game 2, the day-7 ghost-player match',
+        scope: ['bg2'],
       },
     ],
     confidence: 'high',
@@ -276,6 +297,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://news.nate.com/view/20230531n30787',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'lee-sang-min--hong-jin-ho--rivalry-6',
@@ -293,6 +315,20 @@ export const edges: Edge[] = [
       'https://ko.wikipedia.org/wiki/%EB%8D%94_%EC%A7%80%EB%8B%88%EC%96%B4%EC%8A%A4:_%EB%A3%B0_%EB%B8%8C%EB%A0%88%EC%9D%B4%EC%BB%A4',
       'https://ko.wikipedia.org/wiki/%EB%8D%94_%EC%A7%80%EB%8B%88%EC%96%B4%EC%8A%A4:_%EA%B7%B8%EB%9E%9C%EB%93%9C_%ED%8C%8C%EC%9D%B4%EB%84%90',
       'https://namu.wiki/w/이상민(룰라)',
+    ],
+    scope: ['genius-1', 'genius-2'],
+    descriptionParts: [
+      /* NOT `[]`, though it looks like participation. 세 시즌을 함께한 is, but
+         시리즈 최대 라이벌 구도다 is the same verdict the `type: 'rivalry'` on
+         this record carries — and that type is sealed to the two seasons the
+         rivalry was actually decided in. A visible sentence that states the
+         verdict in prose undoes the sealed type, which is the inversion of the
+         failure works.ts warns about on `EdgeScopes.type`. The rivalry is made
+         by 시즌1 and 시즌2; 그랜드 파이널 only reunites them, so it is not here. */
+      { text: "tvN '더 지니어스' 시리즈에서 세 시즌을 함께한 시리즈 최대 라이벌 구도다. ", scope: ['genius-1', 'genius-2'] },
+      { text: "시즌1 '게임의 법칙'(2013)에 13인 참가자로 함께 출연해 홍진호가 최종 우승했고(가넷 79개, 상금 7,900만 원), 이상민은 11화 데스매치에서 김경란에게 패해 3위로 마쳤다. ", scope: ['genius-1'] },
+      { text: "이듬해 시즌2 '룰 브레이커'(2013~2014)에서는 반대로 이상민이 우승(가넷 62개, 결승에서 임요환 격파)했고 홍진호는 중반에 탈락했다. ", scope: ['genius-2'] },
+      { text: "2015년 올스타전 시즌4 '그랜드 파이널'에는 각각 시즌1 우승자·시즌2 우승자 자격으로 나란히 복귀했다.", scope: ['genius-1', 'genius-2'] },
     ],
   },
   {
@@ -313,6 +349,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84(%EC%8B%9C%EC%A6%8C%201)/4%EC%9D%BC%EC%B0%A8',
       'https://namu.wiki/w/피의%20게임(시즌%201)',
     ],
+    scope: ['bg1'],
   },
   {
     id: 'ha-seung-jin--yoon-bi--alliance-s2-8',
@@ -330,6 +367,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/윤비/피의%20게임',
       'https://namu.wiki/w/피의%20게임2',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'ha-seung-jin--lee-gwan-hee--rivalry-9',
@@ -347,6 +385,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/하승진/생애',
       'https://www.seoul.co.kr/news/newsView.php?id=20200527017002',
     ],
+    scope: [],
   },
   {
     id: 'hong-jin-ho--kim-kyung-hoon--prior-show-10',
@@ -364,12 +403,20 @@ export const edges: Edge[] = [
         season: 0,
         where: '더 지니어스: 그랜드 파이널 10화 데스매치 ‘양면포커’',
         whereEn: 'The Genius: Grand Final, the episode-10 death match at two-sided poker',
+        scope: ['genius-4'],
       },
     ],
     confidence: 'high',
     sources: [
       'https://namu.wiki/w/김경훈(1988)/더%20지니어스',
       'https://ko.wikipedia.org/wiki/더_지니어스:_그랜드_파이널',
+    ],
+    scope: [],
+    scopes: { label: ['genius-4'], labelEn: ['genius-4'], description: ['genius-1', 'genius-4'] },
+    descriptionParts: [
+      { text: "더 지니어스 시즌4 '그랜드 파이널'(tvN, 2015) 13인 참가자로 함께 출연했다. ", scope: [] },
+      { text: "홍진호는 시즌1 우승자 자격으로, 김경훈은 시즌3 대표로 참가했다. ", scope: ['genius-1'] },
+      { text: "10화에서 메인매치 '협동홀덤'에 패한 두 사람이 데스매치 '양면포커'에서 1대1로 맞붙었고, 김경훈이 이겨 홍진호를 탈락시켰다. 김경훈은 데스매치를 앞두고 '시즌1, 2 때 정말 팬이었다'며 양면포커를 직접 하게 된 것에 감격을 드러냈다.", scope: ['genius-4'] },
     ],
   },
   {
@@ -388,6 +435,14 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/김유현',
       'https://namu.wiki/w/김유현/더%20지니어스',
     ],
+    scope: [],
+    scopes: { description: ['genius-1', 'genius-4'] },
+    descriptionParts: [
+      { text: "2015년 tvN 「더 지니어스: 그랜드 파이널」 13인 올스타 캐스트에 함께 출연했다. ", scope: [] },
+      { text: "홍진호는 시즌1 우승자 자격으로, 김유현은 시즌3 '블랙가넷' 출신으로 합류했다. ", scope: ['genius-1'] },
+      { text: "단순 동반 출연에 그치지 않고 2화 공포 레이싱 메인매치에서 김유현이 홍진호의 '책사' 역할을 맡아 한 회차 동안 직접 공조했으며, 김유현의 플레이 스타일이 '시즌1 초중반의 홍진호와 흡사하다'는 평가를 받기도 했다. ", scope: ['genius-4'] },
+      { text: "두 사람 모두 프로 포커 플레이어로, 홍진호는 2022년 WSOP 브레이슬릿을 획득했고 김유현은 2015년 출연 당시 이미 직업이 '프로 겜블러'로 소개됐다.", scope: [] },
+    ],
   },
   {
     id: 'hong-jin-ho--park-ji-min--alliance-s2-12',
@@ -405,6 +460,7 @@ export const edges: Edge[] = [
       'https://enews.imbc.com/News/RetrieveNewsInfo/385049',
       'https://namu.wiki/w/%ED%99%8D%EC%A7%84%ED%98%B8/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'kim-kyung-hoon--kim-yoo-hyun--prior-show-13',
@@ -422,6 +478,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/김유현',
       'https://namu.wiki/w/더%20지니어스:그랜드%20파이널',
     ],
+    scope: [],
   },
   {
     id: 'park-ji-min--lee-tae-gyun--betrayal-s1-14',
@@ -445,6 +502,7 @@ export const edges: Edge[] = [
          됐다." The 8표 count is on the day-3 page above. */
       'https://enews.imbc.com/Tpl/View/331883',
     ],
+    scope: ['bg1'],
   },
   {
     id: 'seo-chul-gu--yoon-bi--alliance-s2-15',
@@ -462,6 +520,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://news.nate.com/view/20230525n28704',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'seo-chul-gu--ha-seung-jin--rivalry-s2-16',
@@ -479,6 +538,7 @@ export const edges: Edge[] = [
       'https://ko.wikipedia.org/wiki/피의_게임',
       'https://namu.wiki/w/피의%20게임2',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'seo-chul-gu--heo-seong-beom--rivalry-s3-17',
@@ -509,6 +569,11 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%EB%8D%B0%EC%8A%A4%EA%B2%8C%EC%9E%84(%EB%84%B7%ED%94%8C%EB%A6%AD%EC%8A%A4%20%EC%98%88%EB%8A%A5)',
       'https://enews.imbc.com/News/RetrieveNewsInfo/436779',
     ],
+    scope: ['bg3'],
+    descriptionParts: [
+      { text: "피의 게임3(2024.11~2025.01, 웨이브)에서 두 사람은 1일차부터 서로 다른 거점에 있었다 — 서출구는 피의 저택, 허성범은 피의 낙원 소속으로 출발했고, 제작진 분류상으로도 서출구는 '올스타', 허성범은 '뉴스타'로 다른 그룹으로 소개됐다. 후반에 진영이 갈리면서 서출구는 홍진호 쪽 연합의 두뇌 역할을, 허성범은 장동민 연합 쪽을 맡았다. 기록에 남은 두 사람의 정면 마찰은 10일차 '선과 악' 한 판이다. 허성범은 인터뷰에서 '제 생각을 설명하려고 하긴 했는데 계속 무시당했습니다'라며 소통이 되지 않았다고 불만을 드러냈다. ", scope: ['bg3'] },
+      { text: "그리고 두 사람은 이후 넷플릭스 '데스게임: 천만원을 걸어라'(2026.01.28~04.01)와 '데스게임2: 최후의 승자'(2026.04.22~06.17)에도 나란히 참가자로 이름을 올려, 세 개 프로그램에서 연달아 같은 판에 앉았다.", scope: [] },
+    ],
   },
   {
     id: 'heo-seong-beom--choi-hye-sun--alliance-s3-33',
@@ -526,6 +591,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%ED%97%88%EC%84%B1%EB%B2%94/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84',
       'https://namu.wiki/w/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%843/%EC%B0%B8%EA%B0%80%EC%9E%90',
     ],
+    scope: ['bg3'],
   },
   {
     id: 'jung-keun-woo--lee-tae-gyun--alliance-s1-34',
@@ -543,6 +609,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84(%EC%8B%9C%EC%A6%8C%201)/4%EC%9D%BC%EC%B0%A8',
       'https://namu.wiki/w/피의%20게임(시즌%201)',
     ],
+    scope: ['bg1'],
   },
   {
     id: 'ha-seung-jin--lee-jin-hyung--alliance-s2-18',
@@ -560,6 +627,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/진행%20결과',
       'https://namu.wiki/w/피의%20게임2/참가자',
     ],
+    scope: ['bg2'],
   },
   // 나무위키 피의 게임2/참가자 §소속 및 연합 현황: "실질적으로는 남성 연합(하승진, 넉스,
   // 이진형, 현성주, 서출구, 윤비) + 솔로 플레이 (유리사, 후지이미나) + 왕따 (파이, 박지민)으로
@@ -585,6 +653,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://namu.wiki/w/하승진/피의%20게임',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'hong-jin-ho--ha-seung-jin--rivalry-s2-20',
@@ -617,6 +686,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임',
       'https://enews.imbc.com/News/RetrieveNewsInfo/381723',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'hong-jin-ho--choi-hye-sun--alliance-s3-21',
@@ -634,6 +704,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임3/참가자',
       'https://namu.wiki/w/피의%20게임3',
     ],
+    scope: ['bg3'],
   },
   /* WAS `rivalry`, AND ITS OWN LAST SENTENCE SAID OTHERWISE. The rail glosses
      라이벌 as 시즌 내내 정면으로 부딪친 관계 / 'sustained head-to-head
@@ -665,6 +736,8 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/홍진호/피의%20게임',
       'https://namu.wiki/w/허성범/피의%20게임',
     ],
+    scope: [],
+    scopes: { label: ['bg3'], labelEn: ['bg3'], description: ['bg3'] },
   },
   {
     id: 'hong-jin-ho--kim-nam-hee--alliance-23',
@@ -681,6 +754,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%EB%8D%94%20%ED%83%80%EC%9E%84%20%ED%98%B8%ED%85%94/%EC%B0%B8%EA%B0%80%EC%9E%90',
       'https://ko.wikipedia.org/wiki/%EB%8D%94_%ED%83%80%EC%9E%84_%ED%98%B8%ED%85%94',
     ],
+    scope: ['time-hotel'],
   },
   {
     id: 'hong-jin-ho--yoon-bi--alliance-s2-24',
@@ -698,6 +772,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%EC%9C%A4%EB%B9%84/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84',
       'https://namu.wiki/w/%ED%99%8D%EC%A7%84%ED%98%B8/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%84',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'hyun-seong-joo--seo-chul-gu--mentor-25',
@@ -719,6 +794,13 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/서출구',
       'https://namu.wiki/w/피의%20게임2',
     ],
+    scope: [],
+    scopes: { description: ['bg2'] },
+    descriptionParts: [
+      { text: "두 사람은 피의 게임2(2023) 동시즌 참가자로 처음 만났다. ", scope: [] },
+      { text: "시즌 안에서는 둘 다 저택팀에서 시작했다가 서출구가 야생팀으로 넘어가며 반대 진영으로 갈렸다. ", scope: ['bg2'] },
+      { text: "시즌이 끝난 뒤 서출구는 프로 포커 플레이어 현성주(닉네임 코몽)와 홍진호의 영향으로 홀덤을 시작했고 두 사람 모두에게 피드백을 구했다고 밝혔다 — 현성주는 격려 위주의 조언을, 홍진호는 세밀한 지적을 해줬다고 한다. 이후 현성주의 포커 유튜브 채널 '아르테포커'의 1:1 홀덤 챌린지 콘텐츠에 서출구가 대결 상대로 출연했다(임요환, 김수조 등과 함께).", scope: [] },
+    ],
   },
   // 나무위키 현성주/피의 게임 §시즌2: 습격의 날 유리사 감옥행 동조, 넘버 체인지에서 넉스·이진형이
   // 팀 전략 주도, 10일차 유령 플레이어로 재등장.
@@ -737,6 +819,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://namu.wiki/w/현성주/피의%20게임',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'lee-sang-min--kim-yoo-hyun--prior-show-27',
@@ -752,6 +835,12 @@ export const edges: Edge[] = [
     sources: [
       'https://ko.wikipedia.org/wiki/더_지니어스:_그랜드_파이널',
       'https://namu.wiki/w/더%20지니어스/역대%20출연자',
+    ],
+    scope: [],
+    scopes: { description: ['genius-2'] },
+    descriptionParts: [
+      { text: "더 지니어스 시즌4 '그랜드 파이널'(2015, tvN)의 13인 올스타 출연진에 두 사람이 모두 포함돼 같은 시즌을 직접 치렀다. ", scope: [] },
+      { text: "이상민은 시즌1 '게임의 법칙'과 시즌2 '룰 브레이커'를 거친 시즌2 대표로, 김유현은 시즌3 '블랙가넷' 대표로 합류했으며, 두 사람의 출연 이력이 겹치는 유일한 시즌이 그랜드 파이널이다.", scope: ['genius-2'] },
     ],
   },
   {
@@ -769,6 +858,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임3/참가자',
       'https://namu.wiki/w/피의%20게임3',
     ],
+    scope: ['bg3'],
   },
   {
     id: 'seo-chul-gu--lee-jin-hyung--rivalry-s2-29',
@@ -787,6 +877,7 @@ export const edges: Edge[] = [
         where: '피의 게임2 파이널 1라운드',
         whereEn: 'Bloody Game 2, the first final round',
         score: '17:8',
+        scope: ['bg2'],
       },
     ],
     confidence: 'high',
@@ -795,6 +886,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/%ED%94%BC%EC%9D%98%20%EA%B2%8C%EC%9E%842',
       'https://namu.wiki/w/%EC%84%9C%EC%B6%9C%EA%B5%AC',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'lee-sang-min--lee-tae-gyun--co-season-s1-30',
@@ -813,6 +905,13 @@ export const edges: Edge[] = [
     sources: [
       'https://namu.wiki/w/피의%20게임(시즌%201)',
       'https://v.daum.net/v/20220118002131798',
+    ],
+    scope: [],
+    scopes: { label: ['bg1'], labelEn: ['bg1'], description: ['bg1'] },
+    descriptionParts: [
+      { text: "이상민은 피의 게임 시즌1(MBC every1, 2021.11.01~2022.01.24)에서 스튜디오 패널 '브레인 군단'의 수장으로 장동민·박지윤·슈카·최예나와 함께 참가자들의 플레이를 해설했다. ", scope: [] },
+      { text: "이태균은 같은 시즌의 플레이어로, 초반에 지하실로 떨어졌다가 다시 올라와 시즌을 가져갔다. ", scope: ['bg1'] },
+      { text: "다만 두 사람은 같은 시즌에 속했을 뿐 역할이 달라(스튜디오 패널 vs 플레이어), 게임 진행 중 직접 상호작용한 정황은 확인되지 않는다.", scope: [] },
     ],
   },
   /* THE THREE 이상민 LINES SAY THE SAME PARAGRAPH THREE TIMES, AND ONE OF THEM
@@ -845,6 +944,12 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임(시즌%201)/참가자',
       'https://namu.wiki/w/박지민(아나운서)',
     ],
+    scope: [],
+    scopes: { description: ['bg1'] },
+    descriptionParts: [
+      { text: "이상민이 해설석에서 지켜본 시즌1을 실제로 굴린 사람은 박지민(MBC 아나운서)이었다. 2일차 분배 게임에서 자신을 퀸으로 지목한 킹을 그대로 상대 연합에 팔아넘겼고, 4일차에는 눈물 연기로 정근우의 자진 탈락을 끌어냈으며, 투표로 탈락자를 정하는 시즌1 구조에서 마지막 회까지 단 한 표도 받지 않은 유일한 참가자로 남았다. '처음부터 이 판은 내가 짰어, 그냥 따라와'가 그 시즌에 그가 남긴 대사다. ", scope: ['bg1'] },
+      { text: "패널석은 판에 손을 댈 수 없는 자리이므로 이상민이 그 설계에 개입한 지점은 없고, 두 사람이 판 안에서 마주친 기록도 없다. 박지민은 시즌2에도 플레이어로 나왔지만 그 시즌에는 패널석 자체가 없었다.", scope: [] },
+    ],
   },
   {
     id: 'ha-seung-jin--park-ji-min--rivalry-s2-32',
@@ -862,6 +967,13 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
       'https://namu.wiki/w/피의%20게임2/참가자',
       'https://namu.wiki/w/하승진/피의%20게임',
+    ],
+    scope: ['bg2'],
+    scopes: { description: ['bg1', 'bg2'] },
+    descriptionParts: [
+      { text: "피의 게임2(2023)에서 박지민은 야생팀에서 저택으로 잠입한 스파이였고, 하승진은 처음부터 저택팀에 있던 인물이라 정면 반대 진영이었다. 하승진은 남녀 머릿수 차이를 근거로 한 '성별 갈라치기' 투표 논리를 저택 안에서 가장 먼저 꺼낸 인물이고, 데스매치 진출자 투표에서 실제로 박지민의 이름을 불렀다. ", scope: ['bg2'] },
+      { text: "시즌1에서 굳어진 '배신의 아이콘' 이미지 탓에 초반부터 의심을 사던 사람에게, 저택에서 가장 먼저 나온 지목이 그의 입에서 나왔다는 뜻이다. ", scope: ['bg1', 'bg2'] },
+      { text: "다만 하승진이 저택 남성 연합의 리더였던 것은 아니고, 나무위키는 그의 시즌2를 '조력자' 역할로 서술한다.", scope: ['bg2'] },
     ],
   },
   /* 아는 형님 is a real meeting and the two edges below were filed with the
@@ -892,6 +1004,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/아는%20형님/방영%20목록/2025년%20상반기',
       'https://namu.wiki/w/아는%20형님/방영%20목록/2026년%20상반기',
     ],
+    scope: [],
   },
   {
     id: 'lee-sang-min--ha-seung-jin--prior-show-39',
@@ -909,6 +1022,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/하승진',
       'https://namu.wiki/w/아는%20형님/방영%20목록/2025년%20상반기',
     ],
+    scope: [],
   },
   /* THE THREE BELOW ARE NOT MEETINGS, and they are now typed for it. Each pair
      has a parallel record and has never shared a room; each description says
@@ -982,6 +1096,13 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/대학전쟁',
       'https://namu.wiki/w/강지후(2004)',
     ],
+    scope: [],
+    scopes: { description: ['university-war-3'] },
+    descriptionParts: [
+      { text: "두 사람이 같은 방에 있었던 적은 없다. 쿠팡플레이 '대학전쟁'의 카이스트 자리를 두 시즌 차이로 물려받은 것이 겹치는 전부다. ", scope: [] },
+      { text: "허성범은 2023년 시즌1에서 카이스트 팀 리더로 출연했고, 강지후는 2025~26년 시즌3에서 카이스트 팀으로 출전해 3위를 기록했다. ", scope: ['university-war-3'] },
+      { text: "다만 두 사람이 같은 시즌에 함께 앉은 적은 없다 — '대학전쟁3'의 카이스트 팀 명단은 강지후·김재한·김지우·전지민 넷이고 거기에 허성범은 없다. 시즌3에는 전 시즌 출연자가 돌아오지도 않았고, 진행은 황인성이 맡았다. 겹치는 이력을 하나 더 세면 학교로 가는 길도 같다 — 허성범은 한국과학영재학교를 거쳐 KAIST 전산학부로, 강지후는 경기북과학고를 조기졸업하고 KAIST 수리과학과 22학번으로 들어갔다. 이 라인업에서 과학고·영재학교를 거쳐 KAIST에 간 사람은 이 둘뿐이고, 학과는 서로 다르다.", scope: [] },
+    ],
   },
   {
     id: 'kim-nam-hee--choi-yeon-cheong--prior-show-36',
@@ -1022,6 +1143,7 @@ export const edges: Edge[] = [
       'https://www.newspim.com/news/view/20260604000984',
       'https://news.nate.com/view/20260604n23735',
     ],
+    scope: [],
   },
   {
     id: 'lee-jin-hyung--shin-seung-yong--prior-show-37',
@@ -1048,6 +1170,13 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/이진형(1995)',
       'https://namu.wiki/w/신승용',
       'https://www.newspim.com/news/view/20260604000984',
+    ],
+    scope: [],
+    scopes: { description: ['bg2'] },
+    descriptionParts: [
+      { text: "두 사람이 만난 기록은 어디에도 없다. 라인업의 의사가 둘이고 학교까지 겹친다는 것이 이 선의 전부다. 이진형은 서울과학고를 나와 서울대 자유전공학부에 14학번으로 들어갔다가 중퇴했고, 2019학년도 수능 만점자로 다시 들어가 서울대 의과대학 19학번으로 졸업한 뒤 청담동에서 피부과 진료를 본다. 신승용은 이천고를 나와 서울대를 졸업했고 강남에서 피부·모발 쪽 진료를 보는 개원의다. 다만 같은 단과대학이었는지는 확인되지 않는다 — 신승용의 학력에는 '서울대학교 졸업'까지만 적혀 있고, 두 사람의 학번은 여덟 해 가까이 떨어져 있다. ", scope: [] },
+      { text: "앞의 한 명은 이미 이 프랜차이즈에서 우승했고 뒤의 한 명은 이번이 첫 출연이며, 같은 프로그램이나 같은 병원에서 마주친 기록은 없다. ", scope: ['bg2'] },
+      { text: "이 선은 아는 사이라는 뜻이 아니라 같은 자격증을 들고 같은 집에 들어간다는 뜻이다.", scope: [] },
     ],
   },
   /* 이태균 had three ties and all three were season 1 — the franchise's first
@@ -1091,6 +1220,12 @@ export const edges: Edge[] = [
     sources: [
       'https://namu.wiki/w/프로젝트%20지니어스',
       'https://namu.wiki/w/김유현',
+    ],
+    scope: [],
+    scopes: { description: ['bg1'] },
+    descriptionParts: [
+      { text: "두 사람이 같은 판에 앉은 적은 있는데, 그 판은 끝내 방송되지 않았다. 유튜브 채널 투에이스가 2022년 5월경 촬영한 두뇌 서바이벌 '프로젝트 지니어스'의 참가자 명단에 두 사람이 함께 올라 있다. 명단은 홍진호·이두희·최연승·김유현·공혁준·장지수·현성주·이태균 여덟 명으로, 지니어스 쪽 계보와 피의 게임 쪽 계보를 한 테이블에 앉힌 캐스팅이었다 — 최연승은 이태균과 같은 시즌1을 뛴 참가자이고, 홍진호와 현성주도 이 명단에 있다. 그러나 제작사가 2024년 활동을 중단하면서 프로그램은 공개되지 않았고, 그날 촬영장에서 무슨 일이 있었는지는 어디에도 남아 있지 않다. ", scope: [] },
+      { text: "이 선이 말하는 것은 결과가 아니라 호출이다 — 프랜차이즈 초대 챔피언과 지니어스 출신 프로 갬블러가 4년 전 같은 날 같은 방으로 불려 갔다는 것.", scope: ['bg1'] },
     ],
   },
   /* The other three pairs off the same eight-name call sheet.
@@ -1137,6 +1272,15 @@ export const edges: Edge[] = [
     strength: 2,
     confidence: 'medium',
     sources: ['https://namu.wiki/w/프로젝트%20지니어스'],
+    scope: [],
+    scopes: { label: ['bg1', 'genius-1'], labelEn: ['bg1'], description: ['bg1', 'genius-1', 'poker-gods'] },
+    descriptionParts: [
+      { text: "2022년 5월에 이 명단이 만들어질 때 두 사람이 각각 어디에 서 있었는지를 보면 왜 함께 불렸는지가 보인다. ", scope: [] },
+      { text: "이태균은 넉 달 전인 1월 24일에 피의 게임 시즌1 결승을 끝내고 프랜차이즈의 초대 챔피언이 된 참이었다. ", scope: ['bg1'] },
+      { text: "홍진호는 그해 WSOP 브레이슬릿을 가져갔고, 그 전해 가을에는 이 명단을 만든 바로 그 채널 투에이스가 연 '포커 신들의 전쟁' 시즌2 인비테이셔널을 우승한 상태였다. ", scope: ['poker-gods'] },
+      { text: "두뇌 서바이벌의 초대 우승자와 피의 게임의 초대 우승자를 한 테이블에 앉히는 캐스팅이었다. ", scope: ['bg1', 'genius-1'] },
+      { text: "그 테이블에서 무엇이 오갔는지는 프로그램이 공개되지 않아 남아 있지 않다.", scope: [] },
+    ],
   },
   {
     id: 'hyun-seong-joo--lee-tae-gyun--prior-show-46',
@@ -1151,6 +1295,12 @@ export const edges: Edge[] = [
     strength: 2,
     confidence: 'medium',
     sources: ['https://namu.wiki/w/프로젝트%20지니어스'],
+    scope: [],
+    scopes: { description: ['bg1'] },
+    descriptionParts: [
+      { text: "프랜차이즈 안에서 두 사람이 같은 판에 앉은 적은 없다 — 이태균은 시즌1, 현성주는 시즌2다. 두 이름이 함께 올라간 명단은 2022년 5월의 '프로젝트 지니어스' 하나뿐이다. 그때 현성주는 커리어에서 가장 좋은 구간을 지나고 있었다. 그해에만 WPT 벨라지오 이벤트 #5와 PGT 하이롤러 시리즈 이벤트 #36을 우승했고, 그 전해에는 이 명단을 만든 투에이스가 연 '포커 신들의 전쟁' 시즌2에 나간 그 채널 쪽 플레이어였다. ", scope: [] },
+      { text: "이태균은 반대편에서 온 사람이었다 — 다른 하우스에서 막 우승하고 나온 참가자. 채널의 선수와 바깥에서 온 챔피언을 한 판에 앉히는 그림이었고, 그 판은 방송되지 않았다.", scope: ['bg1'] },
+    ],
   },
   {
     id: 'hyun-seong-joo--kim-yoo-hyun--prior-show-47',
@@ -1165,6 +1315,7 @@ export const edges: Edge[] = [
     strength: 2,
     confidence: 'medium',
     sources: ['https://namu.wiki/w/프로젝트%20지니어스'],
+    scope: [],
   },
   /* Season 1's four X players are now fully connected: the panel chief has a
      line to each of the three who actually played that season. */
@@ -1183,6 +1334,8 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임(시즌%201)',
       'https://namu.wiki/w/피의%20게임(시즌%201)/참가자',
     ],
+    scope: [],
+    scopes: { description: ['bg1'] },
   },
   /* Season 3 used to stop at its four players. 박지민 is the franchise's only
      three-season figure and she was standing inside season 3 the whole time —
@@ -1203,6 +1356,8 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임3/참가자',
       'https://namu.wiki/w/허성범/피의%20게임',
     ],
+    scope: [],
+    scopes: { label: ['bg3'], labelEn: ['bg3'], description: ['bg3'] },
   },
   {
     id: 'park-ji-min--choi-hye-sun--co-season-s3-42',
@@ -1219,6 +1374,13 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/피의%20게임3',
       'https://namu.wiki/w/최혜선/피의%20게임',
       'https://namu.wiki/w/박지민(아나운서)',
+    ],
+    scope: [],
+    scopes: { label: ['bg3'], labelEn: ['bg3'], description: ['bg1', 'bg2', 'bg3'] },
+    descriptionParts: [
+      { text: "최혜선은 피의 게임3 1일차 데스매치를 58칩 대 12칩으로 이기고도 규칙에 따라 잔해로 내려갔다. 이긴 쪽을 내려보내는 그 규칙이 최혜선을 박지민의 테이블 앞에 세운 셈이고, 잔해의 유령 카지노와 연옥을 맡은 집사가 박지민이었다. ", scope: ['bg3'] },
+      { text: "시즌1과 시즌2를 플레이어로 뛰다 '배신의 아이콘'이라는 별명을 얻은 사람이 이번에는 남의 판을 굴려 주는 자리에 앉아 있었고, 재출연 참가자들이 그 별명을 부르는 장면까지 방송을 탔다. ", scope: ['bg1', 'bg2', 'bg3'] },
+      { text: "최혜선은 그 앞을 지나간 참가자 중 한 명이고, 두 사람 사이의 개별적인 일화는 남아 있지 않다.", scope: ['bg3'] },
     ],
   },
   /* ── the season-2 cohort, completed ────────────────────────────────────────
@@ -1258,6 +1420,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/홍진호/피의%20게임',
       'https://namu.wiki/w/이진형(1995)/피의%20게임',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'hyun-seong-joo--yoon-bi--alliance-s2-45',
@@ -1277,6 +1440,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/현성주/피의%20게임',
       'https://namu.wiki/w/윤비/피의%20게임',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'park-ji-min--seo-chul-gu--rivalry-s2-46',
@@ -1295,6 +1459,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/서출구/피의%20게임',
       'https://namu.wiki/w/피의%20게임2/1일차',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'park-ji-min--yoon-bi--rivalry-s2-47',
@@ -1314,6 +1479,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
       'https://namu.wiki/w/윤비/피의%20게임',
     ],
+    scope: ['bg2'],
   },
   {
     id: 'park-ji-min--hyun-seong-joo--co-season-s2-48',
@@ -1332,5 +1498,7 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/현성주/피의%20게임',
       'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
     ],
+    scope: [],
+    scopes: { label: ['bg2'], labelEn: ['bg2'], description: ['bg2'] },
   },
 ];

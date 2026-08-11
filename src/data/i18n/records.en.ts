@@ -7,11 +7,39 @@ import type { SeasonRunEn } from './types';
  * order as their Korean counterparts, so the two can be zipped index by index.
  * Facts — placements, scores, day numbers, sums of money — are carried across
  * unchanged; only the prose is authored fresh. Nothing here touches season X.
+ *
+ * `scope` IS AUTHORED ON THIS SIDE SEPARATELY, AND IT IS NOT A TRANSLATION OF
+ * THE OTHER SIDE'S. The semantics are the same — see the header of ../types.ts
+ * and the inclusion test in ../works.ts — but the values are read off THIS
+ * prose, because this prose is authored rather than translated and it has more
+ * than once said something the Korean does not. Two live examples, both in
+ * 박지민's season-3 block:
+ *
+ *   · The Korean arc opens on her job at the casino table and stops there. The
+ *     English adds "dealing out to others the kind of game that had caught her
+ *     twice" — a claim about how her season 1 AND her season 2 ended, in a
+ *     sentence the Korean scopes as pure structure.
+ *   · Her second Korean beat is the episode-6 reveal (bg3). Her second English
+ *     beat is a different fact — players calling her 배신의 아이콘 on air —
+ *     which reaches back to season 1, so it is bg1 + bg3.
+ *
+ * Nothing should ever "fix" the two sides into agreement. A parity check would
+ * force one of the two prose layers to lie about what it says, and the direction
+ * it forces is toward the coarser tag, which is the leak.
  */
 export const recordsEn: Record<string, SeasonRunEn[]> = {
   'lee-sang-min': [
     {
       season: 1,
+      /* No result in this run at all — see the Korean side. The default stays
+         ['bg1'] so a field added later fails closed; the three that exist are
+         asserted structure, bar the third bullet, which counts the field. */
+      scope: ['bg1'],
+      scopes: {
+        placement: [],
+        arc: [],
+        beats: [[], [], ['bg1']],
+      },
       placement: 'Studio panel',
       arc: "He never set foot in the mansion in season 1. He sat on a five-person studio panel alongside the comedian Jang Dong-min, the broadcaster Park Ji-yoon, the economics YouTuber Shuka World (슈카월드) and the singer Choi Yena, introduced as the head of the so-called 'Brain Corps' (브레인 군단). The panel had no power to intervene in the game at all; its entire function was to watch the house and talk over it. He has spent longer staring at this board than almost anyone in the franchise, and he has never once been caught on it.",
       beats: [
@@ -25,6 +53,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'park-ji-min': [
     {
       season: 1,
+      scope: ['bg1'],
       placement: '4th of 10',
       arc: "She entered as an MBC announcer and became the largest single power in season 1. In the day-two distribution game the player holding the King card, Choi Yeon-seung, named her his Queen; she took what she knew straight to the rival alliance and sent him down to the basement on seven votes. On day four she produced tears on cue and talked Jung Keun-woo into eliminating himself, removing a competitor without spending a won of her own. She then won the Money Challenge (머니 챌린지) repeatedly and stockpiled immunity, and in a season that decided its eliminations by open vote she became the only contestant to reach the finale without ever drawing one. It ended with her finishing last of the four in the first final round.",
       beats: [
@@ -35,6 +64,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     },
     {
       season: 2,
+      scope: ['bg2'],
       placement: '13th of 13 — first player eliminated in season 2',
       arc: "She was season 2's biggest casting twist. To the house she was simply another member of the inside team; in fact she had started a day early out in the wild alongside Dex, the ex-UDT special forces presenter, and Hong Jin-ho, and her assignment was to feed the mansion's business back to the outside team. She passed Lee Jin-hyung a hint about Pandora's Box (판도라의 상자) and he turned it against her on the spot, which put her under suspicion from the opening days; isolated inside the house, she failed the assignment itself. When the house voted on who would go to the Death Match (데스매치), Ha Seung-jin — the first player in the mansion to argue for splitting the vote along gender lines — named her, and with the votes already stacked against her she named herself as well. She lost the match to the model Yurisa and became the first player eliminated in season 2, never seeing the Day of the Raid (습격의 날) she had helped design.",
       beats: [
@@ -45,7 +75,30 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     },
     {
       season: 3,
+      /* The English says more here than the Korean does, in both directions.
+         The opening sentence closes on "the kind of game that had caught her
+         twice", which states how season 1 AND season 2 ended for her — the
+         Korean sentence it mirrors stops at the job title. And the second
+         English beat is the 배신의 아이콘 line rather than the episode-6 reveal
+         its Korean counterpart carries. Read whole, this arc therefore needs all
+         three seasons; read in parts it needs far less, which is the point. */
+      scope: ['bg3'],
+      scopes: {
+        placement: [],
+        arc: ['bg1', 'bg2', 'bg3'],
+        beats: [[], ['bg1', 'bg3'], []],
+      },
       placement: 'Ghost-casino dealer and purgatory butler',
+      arcParts: [
+        {
+          text: 'After two seasons as a player she moved behind the table, running the phantom casino built into the ruins (잔해) as its dealer and butler — dealing out to others the kind of game that had caught her twice. ',
+          scope: ['bg1', 'bg2'],
+        },
+        {
+          text: "Returning contestants who remembered her from season 1 address her on camera by the name she earned back then, 'the icon of betrayal' (배신의 아이콘), and the edit leaves it in.",
+          scope: ['bg1', 'bg3'],
+        },
+      ],
       arc: "After two seasons as a player she moved behind the table, running the phantom casino built into the ruins (잔해) as its dealer and butler — dealing out to others the kind of game that had caught her twice. Returning contestants who remembered her from season 1 address her on camera by the name she earned back then, 'the icon of betrayal' (배신의 아이콘), and the edit leaves it in.",
       beats: [
         'Dealer and butler of the phantom casino down in the ruins',
@@ -58,6 +111,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'jung-keun-woo': [
     {
       season: 1,
+      scope: ['bg1'],
       placement: '7th of 10',
       arc: "In the mansion he was panned for treating the whole thing with a shrug. On day four he joined a bluff intended to stop the other side buying extra votes, then saw Park Ji-min crying — an act, as it turned out — lost his nerve, said that betraying her a second time was not the decent thing to do, and chose his own elimination rather than go through with it, walking down to the basement. Underground he took everything the production put in front of him without complaint, invented rules and a fake class system included, and shouldered the physical labour, which reversed the mansion-era verdict on him completely. He climbed back to the upper floor on day eight and went out for good when the upstairs team lost on day nine.",
       beats: [
@@ -71,6 +125,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'lee-tae-gyun': [
     {
       season: 1,
+      scope: ['bg1'],
       placement: 'Winner — 1st of 10',
       arc: "He was among the first players thrown out of the mansion and won anyway. On day three a probing remark he made to Dex, the ex-UDT special forces presenter, was picked up on a hidden microphone, marked him as a traitor and sent him downstairs on what amounted to a unanimous vote. In the basement he cracked the safe combination on his own, then climbed the boiler-room shaft with nothing but his hands and recovered the real key hidden inside the living-room television, opening the basement team's route back up into the house. In the day-eight strategy-equation game he beat the upstairs team with a complete equation that left no card unused, and he won the second final round, 'Running Puzzle' (러닝 퍼즐), outright to take a prize of 108 million won.",
       beats: [
@@ -84,7 +139,20 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'ha-seung-jin': [
     {
       season: 2,
+      scope: ['bg2'],
       placement: '8th of 13 — sixth player eliminated',
+      /* Same split as the Korean: the NBA line is a career, already stated in
+         his bio and his notableFor, and nobody is part-way through it. */
+      arcParts: [
+        {
+          text: "He arrived as the season's physical presence, billed on being the first Korean to reach the NBA. ",
+          scope: [],
+        },
+        {
+          text: "On the Day of the Raid (습격의 날) his size got him posted as the guard on his team's totem; Dex, the ex-UDT special forces presenter, got past him and broke it anyway, and Ha, convinced he was being mocked for it, grabbed him by the collar and the two had to be pulled apart — he apologised afterwards. He then built the pool alliance with the rapper Nucks and Yoon Bi, and pushed a plan to physically obstruct the opposing camp's communications during 'Day and Night' (낮과 밤), which drew enough of a backlash to put him up for elimination. He lost the 'Pattern Block' (패턴 블록) Death Match (데스매치) 4–1.",
+          scope: ['bg2'],
+        },
+      ],
       arc: "He arrived as the season's physical presence, billed on being the first Korean to reach the NBA. On the Day of the Raid (습격의 날) his size got him posted as the guard on his team's totem; Dex, the ex-UDT special forces presenter, got past him and broke it anyway, and Ha, convinced he was being mocked for it, grabbed him by the collar and the two had to be pulled apart — he apologised afterwards. He then built the pool alliance with the rapper Nucks and Yoon Bi, and pushed a plan to physically obstruct the opposing camp's communications during 'Day and Night' (낮과 밤), which drew enough of a backlash to put him up for elimination. He lost the 'Pattern Block' (패턴 블록) Death Match (데스매치) 4–1.",
       beats: [
         'The Day of the Raid: the totem broken, and a fight over the collar',
@@ -97,7 +165,21 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'hyun-seong-joo': [
     {
       season: 2,
+      scope: ['bg2'],
       placement: '11th of 13 — third player eliminated',
+      /* A world poker title is a credential, not an ending anyone is waiting on,
+         and "an existing history with Hong Jin-ho from poker broadcasts" is
+         where two people met, which the plan keeps. Structure, then a season. */
+      arcParts: [
+        {
+          text: 'He came in with a world poker title and an existing history with Hong Jin-ho from poker broadcasts, which the show promoted early as a duel between two professionals. ',
+          scope: [],
+        },
+        {
+          text: "He announced himself in the day-one Money Challenge (머니 챌린지) by working a gap in the rules rather than playing them straight, and inside the mansion he joined the effort to smoke out the spies. In the first Death Match (데스매치), 'Secret Dice' (시크릿 다이스), he claimed the special item before anyone else could and controlled the psychology of the table from end to end to survive. In the next one, 'Mystery Number' (미스터리 넘버), he lost 17–24. The reading was never his problem; the memorisation was.",
+          scope: ['bg2'],
+        },
+      ],
       arc: "He came in with a world poker title and an existing history with Hong Jin-ho from poker broadcasts, which the show promoted early as a duel between two professionals. He announced himself in the day-one Money Challenge (머니 챌린지) by working a gap in the rules rather than playing them straight, and inside the mansion he joined the effort to smoke out the spies. In the first Death Match (데스매치), 'Secret Dice' (시크릿 다이스), he claimed the special item before anyone else could and controlled the psychology of the table from end to end to survive. In the next one, 'Mystery Number' (미스터리 넘버), he lost 17–24. The reading was never his problem; the memorisation was.",
       beats: [
         'Day one: found the seam in the rules and played it',
@@ -110,7 +192,24 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'yoon-bi': [
     {
       season: 2,
+      /* The opening sentence is another programme's ending — 생존남녀: 갈라진
+         세상, which he won. The union on `arc` is for a reader who takes the
+         string whole; the split is so that a season-2 viewer does not lose the
+         paragraph to a show they have never heard of, and a 생존남녀 viewer does
+         not lose the one clause that is theirs. */
+      scope: ['bg2'],
+      scopes: { arc: ['bg2', 'survival-men-women'] },
       placement: '7th of 13 — conceded midway through his Death Match',
+      arcParts: [
+        {
+          text: 'He arrived holding a win from a web-variety survival show. ',
+          scope: ['survival-men-women'],
+        },
+        {
+          text: "He began on the mansion's inside team, was recruited by the hidden players on the night before the raid and crossed to the outside team, then broke away again to build the pool alliance with Ha Seung-jin and the rapper Nucks — he changed sides more than once. His high point was winning 'Day and Night' (낮과 밤): it brought him personal funds and immunity, made him the power inside the mansion, and let him banish XITSUH out into the wild, and he also opened Pandora's Box (판도라의 상자) on the quiet before anyone else, which forced every player's money to be redistributed in equal shares. Then Lee Jin-hyung, whom he had taken for an ally, named him for the Death Match (데스매치) — and, never having got hold of the rules, he declared his forfeit partway through the game.",
+          scope: ['bg2'],
+        },
+      ],
       arc: "He arrived holding a win from a web-variety survival show. He began on the mansion's inside team, was recruited by the hidden players on the night before the raid and crossed to the outside team, then broke away again to build the pool alliance with Ha Seung-jin and the rapper Nucks — he changed sides more than once. His high point was winning 'Day and Night' (낮과 밤): it brought him personal funds and immunity, made him the power inside the mansion, and let him banish XITSUH out into the wild, and he also opened Pandora's Box (판도라의 상자) on the quiet before anyone else, which forced every player's money to be redistributed in equal shares. Then Lee Jin-hyung, whom he had taken for an ally, named him for the Death Match (데스매치) — and, never having got hold of the rules, he declared his forfeit partway through the game.",
       beats: [
         "Won 'Day and Night' (낮과 밤), took the mansion, and banished XITSUH to the wild",
@@ -123,6 +222,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'lee-jin-hyung': [
     {
       season: 2,
+      scope: ['bg2'],
       placement: 'Winner — 1st of 13',
       arc: "He started inside the men's alliance and was expelled from it for refusing to carry the blame for a defeat; from there he assembled a much smaller minority bloc and survived by working the seams in the majority. In the back half of the season he was, in effect, its most productive killer — he put Yoon Bi, an ally by any reasonable reading, into the Death Match (데스매치), then dropped his last remaining partner himself, dismantling his own alliance with his own hands. He beat XITSUH 17–8 in the first final round and took the closing round, 'Jungle Maze' (정글 메이즈). His personal bank stood at zero, so he left with nothing beyond the 50 million won winner's prize, and his summing-up — that he had chosen an ugly victory over a beautiful defeat — split the audience sharply.",
       beats: [
@@ -136,6 +236,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'hong-jin-ho': [
     {
       season: 2,
+      scope: ['bg2'],
       placement: '3rd of 13',
       arc: "He was the oldest player in season 2 and the byword for the brain-survival genre, and he opened the season outside the house as a hidden player with Dex, the ex-UDT special forces presenter, and Park Ji-min, a full day ahead of everyone in the mansion. He worked the house night after night, pulled XITSUH and Yoon Bi across, and served as the political axis of the outside alliance. On the Day of the Raid (습격의 날) he went to check the CCTV, slipped on an unlit staircase and fractured his ankle; he played the rest of the season in a cast and on crutches. He came through the semi-final in first place, and then lost the first final round, 'Colour Turn' (컬러턴), on a misread of the rules — he was trying to build a line of four in any colour rather than in his own, and that was the difference.",
       beats: [
@@ -146,7 +247,29 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     },
     {
       season: 3,
+      /* Two seasons in one paragraph. The opening sentence — "third AGAIN" — and
+         the closing one — "third for the second season running" — each state a
+         season-3 finish and the season-2 finish it is being measured against, so
+         each needs bg2 as well as bg3 or it hides one result and leaks the
+         other. Everything between them is season 3 alone, and it is most of the
+         paragraph, which is what makes the split worth authoring. */
+      scope: ['bg3'],
+      scopes: {
+        arc: ['bg2', 'bg3'],
+        beats: [['bg3'], ['bg3'], ['bg2', 'bg3']],
+      },
       placement: '3rd of 18',
+      arcParts: [
+        { text: 'He finished third again in the all-star season. ', scope: ['bg2', 'bg3'] },
+        {
+          text: 'Last place in the day-one Money Challenge (머니 챌린지) dropped him straight into a Death Match (데스매치), where he paired with Choi Hye-sun and took the opposing pair apart, and he then opened his season with a piece of sleight of hand — passing off her win as his own and walking back into Paradise (낙원) as a spy. The middle of the season cost him: he was betrayed by Yurisa, the model he had trusted, and it visibly drained him. ',
+          scope: ['bg3'],
+        },
+        {
+          text: 'He came second out of the semi-final and went straight through to the final, where he failed to take a single round, finishing third for the second season running and hardening the perpetual-runner-up reputation around him.',
+          scope: ['bg2', 'bg3'],
+        },
+      ],
       arc: "He finished third again in the all-star season. Last place in the day-one Money Challenge (머니 챌린지) dropped him straight into a Death Match (데스매치), where he paired with Choi Hye-sun and took the opposing pair apart, and he then opened his season with a piece of sleight of hand — passing off her win as his own and walking back into Paradise (낙원) as a spy. The middle of the season cost him: he was betrayed by Yurisa, the model he had trusted, and it visibly drained him. He came second out of the semi-final and went straight through to the final, where he failed to take a single round, finishing third for the second season running and hardening the perpetual-runner-up reputation around him.",
       beats: [
         'Hid a day-one Death Match win and walked back into Paradise as a spy',
@@ -159,6 +282,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'seo-chul-gu': [
     {
       season: 2,
+      scope: ['bg2'],
       /* The parenthetical used to be the whole head of this string, because the
          surfaces that show only the head split on " · " or " — " and this one
          had neither. Em dash, so the Track record cell reads "4th of 13". */
@@ -172,6 +296,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
     },
     {
       season: 3,
+      scope: ['bg3'],
       placement: '6th of 18',
       arc: "His placement is the one most easily misread. He lost the day-two Death Match (데스매치) and the caption said eliminated, but in season 3 that was not a full exit — it meant the underground prison, and he came out of the day-four Death Match in first place and back into the game. Once returned he was the alliance's calculator and effectively its brain. On day nine, in 'Try13', the winning line he worked out burned his own alliance to the ground and handed Choi Hye-sun a solo victory. When the written-communication rule (필담) turned into a dispute, he told the production not to cut it and to put the whole exchange on air, and the scene ran in full.",
       beats: [
@@ -185,6 +310,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'choi-hye-sun': [
     {
       season: 3,
+      scope: ['bg3'],
       placement: '10th of 18',
       arc: "On day one she went into a Death Match (데스매치) for Paradise (낙원) paired with Hong Jin-ho and destroyed the opposing pair 58 chips to 12 — and the rules still sent her down to the ruins (잔해), while Hong Jin-ho passed her win off as his own and kept his place upstairs. Through the middle of the season her footing shifted every time the strongholds were redrawn, but she attached herself to the bloc around XITSUH and Chungju-man, the civil-servant YouTuber, and held her line above elimination. Her peak was day nine's 'Try13', where she rode XITSUH's winning formula cleanly to 75 points and the season's first outright solo win, worth 20 million won and two immunity passes. The very next day, in the Death Match, she walled in one of her own tiles and cut off her own scoring route, finished bottom and went out.",
       beats: [
@@ -198,6 +324,7 @@ export const recordsEn: Record<string, SeasonRunEn[]> = {
   'heo-seong-beom': [
     {
       season: 3,
+      scope: ['bg3'],
       placement: '4th of 18',
       arc: "He started on 5 million won, the smallest bank among the eighteen players, and dragged his whole season upward on individual-game strength, winning the Money Challenge (머니 챌린지) four times to tie the season's high. His reward for winning on day two was Pandora's Box (판도라의 상자), and of all the faces available he opened the penalty one, which rewrote the conditions under which Paradise (낙원) could defend itself against the raid and remained a live variable through the middle of the season. He came second out of the semi-final and into the final, where a transcription slip in the first round — one character missing from the title of a work — proved decisive, and he closed out fourth without a single round win to his name.",
       beats: [

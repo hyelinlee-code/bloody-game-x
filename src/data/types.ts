@@ -1,3 +1,5 @@
+import type { ProsePart, WorkId } from './works';
+
 /**
  * Data model for the Bloody Game X cast atlas.
  *
@@ -10,6 +12,74 @@
  *     eliminations, standings, alliances formed in X, mission outcomes, or
  *     episode events. If you are unsure whether a fact is pre-premiere, leave
  *     it out.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * `scope` — WHAT YOU MUST HAVE WATCHED FOR A CLAIM TO BE SAFE
+ *
+ * The rule above is a firewall against ONE season and it works by exclusion.
+ * Seasons 1–3 cannot be excluded — the readers who have watched them are who
+ * this atlas is for — so the second firewall is a redaction layer at display
+ * time, and `scope` is what it reads.
+ *
+ * `scope?: WorkId[]` says: these are the works whose outcomes this record's
+ * OUTCOME-BEARING FIELDS lean on. Which fields those are is declared once, per
+ * interface, in `OUTCOME_FIELDS` in works.ts — not repeated here, and not left
+ * to each reader of the data to decide. Everything not on that manifest is
+ * structure and is always shown.
+ *
+ * PARTICIPATION IS NOT A SPOILER; THE OUTCOME IS. That a person was in a
+ * season, that a tie exists between two people, where they met, what they do
+ * for a living, what a season's format was — all kept. How they finished it,
+ * which day they went out, who betrayed whom, who won — all scoped.
+ *
+ * OPTIONAL HERE, MANDATORY IN CI, AND THAT SPLIT IS DELIBERATE. The property is
+ * `?` so that adding it could not break a build in the phase that introduced
+ * it. `tools/validate-data.mjs` is what makes it required on any record with an
+ * outcome-bearing field. At runtime an absent scope resolves to HIDDEN
+ * (`isVisible(undefined, …) === false`), so a forgotten tag degrades to
+ * over-redaction, which someone reports, rather than to a leak, which nobody
+ * reports until another reader writes in. Fail closed at runtime, fail loud in
+ * CI. An empty array is NOT the same as an absent one: `[]` is an author
+ * asserting that nothing is at stake, and it is checkable.
+ *
+ * MULTIPLE IDS ARE ANDed, SO SPLIT RATHER THAN WIDEN. A record scoped
+ * `['genius-1', 'genius-4']` is shown only to a reader who has seen both. Where
+ * that over-redacts, split; there are three levels of it and you reach for them
+ * in this order.
+ *
+ *   1. `scope` — the RECORD's default, and the answer for most records. A
+ *      season-2 run is `['bg2']`. One tag per record, because a record is the
+ *      unit an editor authors and a per-field map is a per-field opportunity to
+ *      forget one.
+ *
+ *   2. `scopes` — PER-FIELD OVERRIDES, written only where a field differs from
+ *      the default. Per-field alone is unauthorable across sixteen runs in two
+ *      languages; per-record alone cannot express a panel run whose `placement`
+ *      is the role label '스튜디오 패널' and gives nothing away. So both.
+ *
+ *      ARRAY-VALUED PROSE IS SCOPED PER ENTRY, aligned by index — `beats` and
+ *      `notableFor` take `WorkId[][]`, one scope per bullet. One scope over an
+ *      array hides safe bullets to protect one unsafe one, and these arrays mix
+ *      freely: '「더 지니어스: 룰 브레이커」 우승' and '룰라 리더 겸 프로듀서'
+ *      are two entries of the same `notableFor` and need opposite treatment.
+ *
+ *   3. `*Parts` — ORDERED SEGMENTS of one string, for the paragraph that
+ *      changes scope halfway through. `arcParts`, `bioParts`,
+ *      `descriptionParts`. See `ProsePart` in works.ts: the concatenation of
+ *      the parts must equal the original string BYTE FOR BYTE, and the
+ *      validator asserts it. That invariant is what makes this phase invisible
+ *      by construction rather than by promise — nothing renders the parts yet,
+ *      and when phase 3 does, joining all of them reproduces today's string
+ *      character for character.
+ *
+ *      Split at sentence boundaries and only where both halves stand alone. A
+ *      fragment is worse than a coarse tag; leave it whole and report it.
+ *
+ * The arrays were already a split surface before any of this: `priorElsewhere`,
+ * `otherShows` and `outcomes` are lists, and a pair may carry two edges. 김유현
+ * carries one `PriorElsewhere` per Genius season rather than one about two,
+ * which is the pattern to copy when a new block is written.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /** Prior seasons of the franchise. X is never a value here — by design. */
@@ -82,6 +152,46 @@ export function watched(run: { role: Role }): boolean {
  */
 export type Pronouns = 'he' | 'she' | 'they';
 
+/**
+ * Per-field scope overrides for one `SeasonRun`. Write a key ONLY where that
+ * field differs from the run's own `scope`; absent means "use the default".
+ *
+ * The two fields that most often need one are `placement` and `team`, and both
+ * for the same reason — they hold a role label as often as a result.
+ */
+export interface SeasonRunScopes {
+  /** `[]` for the role labels: '스튜디오 패널', '유령 카지노 딜러 · 연옥 집사'. */
+  placement?: WorkId[];
+  rank?: WorkId[];
+  /**
+   * TAKES THE SAME SCOPE AS `rank`, ALWAYS. The portrait plate draws arc length
+   * as `rank / fieldSize`, which is exactly invertible: hide the rank, keep the
+   * denominator public, and the arc still states the finish. PLAN-spoilers.md
+   * §3 is the long version. Drawing that safely is phase 3's problem; carrying
+   * the information is this phase's, and phase 3 cannot do it if phase 1 did
+   * not.
+   */
+  fieldSize?: WorkId[];
+  eliminatedEpisode?: WorkId[];
+  eliminatedEpisodeEn?: WorkId[];
+  /**
+   * A team NAME is structure — '저택팀', '낙원'. An ARROW between two team
+   * names is a plot: '저택팀 → 야생팀' is a defection, '피의 저택 → 지하 감옥 →
+   * 복귀' is an elimination and a return, '지하팀 (8일차 지상 복귀)' names the
+   * day, and '히든 플레이어 (저택 잠입)' is the season 2 twist stated on one of
+   * the people it was a twist about. Four runs at least.
+   */
+  team?: WorkId[];
+  teamEn?: WorkId[];
+  arc?: WorkId[];
+  /**
+   * ALIGNED WITH `beats`, one scope per beat, in the same order. Not one scope
+   * for the array: 박지민's season 3 beats are structure, bg3, structure, and an
+   * array-level tag would seal two safe bullets to protect the middle one.
+   */
+  beats?: WorkId[][];
+}
+
 /** One person's run through one earlier season. */
 export interface SeasonRun {
   season: SeasonNumber;
@@ -125,6 +235,32 @@ export interface SeasonRun {
    * one exists, the season's 진행 결과 / 참가자 table otherwise.
    */
   sources?: string[];
+  /**
+   * The default for every outcome-bearing field on this run. Always the one
+   * franchise season the run belongs to — `['bg2']` for a `season: 2` run —
+   * because a run is wholly about one season.
+   *
+   * `[]` IS A REAL ANSWER HERE, for the two runs that are not runs at the
+   * prize. 이상민's season 1 `placement` is '스튜디오 패널' and 박지민's season 3
+   * is '유령 카지노 딜러 · 연옥 집사'; those are role labels, not finishes, and
+   * a reader who has watched nothing loses nothing by seeing them. Per-field
+   * `scopes` is how a run that is mostly structure keeps the one clause that
+   * is not.
+   */
+  scope?: WorkId[];
+  /** Only where a field differs from `scope`. */
+  scopes?: SeasonRunScopes;
+  /**
+   * `arc` split at the points where its scope changes, concatenating back to
+   * `arc` byte for byte.
+   *
+   * Most arcs need none — a run's arc is about that run's season and takes the
+   * run's scope whole. The ones that do are the arcs that open on biography
+   * before they reach the house: 현성주's season 2 arc begins '세계 포커 대회
+   * 우승 경력자로' — a career, structure, `[]` — and then goes on to a death
+   * match and a 17:24 defeat. Two parts, not one wide tag.
+   */
+  arcParts?: ProsePart[];
 }
 
 /**
@@ -145,6 +281,15 @@ export interface SeasonRun {
  * the sources do not number it, so his row carries `result` and no `rank`, and
  * the ledger simply has nothing to say about that pair in that season.
  */
+/** Per-field scope overrides for one `ExternalShow`. */
+export interface ExternalShowScopes {
+  result?: WorkId[];
+  resultEn?: WorkId[];
+  rank?: WorkId[];
+  /** Same scope as `rank`, always — see `SeasonRunScopes.fieldSize`. */
+  fieldSize?: WorkId[];
+}
+
 export interface ExternalShow {
   show: string;
   showKo?: string;
@@ -161,6 +306,25 @@ export interface ExternalShow {
   rank?: number;
   /** How many started. A rank without this is a number, not a result. */
   fieldSize?: number;
+  /**
+   * Which works you must have seen for this row's `result` to be safe to show.
+   * Normally the one id for this programme.
+   *
+   * `[]` IS THE RIGHT ANSWER FOR MOST OF THIS TABLE, and it has to be written
+   * rather than left off. Two thirds of these rows state a role and not a
+   * result — 고정 출연, 진행, 게스트, 멘토, 참가 — and a programme that has no
+   * result here does not appear in works.ts at all, so there is no id to point
+   * at and nothing to hide. Write `scope: []` and the check knows you looked.
+   */
+  scope?: WorkId[];
+  /**
+   * Only where a field differs from `scope`. Rare on this table: a row is one
+   * programme and one line about it, so the row-level tag is normally the whole
+   * answer. The case that needs it is a row whose Korean and English halves
+   * claim different amounts — the two languages may carry different scopes, and
+   * nothing may turn that into a parity check.
+   */
+  scopes?: ExternalShowScopes;
 }
 
 /**
@@ -174,6 +338,25 @@ export interface ExternalShow {
  * inline, the way `ExternalShow.result` / `resultEn` already is, so a paragraph
  * and its translation cannot drift apart in separate files.
  */
+/** Per-field scope overrides for one `PriorElsewhere` block. */
+export interface PriorElsewhereScopes {
+  /**
+   * THIS `show` IS NOT A PROGRAMME TITLE and that is why it can need a scope at
+   * all. On `ExternalShow` it is a join key and always structure; here it is an
+   * editorial headline — 'The route, not the job', '카메라 앞에 서기 전의
+   * 십오 년' — and some of those headlines ARE the result: '진 경연 셋, 이긴
+   * 서바이벌 하나' / 'Three cyphers lost, one survival won' states three
+   * eliminations and a win in the title bar of the block. Nothing joins on it,
+   * so sealing it breaks no lookup.
+   */
+  show?: WorkId[];
+  showKo?: WorkId[];
+  result?: WorkId[];
+  resultEn?: WorkId[];
+  arc?: WorkId[];
+  arcEn?: WorkId[];
+}
+
 export interface PriorElsewhere {
   /** Programme title in English, e.g. "The Genius: Grand Final". */
   show: string;
@@ -190,6 +373,36 @@ export interface PriorElsewhere {
   /** The same account in English. */
   arcEn: string;
   sources?: string[];
+  /**
+   * Which works you must have seen for this block to be safe to show.
+   *
+   * THIS IS THE FIELD WHERE SPLITTING PAYS. `priorElsewhere` is an array, and
+   * 김유현 already carries one block per Genius season rather than one block
+   * about two — which is why his two blocks can be scoped `['genius-3']` and
+   * `['genius-4']` and shown independently. 이상민's single block covers Genius
+   * seasons 1, 2 and 4 in one paragraph, so as written its scope is all three
+   * ANDed and it is invisible to a reader who has seen only the season it is
+   * titled after. Split the paragraph, do not widen the scope.
+   *
+   * `[]` for the career blocks. Roughly a dozen of these are not programmes at
+   * all — an NBA draft position, an Olympic medal, a bar exam, a gugak prize —
+   * and a career result is not a spoilable one. See the inclusion test in
+   * works.ts.
+   */
+  scope?: WorkId[];
+  /** Only where a field differs from `scope`. */
+  scopes?: PriorElsewhereScopes;
+  /**
+   * `arc` and `arcEn` split at the points where their scope changes, each
+   * concatenating back to its own string byte for byte.
+   *
+   * SEPARATELY, because these two are the clearest case in the dataset of the
+   * two languages making different claims: they are authored fresh rather than
+   * translated, and the English side has more than once said more than the
+   * Korean. Split each against what it actually says.
+   */
+  arcParts?: ProsePart[];
+  arcEnParts?: ProsePart[];
 }
 
 export type Confidence = 'high' | 'medium' | 'low';
@@ -200,6 +413,12 @@ export type Confidence = 'high' | 'medium' | 'low';
  */
 export type XTeam = 'season1' | 'season2' | 'season3' | 'challenger' | 'rookie';
 
+/** Per-field scope overrides for one `XBilling`. */
+export interface XBillingScopes {
+  billing?: WorkId[];
+  billingEn?: WorkId[];
+}
+
 /** Which bloc of the X lineup they were announced under. */
 export interface XBilling {
   team: XTeam;
@@ -209,6 +428,38 @@ export interface XBilling {
   /** One line on why this particular casting is interesting. */
   billing?: string;
   billingEn?: string;
+  /**
+   * Which works you must have seen for the billing line to be safe to show.
+   * The bloc and its two labels are the casting announcement and are never
+   * scoped; the billing line usually is, because the thing that makes a casting
+   * interesting is usually a result — '첫 번째 우승자', '앞의 한 명은 우승했다',
+   * '데스매치를 58대 12로 이기고도'.
+   */
+  scope?: WorkId[];
+  /**
+   * Only where a language differs from `scope`. Worth checking rather than
+   * assuming: 이상민's Korean billing line says he watched from the commentary
+   * desk and the English says the same, but 신승용's pair — '앞의 한 명은
+   * 우승했다' / 'The first one won a season' — names a result in both, about
+   * somebody else.
+   */
+  scopes?: XBillingScopes;
+}
+
+/** Per-field scope overrides for one `Person`. */
+export interface PersonScopes {
+  bio?: WorkId[];
+  /**
+   * ALIGNED WITH `notableFor`, one scope per bullet, in the same order.
+   *
+   * THIS IS THE ARRAY THE PER-ENTRY RULE EXISTS FOR. It mixes more freely than
+   * anything else in the dataset: 이상민's four bullets are a Genius title, a
+   * count of Genius seasons, a season 1 panel seat and being the leader of
+   * Roo'Ra — a result, a result, structure and structure, in one array. An
+   * array-level scope would seal his band or reveal his championship, and there
+   * is no single answer that does neither.
+   */
+  notableFor?: WorkId[][];
 }
 
 export interface Person {
@@ -267,6 +518,32 @@ export interface Person {
   x: XBilling;
   confidence: Confidence;
   sources?: string[];
+  /**
+   * Which works you must have seen for `bio` and `notableFor` to be safe.
+   *
+   * NOTHING ELSE ON THIS RECORD IS SCOPED BY IT. The name, the occupation, the
+   * category, the pronouns, the birth year and the photograph are who they are,
+   * not how they finished, and the nested records carry their own scope.
+   *
+   * These two fields are where a dossier states a result before any table gets
+   * the chance — '피의 게임 시즌1의 최종 우승자' is the second sentence of
+   * 이태균's bio, and `notableFor` opens with 우승 for four people.
+   */
+  scope?: WorkId[];
+  /** Only where a field differs from `scope`. `notableFor` is per bullet. */
+  scopes?: PersonScopes;
+  /**
+   * `bio` split at the points where its scope changes, concatenating back to
+   * `bio` byte for byte.
+   *
+   * THIS IS WHERE THE SPLIT EARNS ITS KEEP. A bio is two or three sentences and
+   * typically only one of them is a result: 이태균's opens on the police
+   * university and the bar, and then says he won season 1. Scoping the whole
+   * string to `['bg1']` would seal his occupation, his education and his name
+   * for a reader who has watched nothing — the dossier's opening paragraph, on
+   * a page the plan says must still be worth reading redacted. Two parts.
+   */
+  bioParts?: ProsePart[];
 }
 
 export type EdgeType =
@@ -313,6 +590,40 @@ export interface Duel {
   whereEn: string;
   /** Printed result when one exists — "17:8", "22:0". Never invented. */
   score?: string;
+  /**
+   * Which works you must have seen for this duel to be safe to show.
+   *
+   * A duel is a verdict end to end, so every field of it is outcome-bearing and
+   * a redacted duel disappears as a RECORD rather than being emptied field by
+   * field — an edge that still says "one duel, details withheld" has told the
+   * reader that one of these two beat the other, which is the claim.
+   *
+   * `season: 0` means outside the franchise and does NOT mean unscoped: both
+   * such duels here are 더 지니어스: 그랜드 파이널 and scope to `['genius-4']`.
+   */
+  scope?: WorkId[];
+}
+
+/**
+ * Per-field scope overrides for one `Edge`.
+ *
+ * `outcomes` is absent on purpose: a `Duel` is its own record and carries its
+ * own `scope`, so a pair with two duels in different works can show one and
+ * seal the other without an index-aligned array here.
+ */
+export interface EdgeScopes {
+  /**
+   * THE TYPE IS ITSELF A CLAIM, and this is the field most likely to be missed
+   * because it does not look like prose. `betrayal` is a verdict about a named
+   * real person, `rivalry` is a milder one, and `directed` points it — the
+   * arrowhead is the app's only aggression marker. Scoping the description and
+   * leaving the type unscoped redacts the sentence and keeps the accusation.
+   */
+  type?: WorkId[];
+  directed?: WorkId[];
+  label?: WorkId[];
+  labelEn?: WorkId[];
+  description?: WorkId[];
 }
 
 export interface Edge {
@@ -336,6 +647,57 @@ export interface Edge {
   outcomes?: Duel[];
   confidence: Confidence;
   sources?: string[];
+  /**
+   * Which works you must have seen for this tie's TYPE, headline and account to
+   * be safe to show. `source`, `target` and `season` are never scoped: a line
+   * between two people is structure, and the plan keeps it.
+   *
+   * THE TYPE IS PART OF WHAT THIS PROTECTS. `betrayal` is a verdict and
+   * `directed` is a verdict with a direction, and both degrade to a neutral tie
+   * rather than to no tie. So `scope: []` on a `betrayal`, a `rivalry` or any
+   * directed edge is a contradiction — the type alone is the claim — and the
+   * validator should refuse it.
+   *
+   * `[]` IS RIGHT FOR THE THREE `parallel` EDGES. Their whole content is that
+   * the pair has demonstrably never been in a room together: a shared
+   * university, two Mensa cards, the KAIST seat two seasons apart. That is the
+   * part of the atlas that survives full redaction, and sealing it would cost a
+   * reader the product while protecting nothing — as long as the description
+   * says nothing else, which for 최연청 × 김남희 currently means the pageant
+   * placing in it stays a placing and not a scope.
+   */
+  scope?: WorkId[];
+  /** Only where a field differs from `scope`. */
+  scopes?: EdgeScopes;
+  /**
+   * `description` split at the points where its scope changes, concatenating
+   * back to `description` byte for byte.
+   *
+   * EDGE DESCRIPTIONS ARE THE LONGEST MIXED PROSE IN THE DATASET and several
+   * of them span works: the 이태균 × 홍진호 line opens on an unreleased shoot
+   * (structure — nothing was ever broadcast, so there is nothing to spoil),
+   * then dates it against 'the franchise's first champion' and a 포커 신들의
+   * 전쟁 title. Three parts, three scopes, one string.
+   */
+  descriptionParts?: ProsePart[];
+}
+
+/** Per-field scope overrides for one `SeasonMeta`. */
+export interface SeasonMetaScopes {
+  winnerId?: WorkId[];
+  winnerNameKo?: WorkId[];
+  winnerNameEn?: WorkId[];
+  signatureMoment?: WorkId[];
+  /**
+   * THE THREE SEASONS NEED THREE DIFFERENT ANSWERS HERE, which is the whole
+   * reason this override exists. Season 1's '우승자 상금 약 1억 800만 원' is what
+   * the winner actually took home and is a result. Season 2's '최대 3억 원' is
+   * the maximum on the table before a card is dealt, which is format — `[]`.
+   * Season 3's '우승 상금 액수 비공개' says the figure was never published, which
+   * gives away nothing at all — `[]`. One scope over the field would get two of
+   * the three wrong in whichever direction it was set.
+   */
+  prize?: WorkId[];
 }
 
 export interface SeasonMeta {
@@ -358,12 +720,51 @@ export interface SeasonMeta {
   winnerNameEn?: string;
   signatureMoment?: string;
   accent: string;
+  /**
+   * Which works you must have seen for the winner, the signature moment and the
+   * prize figure to be safe. Always this season's own id — `['bg1']` for
+   * `season: 1`.
+   *
+   * `format`, `hook`, `premise`, `network`, `airDates` and `episodes` are NOT
+   * covered and are never hidden: the plan keeps the premise and the format,
+   * because a season people have not watched is still a season they can be told
+   * the shape of. That puts an obligation on those fields — a format paragraph
+   * may describe the twist, and may not narrate who it happened to.
+   *
+   * `prize` is covered because season 1's string is what the winner actually
+   * took home, not what was on the table — and because seasons 2 and 3 override
+   * it back to `[]`, which is what `scopes` is for.
+   */
+  scope?: WorkId[];
+  /** Only where a field differs from `scope`. */
+  scopes?: SeasonMetaScopes;
 }
 
 export interface GlossaryTerm {
   termKo: string;
   termEn: string;
   meaning: string;
+  /**
+   * Which works you must have seen for this definition to be safe.
+   *
+   * Most of the glossary is format vocabulary and scopes to `[]`. Three entries
+   * are not: 상금, 개인 자금 and 승자독식 reconcile the prize against named
+   * people and their finishes, so the definitions of this franchise's money
+   * rules are, as written, season 1 and season 2 results.
+   */
+  scope?: WorkId[];
+  /**
+   * `meaning` split at the points where its scope changes, concatenating back
+   * to `meaning` byte for byte. No `scopes` object: there is only one field
+   * here to scope.
+   *
+   * The three money entries all have the same shape — a rule, then a worked
+   * example that names people and their finishes. 승자독식 defines winner-takes-
+   * all in one clause and then reconciles 서출구's balance against his 0원. The
+   * rule is the glossary's job and is structure; the example is a season 2
+   * result. Split at the full stop and the definition survives redaction.
+   */
+  meaningParts?: ProsePart[];
 }
 
 export interface Dataset {

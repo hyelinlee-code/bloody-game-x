@@ -30,6 +30,39 @@ import type { SeasonRun } from './types';
  * said so and then did not link them, so the longest and most argued-over prose
  * in the app was the only text in it with no source list. Cite the narrowest
  * page that actually carries the claim — see `SeasonRun.sources`.
+ *
+ * EVERY RUN ALSO CARRIES ITS OWN `scope`. This file is the densest concentration
+ * of spoilable claims in the dataset, and `scope` is what a later phase reads to
+ * decide whether a reader has earned them — see the note at the head of types.ts
+ * and the inclusion test in works.ts. Three things are worth knowing before
+ * editing a run:
+ *
+ *   1. A RUN'S SCOPE IS ITS OWN SEASON, AND THE PROSE SOMETIMES IS NOT. Fourteen
+ *      of these sixteen runs are `['bg1']`, `['bg2']` or `['bg3']` end to end.
+ *      Two are not: 홍진호's season-3 arc opens on "다시 3위" and closes on
+ *      "시즌2에 이어 또 3위", and 박지민's season-3 arc has a returning player
+ *      calling her by the season-1 nickname 배신의 아이콘. A sentence that names
+ *      one season's outcome inside another season's arc needs BOTH ids, or it
+ *      hides one and leaks the other.
+ *
+ *   2. TEAMS ARE SCOPED UNIFORMLY, ON PURPOSE. '저택팀' on its own looks like
+ *      structure — a side, like a bloc — and three of these strings plainly are
+ *      not: '저택팀 → 야생팀' is a defection, '지하팀 (8일차 지상 복귀)' names a
+ *      day, '피의 저택 → 지하 감옥 → 복귀' is an elimination and a return. The
+ *      temptation is to scope the arrows and leave the plain names visible, and
+ *      that is exactly the subtraction PLAN-spoilers.md §5 warns about: if the
+ *      innocent ones show and the interesting ones seal, a sealed team label
+ *      becomes a reliable signal that something happened. So every contestant
+ *      run's team takes the season's scope, including 박지민's bare '지상팀'.
+ *      In season 1 that is not even a stretch — upstairs versus basement was
+ *      decided by vote, so the side is a result.
+ *
+ *   3. `[]` MEANS "READ, AND IT IS STRUCTURE" AND IS NOT THE SAME AS ABSENT.
+ *      Absent means nobody has looked, and a later phase hides it. The two runs
+ *      that are not runs at the prize — 이상민 on the studio panel, 박지민 as
+ *      season 3's dealer — keep their season as the run-level DEFAULT so that a
+ *      field added here later fails closed, and assert `[]` field by field on
+ *      what they actually carry: a role label is not a finish.
  */
 
 /* Season indexes and result tables. */
@@ -81,6 +114,19 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 1,
       role: 'panel',
+      /* The run-level default is the season he was present for, so that a field
+         added here later inherits a tag rather than nothing. Every field he
+         actually carries then overrides it: he never entered the house and this
+         run states no result — the placement is a seat, and the arc is the
+         panel's composition and its remit. The exception is the third beat,
+         which is only true against a field size, and a field size is the
+         denominator PLAN-spoilers.md §3 says makes a placing recoverable. */
+      scope: ['bg1'],
+      scopes: {
+        placement: [],
+        arc: [],
+        beats: [[], [], ['bg1']],
+      },
       placement: '스튜디오 패널 · Studio panel',
       sources: [S1, S1_CAST],
       arc: '시즌1에서는 저택에 들어가지 않았다. 코미디언 장동민, 방송인 박지윤, 경제 유튜버 슈카월드, 가수 최예나와 함께 앉은 다섯 명의 패널 중 ‘브레인 군단’의 수장으로 소개됐고, 이 패널진은 게임에 개입하지 않고 저택 상황을 관전·해설하는 역할만 했다. 판을 가장 오래 들여다봤지만 그 안에서 한 번도 당해 본 적은 없는 사람이다.',
@@ -96,6 +142,7 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 1,
       role: 'contestant',
+      scope: ['bg1'],
       fieldSize: 10,
       team: '지상팀',
       teamEn: 'Upstairs team',
@@ -114,6 +161,7 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 2,
       role: 'contestant',
+      scope: ['bg2'],
       fieldSize: 13,
       team: '히든 플레이어 (저택 잠입)',
       teamEn: 'Hidden player, embedded in the mansion',
@@ -132,8 +180,35 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 3,
       role: 'crew',
+      /* Her season-3 seat is not a run at the prize, so the 'placement' is a job
+         title and gives nothing away. The arc is the split case: it opens on
+         that job (structure), turns on a reveal production held to episode 6,
+         and closes on a returning player calling her by the season-1 nickname
+         배신의 아이콘 — a verdict on how she played season 1, four years and two
+         seasons earlier. Reading the arc whole therefore needs bg1 AND bg3;
+         reading it in parts needs much less. */
+      scope: ['bg3'],
+      scopes: {
+        placement: [],
+        arc: ['bg1', 'bg3'],
+        beats: [[], ['bg3'], []],
+      },
       placement: '유령 카지노 딜러 · 연옥 집사',
       sources: [P_PJM, S3_CAST],
+      arcParts: [
+        {
+          text: '두 시즌을 플레이어로 뛴 뒤, 시즌3에서는 경쟁자가 아니라 판을 굴리는 쪽으로 자리를 옮겼다 — 잔해에 설치된 유령 카지노의 딜러 겸 연옥 담당 집사이고, 상금을 놓고 겨루는 참가자가 아닌 보조 출연이다. ',
+          scope: [],
+        },
+        {
+          text: '제작진이 그의 출연 사실 자체를 반전 카드로 아껴둔 탓에 첫 등장은 6화(4일차)였고, 그래서 시즌3을 본 사람도 그가 나왔다는 것 자체를 기억하지 못하는 경우가 많다. ',
+          scope: ['bg3'],
+        },
+        {
+          text: '전 시리즈를 모니터링하고 들어온 참가자들은 그의 얼굴을 알아봤다 — 장동민은 개인 인터뷰에서 “이제 뭐 피의 게임 안방마님이시네”라 했고, 시윤은 “어? 이 배신의 아이콘이 여기 왜 있지?”라며 시즌1 시절의 별명을 그대로 불렀다.',
+          scope: ['bg1', 'bg3'],
+        },
+      ],
       arc: '두 시즌을 플레이어로 뛴 뒤, 시즌3에서는 경쟁자가 아니라 판을 굴리는 쪽으로 자리를 옮겼다 — 잔해에 설치된 유령 카지노의 딜러 겸 연옥 담당 집사이고, 상금을 놓고 겨루는 참가자가 아닌 보조 출연이다. 제작진이 그의 출연 사실 자체를 반전 카드로 아껴둔 탓에 첫 등장은 6화(4일차)였고, 그래서 시즌3을 본 사람도 그가 나왔다는 것 자체를 기억하지 못하는 경우가 많다. 전 시리즈를 모니터링하고 들어온 참가자들은 그의 얼굴을 알아봤다 — 장동민은 개인 인터뷰에서 “이제 뭐 피의 게임 안방마님이시네”라 했고, 시윤은 “어? 이 배신의 아이콘이 여기 왜 있지?”라며 시즌1 시절의 별명을 그대로 불렀다.',
       beats: [
         '참가자가 아니라 잔해 유령 카지노의 딜러 겸 연옥 집사 — 보조 출연',
@@ -147,6 +222,7 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 1,
       role: 'contestant',
+      scope: ['bg1'],
       fieldSize: 10,
       team: '지하팀 (8일차 지상 복귀)',
       teamEn: 'Basement team, back upstairs on day 8',
@@ -168,6 +244,7 @@ export const records: Record<string, SeasonRun[]> = {
     {
       season: 1,
       role: 'contestant',
+      scope: ['bg1'],
       fieldSize: 10,
       team: '지하팀',
       teamEn: 'Basement team',
@@ -190,11 +267,23 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '저택팀',
       teamEn: 'Mansion team',
+      scope: ['bg2'],
       rank: 8,
       placement: '8위 / 13명 중 · 6번째 탈락자',
       sources: [P_HASJ, S2_RESULT, S2_CAST],
       eliminatedEpisode: '데스매치 ‘패턴 블록’ 4:1 패배',
       eliminatedEpisodeEn: 'Lost the ‘Pattern Block’ Death Match 4–1',
+      /* Split, because the first sentence is a career and the rest is a season.
+         한국인 최초 NBA 진출 is biography — it is already on his own bio line and
+         in notableFor, both of which stay visible — and nobody is part-way
+         through somebody's NBA career. */
+      arcParts: [
+        { text: '한국인 최초 NBA 진출이라는 피지컬 캐릭터로 들어왔다. ', scope: [] },
+        {
+          text: '습격의 날에는 큰 체구를 살려 상징물을 지키는 자리에 배치됐지만 덱스(前 UDT 출신 방송인)의 기습에 상징물이 깨졌고, 조롱당했다고 오해해 멱살을 잡고 몸싸움을 벌였다(이후 사과). 이후 래퍼 넉스, 윤비와 수영장 연합을 꾸렸고, ‘낮과 밤’에서 상대 진영의 소통을 물리적으로 방해하는 전략을 밀어붙였다가 역풍을 맞아 탈락 후보가 됐다. 데스매치 ‘패턴 블록’에서 4:1로 완패했다.',
+          scope: ['bg2'],
+        },
+      ],
       arc: '한국인 최초 NBA 진출이라는 피지컬 캐릭터로 들어왔다. 습격의 날에는 큰 체구를 살려 상징물을 지키는 자리에 배치됐지만 덱스(前 UDT 출신 방송인)의 기습에 상징물이 깨졌고, 조롱당했다고 오해해 멱살을 잡고 몸싸움을 벌였다(이후 사과). 이후 래퍼 넉스, 윤비와 수영장 연합을 꾸렸고, ‘낮과 밤’에서 상대 진영의 소통을 물리적으로 방해하는 전략을 밀어붙였다가 역풍을 맞아 탈락 후보가 됐다. 데스매치 ‘패턴 블록’에서 4:1로 완패했다.',
       beats: [
         '습격의 날, 상징물이 깨지고 벌어진 멱살잡이',
@@ -211,11 +300,27 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '저택팀',
       teamEn: 'Mansion team',
+      scope: ['bg2'],
       rank: 11,
       placement: '11위 / 13명 중 · 3번째 탈락자',
       sources: [P_HYSJ, S2_RESULT],
       eliminatedEpisode: '데스매치 ‘미스터리 넘버’ 17:24 패배',
       eliminatedEpisodeEn: 'Lost ‘Mystery Number’ 17–24',
+      /* The case works.ts's inclusion test is written around. A WSOP bracelet is
+         a title held in the world, not an ending somebody is waiting to watch,
+         and 포커 방송에서 이미 접점이 있어 is WHERE two people met, which the
+         plan keeps. So the opening sentence is structure and the four that
+         follow it are a season 2 that ends 17:24. */
+      arcParts: [
+        {
+          text: '세계 포커 대회 우승 경력자로, 홍진호와는 포커 방송에서 이미 접점이 있어 ‘두 포커 플레이어의 맞대결’이 초반 관전 포인트로 홍보됐다. ',
+          scope: [],
+        },
+        {
+          text: '1일차 머니 챌린지에서 규칙의 빈틈을 파고드는 편법 플레이로 존재감을 냈고, 저택 안에서는 스파이를 색출하는 작업에도 참여했다. 첫 데스매치 ‘시크릿 다이스’에서는 특수 아이템을 선점하고 심리전을 완전히 지배하며 살아남았지만, 이어진 ‘미스터리 넘버’에서 17:24로 패했다. 예측은 좋았고 암기가 발목을 잡았다.',
+          scope: ['bg2'],
+        },
+      ],
       arc: '세계 포커 대회 우승 경력자로, 홍진호와는 포커 방송에서 이미 접점이 있어 ‘두 포커 플레이어의 맞대결’이 초반 관전 포인트로 홍보됐다. 1일차 머니 챌린지에서 규칙의 빈틈을 파고드는 편법 플레이로 존재감을 냈고, 저택 안에서는 스파이를 색출하는 작업에도 참여했다. 첫 데스매치 ‘시크릿 다이스’에서는 특수 아이템을 선점하고 심리전을 완전히 지배하며 살아남았지만, 이어진 ‘미스터리 넘버’에서 17:24로 패했다. 예측은 좋았고 암기가 발목을 잡았다.',
       beats: [
         '1일차, 규칙의 빈틈을 파고든 편법 플레이',
@@ -232,11 +337,27 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '저택팀 → 야생팀',
       teamEn: 'Mansion team → outside team',
+      /* The arc opens on a different programme's ending. 생존남녀: 갈라진 세상 is
+         a survival with a winner and he is the winner, so it is a work in its
+         own right — see works.ts. Union-tagging the arc ['bg2',
+         'survival-men-women'] would cost a season-2 viewer the whole paragraph
+         to protect one clause about a show they have never heard of, and cost a
+         생존남녀 viewer the clause they are entitled to. Hence the split, and
+         `scopes.arc` is the union only for a reader who takes the string whole. */
+      scope: ['bg2'],
+      scopes: { arc: ['bg2', 'survival-men-women'] },
       rank: 7,
       placement: '7위 / 13명 중 · 데스매치 도중 기권',
       sources: [P_YB, S2_RESULT, S2],
       eliminatedEpisode: '이진형이 지목한 데스매치',
       eliminatedEpisodeEn: 'Death Match, named by Lee Jin-hyung',
+      arcParts: [
+        { text: '웹예능 서바이벌 우승 경력을 안고 들어왔다. ', scope: ['survival-men-women'] },
+        {
+          text: '저택 내부팀으로 시작했지만 습격 직전 밤에 히든 플레이어들에게 포섭돼 야생팀으로 넘어갔고, 다시 이탈해 하승진·래퍼 넉스와 수영장 연합을 꾸리는 등 소속을 여러 번 갈아탔다. 정점은 ‘낮과 밤’ 우승으로, 개인 자금과 면제권을 챙기고 저택의 권력자가 되어 서출구를 야생으로 추방했으며, 판도라의 상자를 몰래 먼저 열어 전 참가자의 자금을 균등 재분배시켰다. 그러나 동맹이라 믿었던 이진형에게 데스매치 상대로 지목당했고, 규칙을 끝까지 이해하지 못한 채 게임 도중 기권을 선언했다.',
+          scope: ['bg2'],
+        },
+      ],
       arc: '웹예능 서바이벌 우승 경력을 안고 들어왔다. 저택 내부팀으로 시작했지만 습격 직전 밤에 히든 플레이어들에게 포섭돼 야생팀으로 넘어갔고, 다시 이탈해 하승진·래퍼 넉스와 수영장 연합을 꾸리는 등 소속을 여러 번 갈아탔다. 정점은 ‘낮과 밤’ 우승으로, 개인 자금과 면제권을 챙기고 저택의 권력자가 되어 서출구를 야생으로 추방했으며, 판도라의 상자를 몰래 먼저 열어 전 참가자의 자금을 균등 재분배시켰다. 그러나 동맹이라 믿었던 이진형에게 데스매치 상대로 지목당했고, 규칙을 끝까지 이해하지 못한 채 게임 도중 기권을 선언했다.',
       beats: [
         '‘낮과 밤’ 우승으로 권력자가 되어 서출구를 야생으로 추방',
@@ -253,6 +374,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '저택팀',
       teamEn: 'Mansion team',
+      scope: ['bg2'],
       rank: 1,
       placement: '우승 · 13명 중 1위',
       sources: [P_LJH, S2_RESULT, PRESS_LJH_WIN],
@@ -272,6 +394,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '히든 플레이어 · 야생팀',
       teamEn: 'Hidden player, outside team',
+      scope: ['bg2'],
       rank: 3,
       placement: '3위 / 13명 중 · 3rd of 13',
       sources: [P_HJH, S2_RESULT],
@@ -290,11 +413,33 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 18,
       team: '낙원',
       teamEn: 'Paradise',
+      /* The one arc in the file that is about two seasons at once. It opens on
+         '다시 3위' and closes on '시즌2에 이어 또 3위' — both sentences state a
+         season-3 result AND the season-2 result it is being measured against,
+         so both need bg2 and bg3 or they hide one and leak the other. The
+         middle, which is most of it, is season 3 alone. The third beat is the
+         same sentence in miniature. */
+      scope: ['bg3'],
+      scopes: {
+        arc: ['bg2', 'bg3'],
+        beats: [['bg3'], ['bg3'], ['bg2', 'bg3']],
+      },
       rank: 3,
       placement: '3위 / 18명 중 · 3rd of 18',
       sources: [P_HJH, S3_CAST, S3],
       eliminatedEpisode: '파이널 · 라운드 승 0',
       eliminatedEpisodeEn: 'The final — not one round won',
+      arcParts: [
+        { text: '올스타 성격의 시즌3에서도 다시 3위에 올랐다. ', scope: ['bg2', 'bg3'] },
+        {
+          text: '1일차 머니 챌린지 최하위로 데스매치에 몰렸지만 최혜선과 짝을 이뤄 상대 조를 압도적으로 꺾고 살아남았고, 최혜선을 이긴 척 위장한 채 낙원에 스파이로 복귀하는 변칙 플레이로 시즌을 열었다. 중반에는 신뢰하던 모델 출신 참가자 유리사에게 배신당해 감정 소모가 컸다. ',
+          scope: ['bg3'],
+        },
+        {
+          text: '준결승을 2위로 통과해 결승에 직행했지만 파이널에서는 단 한 라운드도 따내지 못했고, 시즌2에 이어 또 3위에 그치며 ‘2인자’ 이미지가 재확인됐다.',
+          scope: ['bg2', 'bg3'],
+        },
+      ],
       arc: '올스타 성격의 시즌3에서도 다시 3위에 올랐다. 1일차 머니 챌린지 최하위로 데스매치에 몰렸지만 최혜선과 짝을 이뤄 상대 조를 압도적으로 꺾고 살아남았고, 최혜선을 이긴 척 위장한 채 낙원에 스파이로 복귀하는 변칙 플레이로 시즌을 열었다. 중반에는 신뢰하던 모델 출신 참가자 유리사에게 배신당해 감정 소모가 컸다. 준결승을 2위로 통과해 결승에 직행했지만 파이널에서는 단 한 라운드도 따내지 못했고, 시즌2에 이어 또 3위에 그치며 ‘2인자’ 이미지가 재확인됐다.',
       beats: [
         '1일차 데스매치 승리를 숨기고 낙원에 스파이로 복귀',
@@ -311,6 +456,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 13,
       team: '저택팀 → 야생팀',
       teamEn: 'Mansion team → outside team',
+      scope: ['bg2'],
       rank: 4,
       placement: '4위 / 13명 중 · 4th of 13 (본인 문서는 홍진호와 공동 3위로 표기)',
       sources: [P_SCG, S2_RESULT, S2_CAST],
@@ -329,6 +475,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 18,
       team: '피의 저택 → 지하 감옥 → 복귀',
       teamEn: 'The mansion of blood → the underground prison → back in',
+      scope: ['bg3'],
       rank: 6,
       placement: '6위 / 18명 중 · 6th of 18',
       sources: [P_SCG, S3_CAST, S3],
@@ -348,6 +495,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 18,
       team: '낙원 → 잔해',
       teamEn: 'Paradise → the ruins',
+      scope: ['bg3'],
       rank: 10,
       placement: '10위 / 18명 중 · 10th of 18',
       sources: [P_CHS, S3_CAST],
@@ -369,6 +517,7 @@ export const records: Record<string, SeasonRun[]> = {
       fieldSize: 18,
       team: '피의 낙원 → 잔해 → 개인전',
       teamEn: 'The paradise of blood → the ruins → solo play',
+      scope: ['bg3'],
       rank: 4,
       placement: '4위 / 18명 중 · 4th of 18',
       sources: [P_HSB, S3_CAST],
