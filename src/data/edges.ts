@@ -1221,4 +1221,116 @@ export const edges: Edge[] = [
       'https://namu.wiki/w/박지민(아나운서)',
     ],
   },
+  /* ── the season-2 cohort, completed ────────────────────────────────────────
+     Seven of this lineup played season 2 and all seven played it as
+     contestants in one field of thirteen, so all twenty-one pairs met by
+     construction. Five of them had no line, and a reader found the worst of
+     them before any check did: 이진형 won that season and 홍진호 came third in
+     it, and the graph said the two had never met. Section 0e of the validator
+     now fails the build on any such gap.
+
+     These are drawn from namu's PER-DAY episode pages rather than the
+     per-person pages, which is the stronger of the two — an adversarial pass
+     against the day pages corrected four things the person pages had wrong:
+     the item is 히든 찬스 (시크릿 다이스 is a different day-4 game), 넘버 체인지
+     is played with 숫자 블록 rather than cards, 홍진호 spent his own side's
+     hidden chance in the same exchange, and the 서출구 quote is from the
+     official 일문일답, not his elimination interview.
+
+     All five are `medium`: the game-level detail is namu-only, and this file's
+     own ratchet fails the build on another wiki-only `high`. */
+  {
+    id: 'lee-jin-hyung--hong-jin-ho--rivalry-s2-44',
+    source: 'lee-jin-hyung',
+    target: 'hong-jin-ho',
+    type: 'rivalry',
+    season: 2,
+    label: '넘버 체인지 2:0, 그리고 신뢰 철회',
+    labelEn: 'Beaten 2:0, then cut loose',
+    description:
+      '시즌2 우승자와 3위가 시즌 내내 반대편에 있었다. 4일차 머니 챌린지 \'넘버 체인지\'에서 두 사람은 각 팀 1번 주자로 맞붙었다 — 이진형이 블록 제출 직전에 히든 찬스를 쓰겠다고 선언해 흔들어 보려 했으나 홍진호는 그 의도를 읽고 상대가 8~9를 낼 것으로 보고 6·4를 냈고, 이진형이 낸 것은 4·4였다(2:0). 7일차에는 홍진호가 이진형과 파이를 찾아가 자신을 찍지 않으면 둘 중 하나가 위험하다고 엄포를 놓았고, 원래 덱스를 찍으려던 이진형은 서출구에게 1,000만 원을 받고 홍진호를 지목했다. 9일차 \'메인 컬러\'에서 잠깐 4인 연합으로 같은 편이 됐지만, 이진형이 라운드마다 상대편에 말을 흘리자 홍진호는 마지막 라운드에 서출구와 윤비를 보내 뒤를 밟게 한 뒤 "우리는 네 말 못 믿어 이제. 그리고 너에 대해서 적대감을 가질 수밖에 없어"라며 연합을 끊었다. 세미파이널을 이겨 파이널 1라운드의 종목과 대진을 정하게 된 홍진호는 이진형을 서출구와 고난도 \'히든 미션\'에 붙이고 자신은 덱스를 골랐다 — 둘이 직접 맞붙는 대진은 끝내 없었다.',
+    strength: 5,
+    confidence: 'medium',
+    sources: [
+      'https://namu.wiki/w/피의%20게임2/4일차',
+      'https://namu.wiki/w/피의%20게임2/7일차',
+      'https://namu.wiki/w/피의%20게임2/9일차',
+      'https://namu.wiki/w/홍진호/피의%20게임',
+      'https://namu.wiki/w/이진형(1995)/피의%20게임',
+    ],
+  },
+  {
+    id: 'hyun-seong-joo--yoon-bi--alliance-s2-45',
+    source: 'hyun-seong-joo',
+    target: 'yoon-bi',
+    type: 'alliance',
+    season: 2,
+    label: '첫날 수영장에서 친해진 사이',
+    labelEn: 'Close by the pool on day one',
+    description:
+      '윤비는 종영 후 엑스포츠뉴스 일문일답(2023.6.5.)에서 저택 초반에 가까워진 상대로 현성주를 실명으로 꼽았다 — "첫 날 하승진 형님과 현성주 형님이랑 수영장에서 위스키를 마시면서 많은 대화를 나눴고 엄청 친해졌다". 둘이 같은 편이었던 기간은 2일차까지다. 그날 밤 윤비가 서출구에 이어 두 번째로 히든 플레이어에게 납치되면서 소속이 강제로 바뀌었고, 다음 날 \'습격의 날\' 결과표에서 현성주는 패한 저택 내부팀에, 윤비는 이긴 외부팀에 있었다. 돌아온 윤비의 말을 넉스는 그대로 믿었지만 현성주는 완전히 믿지 않았다고 기록돼 있다. 현성주는 5일차 데스매치에서 후지이 미나에게 17:24로 지며 세 번째로 탈락했고, 종영 뒤에는 윤비가 진행한 피의 게임3 리뷰 방송에 게스트로 나왔다.',
+    strength: 3,
+    confidence: 'high',
+    sources: [
+      'https://v.daum.net/v/xk3Jcq8CUJ',
+      'https://namu.wiki/w/피의%20게임2/3일차',
+      'https://namu.wiki/w/현성주/피의%20게임',
+      'https://namu.wiki/w/윤비/피의%20게임',
+    ],
+  },
+  {
+    id: 'park-ji-min--seo-chul-gu--rivalry-s2-46',
+    source: 'park-ji-min',
+    target: 'seo-chul-gu',
+    type: 'rivalry',
+    season: 2,
+    label: '버림패로 쓰려고 데려갔다',
+    labelEn: 'Taken out of the house as a throwaway card',
+    description:
+      '1일차 데스매치 투표에서 하승진이 남녀 갈라치기 국면을 열자 서출구는 후지이 미나를 보내야 한다고 주장했다(본인은 갈라치기에서 벗어나자는 취지였다고 했으나 여성 참가자들에게는 갈라치기로 읽혔다). 이때의 \'공격적인 면모와 급발진하는 모습들\' 때문에 저택에 스파이로 잠입해 있던 박지민에게 찍혔고, 그날 저녁 박지민은 \'고학력자라 실력자로 예상되는 이진형을 포섭한다\'는 외부팀의 원래 계획을 히든팀과 상의도 없이 파기하고 \'버림패로 써먹기 좋을 것 같다\'는 이유로 서출구를 지목해 저택 밖으로 데려갔다. 서출구는 순순히 따라나섰고 복면을 벗고 허허벌판을 보고서야 상황을 알았는데, 공식 일문일답에서 "저택 플레이어 중에 제일 먼저 이 사실을 알게 됐다는 것에 신나기도 했다"고 밝혔다. 다음 날 저택에서는 그의 실종이 소동이 됐고 \'마지막으로 서출구와 대화했던\' 박지민이 용의선상에 올랐다.',
+    strength: 4,
+    confidence: 'medium',
+    sources: [
+      'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
+      'https://namu.wiki/w/서출구/피의%20게임',
+      'https://namu.wiki/w/피의%20게임2/1일차',
+    ],
+  },
+  {
+    id: 'park-ji-min--yoon-bi--rivalry-s2-47',
+    source: 'park-ji-min',
+    target: 'yoon-bi',
+    type: 'rivalry',
+    season: 2,
+    label: '서로를 찍은 이틀',
+    labelEn: 'Two days, two votes against each other',
+    description:
+      '1일차 데스매치 후보 투표에서 파이가 윤비와 후지이 미나를 후보로 올리자, 박지민은 열 명의 투표자 가운데 유일하게 윤비에게 표를 던졌다(윤비 1표, 후지이 미나 9표). 정작 윤비 본인은 후지이 미나를 찍었다. 이튿날 \'오름차순\' 2라운드 순서결정권 비공개 경매에서는, 유리사의 판도라의 상자 협박으로 최하위에 몰리던 박지민이 1,000만 원에 우승 상금 양도까지 얹어 입찰했지만 하승진(3,000만 원)과 윤비(2,000만 원)에게 밀려 \'실패\'로 처리됐다. 같은 날 데스매치 투표에서 윤비는 박지민을 지목했고, 박지민은 자기 표까지 포함해 9표를 받아 데스매치에 나갔다가 탈락했다. 윤비가 납치돼 외부팀으로 넘어간 것은 그 투표 뒤이므로, 두 사람이 같은 편이었던 적은 없다.',
+    strength: 3,
+    confidence: 'medium',
+    sources: [
+      'https://namu.wiki/w/피의%20게임2/1일차',
+      'https://namu.wiki/w/피의%20게임2/2일차',
+      'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
+      'https://namu.wiki/w/윤비/피의%20게임',
+    ],
+  },
+  {
+    id: 'park-ji-min--hyun-seong-joo--co-season-s2-48',
+    source: 'park-ji-min',
+    target: 'hyun-seong-joo',
+    type: 'co-season',
+    season: 2,
+    label: '9표 만장일치 중 한 표',
+    labelEn: 'One vote of a unanimous nine',
+    description:
+      '2일차 \'오름차순\' 뒤 열린 데스매치 진출자 투표에서 현성주는 박지민을 지목했다. 다만 그 투표는 저택에 남아 있던 아홉 명 전원이 박지민을 찍은 9표 만장일치였고 — 박지민 본인의 표까지 포함해서다 — 나무위키도 현성주의 표를 "다수의 여론을 따라서"라고 적는다. 즉 날짜와 게임과 대상이 특정된 실제 행위이되, 그를 겨눈 개인적 지목으로 읽어서는 안 된다. 두 사람이 면전에서 부딪친 장면은 기록돼 있지 않고, 유령 카지노에서 맞붙은 적도 없다 — 박지민의 상대는 7일차의 이진형이었고, 현성주는 10일차 새벽에 서출구와 붙었다. 이 선은 두 사람이 같은 시즌 반대편에 있었다는 사실까지만 말한다.',
+    strength: 2,
+    confidence: 'medium',
+    sources: [
+      'https://namu.wiki/w/피의%20게임2/2일차',
+      'https://namu.wiki/w/현성주/피의%20게임',
+      'https://namu.wiki/w/박지민(아나운서)/피의%20게임',
+    ],
+  },
 ];

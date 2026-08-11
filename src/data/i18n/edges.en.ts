@@ -290,4 +290,34 @@ export const edgesEn: Record<string, EdgeEn> = {
     description:
       "Choi Hye-sun won her day-one Death Match (데스매치) in Bloody Game 3 by 58 chips to 12 and the rules sent her down to the ruins (잔해) anyway — and the butler running the phantom casino and the purgatory down there was Park Ji-min. The woman who played seasons 1 and 2 and came out of them nicknamed the icon of betrayal (배신의 아이콘) was now turning other people's games for them, and Choi Hye-sun was one of the players who passed her table. Same season, different seats; nothing individual between them is on record.",
   },
+
+  'lee-jin-hyung--hong-jin-ho--rivalry-s2-44': {
+    label: 'Beaten 2:0, then cut loose',
+    description:
+      "The season's winner and its third place spent it on opposite sides. On day 4, in the money challenge Number Change, the two went out as their teams' first entrants: Lee announced he would spend the Hidden Chance just before submitting his blocks, trying to rattle Hong; Hong read the intent, expected an 8 or 9, and played 6 and 4 for ten. Lee had played 4 and 4 for eight — 2:0. On day 7 Hong went to Lee and Pi in person and warned that one of the two of them would be in danger if they did not vote for him; Lee, who had meant to vote Dex, took ten million won from XITSUH and voted Hong instead. On day 9's Main Color they were briefly allied in a four-man bloc, but Lee kept feeding remarks to the opposing side, so in the final round Hong sent XITSUH and Yoon Bi to tail him and then withdrew his trust outright: \"We can't believe a word you say now. And I can't help but treat you as hostile.\" Hong won the semifinal, which carried the right to choose the final's first-round game and set the bracket, and used it to put Lee against XITSUH in the harder Hidden Mission while taking Dex for himself — so the two never actually faced each other in the final.",
+  },
+
+  'hyun-seong-joo--yoon-bi--alliance-s2-45': {
+    label: 'Close by the pool on day one',
+    description:
+      "In a post-season Q&A with Xports News (5 June 2023), Yoon Bi named Hyun Seong-joo outright as one of the people he grew close to in the mansion's first days: \"On the first day I drank whisky by the pool with Ha Seung-jin and Hyun Seong-joo, talked a great deal, and we became extremely close.\" They were on the same side only through day 2. That night Yoon was abducted by the hidden players — the second taken, after XITSUH — and his side changed for him; the next day's Raid result table has Hyun on the losing mansion team and Yoon on the winning outside one. Nucksal took the returning Yoon at his word; Hyun is recorded as not fully believing him. Hyun lost the day-5 death match to Fujii Mina 17:24 and went out third. After the season he appeared as a guest on Yoon Bi's Bloody Game 3 review broadcast.",
+  },
+
+  'park-ji-min--seo-chul-gu--rivalry-s2-46': {
+    label: 'Taken out of the house as a throwaway card',
+    description:
+      "At the day-1 death-match vote Ha Seung-jin opened a men-against-women split, and XITSUH argued Fujii Mina should be the one sent — he later said his point was to get out of that framing, but the women in the house read it as the split itself. The \"aggression and the sudden flare-ups\" he showed at that vote got him marked by Park Ji-min, who was inside the mansion as the wild team's spy. That evening she scrapped the outside team's own plan — recruit Lee Jin-hyung, expected to be strong on the strength of his academic record — without consulting them, and picked XITSUH instead because he \"looked useful as a throwaway card,\" walking him out of the house. He followed her without argument and only understood once the hood came off and he was looking at open forest. In the official Q&A he said he was \"actually excited to be the first of the mansion players to know.\" His disappearance caused an uproar inside the house the next day, and Park — the last person seen talking to him — fell under suspicion for it.",
+  },
+
+  'park-ji-min--yoon-bi--rivalry-s2-47': {
+    label: 'Two days, two votes against each other',
+    description:
+      "At the day-1 death-match vote Pi put Yoon Bi and Fujii Mina up as the two candidates, and Park Ji-min was the only one of ten voters to vote for Yoon (Yoon 1, Fujii Mina 9). Yoon himself voted for Fujii Mina. The next day, in the sealed auction for the round-2 running order in Ascending Order, Park — being pushed toward last place by Yurisa's Pandora's Box blackmail — bid ten million won of her own funds and offered to sign over the winner's prize on top, and was outbid by Ha Seung-jin at thirty million and Yoon Bi at twenty; her bid is recorded as failed. At that same day's death-match vote Yoon named Park, and she went to the death match on nine votes including her own, lost, and was eliminated. Yoon was abducted onto the outside team only after that vote, so the two were never on the same side.",
+  },
+
+  'park-ji-min--hyun-seong-joo--co-season-s2-48': {
+    label: 'One vote of a unanimous nine',
+    description:
+      "After Ascending Order on day 2, Hyun Seong-joo named Park Ji-min in the death-match nomination vote. But that vote was unanimous — all nine players left in the mansion named her, her own vote among them — and namu.wiki itself describes his as following the majority. So it is a real act with a date, a game and a target, and it should not be read as a personal move against her. No confrontation between the two is recorded, and they never met in the ghost casino either: Park's opponent there was Lee Jin-hyung on day 7, while Hyun played XITSUH at dawn on day 10. This line claims only that the two were in the same season on opposite sides of it.",
+  },
 };

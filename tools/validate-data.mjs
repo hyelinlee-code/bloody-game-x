@@ -334,6 +334,64 @@ const ids = new Set(people.map((p) => p.id));
   openSeams.push(...[...SHARED_OPEN].map(([k, v]) => `${k} — ${v}`));
 }
 
+/* ── 0e. two people in the same season of THIS franchise ────────────────────
+   0d above answers "they were on the same other programme". It never asked the
+   same question about the franchise the atlas is actually about, and that is
+   the bigger claim by far: a season of 피의 게임 is ten to eighteen people
+   sealed in one house for a fortnight, playing against each other by
+   construction. Two names on one season's cast list did not merely overlap —
+   they demonstrably met.
+
+   That hole was open for twelve rounds and a reader found it before any check
+   did. Seven of this lineup played season 2, all as contestants in one field of
+   thirteen; five of the twenty-one pairs had no line between them, including
+   이진형 and 홍진호 — the man who WON that season and the man who came third in
+   it. The graph said they had never met.
+
+   A host or panel seat still counts. 이상민 watched season 1 from the studio and
+   박지민 dealt in season 3's 잔해 casino, so neither played those seasons — but
+   both were THERE, the dataset already draws all five of those pairs as
+   `co-season`, and the type exists to say exactly that: same season, different
+   seat. Excluding them would be inventing an exemption the data does not use.
+
+   FAIL, not warn, and for 0d's reason: this is a same-room candidate with no
+   ambiguity to filter for. A pair may sit in SEASON_OPEN only with the research
+   that keeps it there, and gaining an edge deletes the line — so the list
+   cannot outlive the problem. */
+{
+  const pairsWithEdge = new Set(edges.map((e) => [e.source, e.target].sort().join('|')));
+  /* Kept deliberately empty. A season pair with no edge is a factual claim that
+     two people who spent a fortnight in the same house never met, and there is
+     no version of that which is true — so unlike SHARED_OPEN, where a dead end
+     is a real answer, an entry here can only ever mean "not written yet". */
+  const SEASON_OPEN = new Map([]);
+
+  const bySeason = new Map();
+  for (const [id, runs] of Object.entries(records)) {
+    for (const r of runs ?? []) {
+      bySeason.set(r.season, [...(bySeason.get(r.season) ?? []), id]);
+    }
+  }
+  const seen = new Set();
+  for (const [season, list] of [...bySeason].sort((a, b) => a[0] - b[0])) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const k = [list[i], list[j]].sort().join('|');
+        if (pairsWithEdge.has(k) || seen.has(k)) continue;
+        seen.add(k);
+        if (!SEASON_OPEN.has(k))
+          fail(
+            `${k} were both in season ${season} and carry no edge — two people cannot share a season of this show and not have met. Draw the line.`,
+          );
+      }
+    }
+  }
+  for (const k of SEASON_OPEN.keys()) {
+    if (pairsWithEdge.has(k)) fail(`${k} now has an edge — delete its line from SEASON_OPEN in tools/validate-data.mjs`);
+  }
+  openSeams.push(...[...SEASON_OPEN].map(([k, v]) => `${k} — ${v}`));
+}
+
 /* ── 0b. the ledger seam ───────────────────────────────────────────────────
    `Edge.outcomes` is the only hand-authored half of the head-to-head ledger;
    everything else in headToHead.ts is derived. So the authored half has to be
