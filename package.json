@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsx tools/validate-data.mjs && vite build",
     "lint": "oxlint",
     "preview": "vite preview --port 4173",
     "shots": "node tools/shots.mjs",
