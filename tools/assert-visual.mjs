@@ -126,7 +126,20 @@ const OPEN = {
    * list — they have never failed under frame-sampling, so they are hard gates
    * and they are what stops a fix for the unnamed count from buying its names
    * back by seating them under strangers. */
-  'captions.unnamed': 'r12 — render.ts: the seat search gives up and the node goes nameless',
+  /* …AND IT GOT WORSE ON PURPOSE IN ROUND 15. The number moved from 3 states /
+     4 people to 5–6 states / 15–16 people across two runs, and none of that is a
+     new bug: it is the own-face seat being withdrawn (render.ts, `if (stray.own <
+     rPhoto) return Infinity`). Every name lost is a name that was previously
+     printed across the middle of the photograph it names — the four on the phone
+     are exactly the four that measured 0.74–0.94 covered before it. The two
+     defects trade against each other roughly one for one, and this is the side
+     of that trade the round was asked to come down on: a disc with no name is a
+     gap the reader can see is a gap, and a face with a name stamped through it
+     is the identification destroyed to repeat what the HoverCard is showing.
+     What is still owed here is the fix this entry was always for: a seat search
+     that finds honest room for those sixteen. Getting the count back by
+     re-opening the own-face seat is not that fix. */
+  'captions.unnamed': 'r12 — render.ts: the seat search gives up and the node goes nameless. Round 15 traded ~12 more people into it to get captions off faces — see the block above',
   /* THESE TWO ARE PASSING AND THEY ARE STILL HERE, ON PURPOSE.
    *
    * render.ts made MISSEAT unreachable rather than merely expensive (the
@@ -148,7 +161,43 @@ const OPEN = {
    * one that would have promoted it. Leave both here. */
   'captions.misattributed': 'r12 blocker — render.ts: MISSEAT was priced rather than infinite; rare but real once settled (1 of 13 states, 1 run in 8). Now unreachable — passing, awaiting consecutive-run evidence before promotion',
   'captions.misattributedUncorrected': 'r12 blocker — render.ts: …and when it happens the leader hairline that is supposed to fire unconditionally does not. Passing — promoted together with the check above or not at all',
-  'captions.overPlate': 'NEW this round — render.ts: a caption is set square across the photograph it names (up to 100% of the disc). plate.ts refuses to draw a mark over a face for exactly this reason; the caption does it anyway',
+  /* MOSTLY CLOSED, AND WHAT IS LEFT IS A DIFFERENT DEFECT WEARING THE SAME NAME.
+   *
+   * Filed as "a caption is set square across the photograph it names, up to
+   * 100% of the disc". That was the own-face seat, and it is gone: `boxCost`
+   * returns Infinity for any box whose centre is on its own face.
+   *
+   * BEFORE — five states, and every one of them a face with type through it:
+   *
+   *     laptop  en fitted   jung-keun-woo   0.915
+   *     desktop ko dossier  hong-jin-ho     0.926
+   *     mobile  en fitted   lee-jin-hyung   0.940
+   *     laptop  ko dossier  lee-tae-gyun    0.965
+   *     laptop  en dossier  lee-tae-gyun    1.000
+   *
+   * AFTER — two full runs of the matrix, because one run does not describe this
+   * check (see the note on `captions.misattributed` for why this file insists):
+   *
+   *     run 1   1 state    desktop en zoomed  0.199
+   *     run 2   3 states   desktop en zoomed  0.341
+   *                        desktop en fitted  0.053
+   *                        desktop ko zoomed  0.051
+   *
+   * Two of those four readings are a hair over the 0.05 the check calls a graze,
+   * which is boundary noise and not a picture anybody can see. The one that is
+   * not is the ZOOMED state, and it is a different defect from the filed one: at
+   * k ≈ 3.4 a caption is 231–407px wide against a 97–137px photograph, so a box
+   * seated BESIDE a disc overhangs its rim. Nothing is over the middle of a face
+   * — measured in that exact frame, every visible portrait reads 0.30–0.62
+   * mid-tone at 0.6·r and 0.20–0.44 at 0.75·r, against the 0.15 floor that
+   * separates a photograph from a mark.
+   *
+   * So it stays open, at 0.05, and the next owner is owed the distinction. What
+   * is left is "a big caption does not fit beside a big disc", a question about
+   * the seat ring above k = 3. It is NOT the round-15 blocker; that one was
+   * about the middle of the face, and it is now measured in pixels, in six
+   * states including the keyboard path, by `hover.facePhotoMid` in suite 1b. */
+  'captions.overPlate': 'r15 — render.ts: 5 states at 0.92–1.00 (type through the middle of a face) → 1–3 states across two runs, worst 0.20–0.34, and a rim overhang at 3.4× zoom rather than an erasure. See the block above',
   'reveal.frames': 'r12 blocker — GraphCanvas.tsx: the reveal is delivered in a handful of frames',
   'reveal.firstPaintedValue': 'r12 blocker — GraphCanvas.tsx: the same defect from the front of the curve. Intermittent: measured 0.003, 0.007, 0.027 and 0.124, 0.183, 0.314 on the early path across six runs — i.e. the reader sometimes gets the first third of the fade and sometimes does not',
   /* ══ THESE THREE ARE NOT A PALETTE DEFECT, AND THE ATTRIBUTION ABOVE THEM WAS
@@ -231,12 +280,24 @@ const OPEN = {
    *
    * It is here rather than at min:2 because the floor is not the thing that is
    * wrong. This is a downstream symptom, and it goes away for free the moment
-   * captions stop being painted over faces. DELETE THESE FOUR WITH
-   * `captions.overPlate`, not before, and not by moving the number. */
-  'plate.discsSampled.desktop.ko.zoomed': 'symptom of captions.overPlate at max zoom — see the block above',
-  'plate.discsSampled.desktop.en.zoomed': 'symptom of captions.overPlate at max zoom — see the block above',
-  'plate.discsSampled.laptop.ko.zoomed': 'symptom of captions.overPlate at max zoom — see the block above',
-  'plate.discsSampled.laptop.en.zoomed': 'symptom of captions.overPlate at max zoom — see the block above',
+   * captions stop being painted over faces.
+   *
+   * ROUND 15 — HALF RIGHT. Captions did stop being painted over faces, and all
+   * four now pass: 4, 3, 4, 4 against the floor of 3. But the prediction that
+   * they would go away "for free" was optimistic about WHY they were low. The
+   * exclusion note now reads "3 / 4 / 4 / 5 disc(s) excluded" and the reason has
+   * changed underneath it — at six steps of zoom most of the cast is off the
+   * edge of the canvas, so the exclusions are now CLIPPING, which no caption fix
+   * can recover. desktop-en still measures exactly 3.
+   *
+   * They stay listed, and not out of caution about one run: `captions.overPlate`
+   * is still open on precisely the desktop-en zoomed state these four are
+   * paired with, so the condition their own instruction names has not been met.
+   * Promote them when it is. */
+  'plate.discsSampled.desktop.ko.zoomed': 'passing since r15 (4) — the exclusion is now frame-clipping, not captions; see the block above',
+  'plate.discsSampled.desktop.en.zoomed': 'passing since r15, at exactly the floor (3) — see the block above',
+  'plate.discsSampled.laptop.ko.zoomed': 'passing since r15 (4) — see the block above',
+  'plate.discsSampled.laptop.en.zoomed': 'passing since r15 (4) — see the block above',
   /* SAME DEFECT, one suite over, and parked here for the same reason and with
    * the same instruction: delete these two with `captions.overPlate`, never by
    * moving the 18.
@@ -270,15 +331,42 @@ const OPEN = {
    * the camera frames the whole cast, captions have room, the exclusion is
    * near-empty and the reading is stable — which is also the evidence that the
    * dossier instability really is about caption crowding rather than about
-   * dimming being broken. */
-  'discs.dimmed.maxL.desktop.ko.dossier': 'symptom of captions.overPlate — the dimmed sample it maxes over is the one the caption exclusion ate; see the block above',
-  'discs.dimmed.maxL.desktop.en.dossier': 'symptom of captions.overPlate — see the block above',
-  'discs.dimmed.maxL.laptop.ko.dossier': 'symptom of captions.overPlate — see the block above',
-  'discs.dimmed.maxL.laptop.en.dossier': 'symptom of captions.overPlate — see the block above',
-  'discs.dim.gapL.desktop.ko.dossier': 'symptom of captions.overPlate — derived from dimmed.maxL directly, so it moves with it',
-  'discs.dim.gapL.desktop.en.dossier': 'symptom of captions.overPlate — derived from dimmed.maxL directly, so it moves with it',
-  'discs.dim.gapL.laptop.ko.dossier': 'symptom of captions.overPlate — derived from dimmed.maxL directly, so it moves with it',
-  'discs.dim.gapL.laptop.en.dossier': 'symptom of captions.overPlate — derived from dimmed.maxL directly, so it moves with it',
+   * dimming being broken.
+   *
+   * ══ ROUND 15 SETTLED IT, AND AGAINST THE THEORY ABOVE. READ THIS FIRST. ══
+   *
+   * The block above is the reasoning; here is the experiment it was waiting for.
+   * Captions are off faces now, `discs.dimSampled` reports "0 disc(s) excluded"
+   * in all four of these states, and the reading is finally stable:
+   *
+   *     desktop ko dossier   13.02 (1 excluded)  →  26.92 (0 excluded)
+   *     desktop en dossier   25.69 (0 excluded)  →  26.97 (0 excluded)
+   *     laptop  ko dossier   27.87 (2 excluded)  →  27.87 (0 excluded)
+   *     laptop  en dossier   23.83 (2 excluded)  →  28.69 (0 excluded)
+   *
+   * Stable at 27±1 in every state, against a ceiling of 18. So the sample was
+   * never the disease. The exclusion was HIDING a dimmed disc that has been
+   * sitting at ~27 L* the whole time, and the lottery in the table above was the
+   * lottery of whether that disc happened to be the one a caption had eaten. The
+   * one state that used to pass, desktop-ko at 12.71–13.02, passed because its
+   * single excluded disc was the bright one.
+   *
+   * These are therefore NOT symptoms of `captions.overPlate` and must not be
+   * deleted with it. They are a live focus-pass defect — one of the six dimmed
+   * discs in a dossier state is not being dimmed, or is being lit by something
+   * that is not the focus pass — and the caption fix has done the one useful
+   * thing it could do for them, which is make the number repeatable so somebody
+   * can chase it. `discs.dimSampled` at 20/20 is the evidence that the sample is
+   * now honest. GraphCanvas.tsx's focus loop and drawNodes' DIM_FLOOR are where
+   * this lives; it is not in the caption code. */
+  'discs.dimmed.maxL.desktop.ko.dossier': 'r15: a dimmed disc sits at ~27 L* against a ceiling of 18, in all four states, with nothing excluded. NOT a caption symptom — see the block above',
+  'discs.dimmed.maxL.desktop.en.dossier': 'r15: see the block above — a live focus-pass defect, no longer a sampling lottery',
+  'discs.dimmed.maxL.laptop.ko.dossier': 'r15: see the block above — a live focus-pass defect, no longer a sampling lottery',
+  'discs.dimmed.maxL.laptop.en.dossier': 'r15: see the block above — a live focus-pass defect, no longer a sampling lottery',
+  'discs.dim.gapL.desktop.ko.dossier': 'derived from dimmed.maxL directly, so it moves with it — see the block above',
+  'discs.dim.gapL.desktop.en.dossier': 'derived from dimmed.maxL directly, so it moves with it — see the block above',
+  'discs.dim.gapL.laptop.ko.dossier': 'derived from dimmed.maxL directly, so it moves with it — see the block above',
+  'discs.dim.gapL.laptop.en.dossier': 'derived from dimmed.maxL directly, so it moves with it — see the block above',
   /* PROMOTED — `wall.worstPlateShownAtRest.mobile` was here. Gallery.css now
      solves the trailing pad against the last CELL ROW rather than the last
      group, and all three viewports measure an exact 1.000 at every rest. A fix
@@ -465,6 +553,82 @@ const DISC_BANDS = (f) => {
   return out;
 };
 
+/**
+ * THE MIDDLE OF EVERY FACE, WITH NOTHING TAKEN OUT.
+ *
+ * DISC_BANDS answers "is there a photograph on this plate" and to do it
+ * honestly it has to SKIP the pixels a caption is painted over — otherwise a
+ * name set across a face reads as the plate having fallen back to the monogram.
+ * That exclusion is right there and fatal here, because the pixels it skips are
+ * the exact pixels this probe exists to look at. A wash painted over a
+ * photograph is not a confound to be removed from the sample; it IS the sample.
+ *
+ * So: mean lightness inside `f` of the photograph's radius, every pixel
+ * counted, no label boxes subtracted, no dropped alpha. `f = 0.6` is the
+ * middle of the face — eyes, nose, mouth — which is what a reader identifies a
+ * person by and what a centred caption lands on first.
+ *
+ * `mid` rides along, and it is the number that actually catches an erasure. It
+ * is DISC_BANDS's band, L* 14…55, over the same disc of pixels: the share of the
+ * sample that is mid-tone, i.e. the share of it that is still a photograph. The
+ * mean cannot do that job here — a near-black wash under bone-white type is
+ * bimodal and its mean lands wherever the two balance, which on this build was
+ * BRIGHTER than the face it replaced. See the table above suiteHover.
+ *
+ * `r` is returned with it, and it is load-bearing rather than diagnostic: the
+ * painter grows a photograph by 9% while it is the anchor of the focus pass
+ * (`photoRadius`: `1 + focus * 0.09`), so the disc whose radius grew between
+ * two reads is the disc the app decided the reader is pointing at. That is how
+ * the suite below identifies its own subject instead of assuming that the point
+ * it aimed at is the node the picker returned.
+ *
+ * Read in the SAME TASK as the pixels, for the reason DISC_BANDS gives: a disc
+ * list captured on an earlier frame turns a moving camera into a false reading.
+ */
+const FACE_CORE = (f) => {
+  const c = document.querySelector('canvas.graph-canvas');
+  if (!c || !window.__atlasPaint) return null;
+  const discs = window.__atlasPaint.frame.discs.map((d) => ({ id: d.id, x: d.x, y: d.y, r: d.r }));
+  const ctx = c.getContext('2d');
+  const rect = c.getBoundingClientRect();
+  const sx = c.width / rect.width;
+  const lin = (u) => (u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4));
+  const Ls = (Y) => (Y > 0.008856 ? 116 * Math.cbrt(Y) - 16 : 903.3 * Y);
+  const out = [];
+  for (const d of discs) {
+    const rr = Math.max(2, d.r * f);
+    const x0 = Math.round((d.x - rr) * sx);
+    const y0 = Math.round((d.y - rr) * sx);
+    const w = Math.max(1, Math.round(rr * 2 * sx));
+    if (x0 < 0 || y0 < 0 || x0 + w > c.width || y0 + w > c.height) continue;
+    const img = ctx.getImageData(x0, y0, w, w).data;
+    const cc = w / 2;
+    let n = 0;
+    let sum = 0;
+    let mid = 0;
+    for (let py = 0; py < w; py++) {
+      for (let pxi = 0; pxi < w; pxi++) {
+        const dx = pxi - cc;
+        const dy = py - cc;
+        if (dx * dx + dy * dy > cc * cc) continue;
+        const i = (py * w + pxi) * 4;
+        const a = img[i + 3] / 255;
+        const Y =
+          0.2126 * lin((img[i] / 255) * a) +
+          0.7152 * lin((img[i + 1] / 255) * a) +
+          0.0722 * lin((img[i + 2] / 255) * a);
+        sum += Y;
+        const L = Ls(Y);
+        // The same band DISC_BANDS calibrated the photograph detector on.
+        if (L >= 14 && L <= 55) mid++;
+        n++;
+      }
+    }
+    if (n) out.push({ id: d.id, L: +Ls(sum / n).toFixed(2), mid: +(mid / n).toFixed(3), r: +d.r.toFixed(2) });
+  }
+  return out;
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * DERIVATIONS  (node side — plain arithmetic over what the page reported)
  * ═════════════════════════════════════════════════════════════════════════*/
@@ -620,12 +784,19 @@ const VIEWPORTS = {
   mobile: { width: 390, height: 844 },
 };
 
-async function openPage(browser, base, { viewport, lang, dpr = 2, mobile = false, block = null }) {
+async function openPage(browser, base, { viewport, lang, dpr = 2, mobile = false, block = null, reduced = false }) {
   const ctx = await browser.newContext({
     viewport,
     deviceScaleFactor: dpr,
     colorScheme: 'dark',
     locale: lang === 'ko' ? 'ko-KR' : 'en-US',
+    /* `reduced` is a reader preference, not a viewport — it changes what the
+       painter does rather than what it draws into. Every ease in render.ts cuts
+       to its destination under it, which means the label solver's glide, the
+       veil and the focus ramp all land in ONE frame; that is the path where a
+       caption arrives at its seat with no transition to hide behind, so it is
+       the path worth measuring a hover on. */
+    ...(reduced ? { reducedMotion: 'reduce' } : {}),
     ...(mobile ? { isMobile: true, hasTouch: true } : {}),
   });
   /* Arm the in-page probes. They are gated in src/probe.ts so a live
@@ -931,6 +1102,252 @@ async function assertState(page, tag, { expectAllTwenty = false, expectPhotos = 
   }
 }
 
+/* ── suite 1b: what pointing at somebody costs their photograph ────────────
+ *
+ * THE ROUND-15 BLOCKER, WRITTEN AS A NUMBER.
+ *
+ * Filed twice, independently: "hovering a node erases that person's
+ * photograph". Three things compounded. The caption of a pointed-at node was
+ * promoted to the two-line name+role form, which takes a box from ~70px wide to
+ * ~200px; the solver's seat of last resort was dead centre on the node's own
+ * face; and the backing wash for that seat was a 94%-opaque near-black ellipse
+ * whose radius came off the box WIDTH. A ~31px photograph became a black
+ * silhouette with a name printed on it — shots 03, 04, 05, 06, and the centre of
+ * 07-orbit.
+ *
+ * `captions.overPlate` already owns this question AT REST and owns it
+ * geometrically. This suite owns the reader's GESTURE, in pixels: whatever the
+ * painter decides to do when somebody is pointed at, there still has to be a
+ * face there afterwards.
+ *
+ * ── WHY THERE ARE TWO MEASUREMENTS AND NOT ONE ─────────────────────────────
+ *
+ * The reviewer proposed one: mean luma inside r = 0.6·rPhoto, before the hover
+ * and after it, no more than a 25% drop. It is measured below and it is kept,
+ * because it is a real invariant with real failure modes — a wash with no type
+ * on it, a dim applied to the wrong node, a plate that fell back to the mark.
+ *
+ * IT DOES NOT, BY ITSELF, DETECT THE DEFECT IT WAS WRITTEN FOR. Measured on the
+ * production build that has it, hovering the affected people:
+ *
+ *     desktop en  lee-tae-gyun    L* 27.8 → 43.1    mean luma  +55%
+ *     desktop en  lee-jin-hyung   L* 31.5 → 42.1               +34%
+ *     desktop en  ha-seung-jin    L* 29.8 → 34.1               +14%
+ *     mobile  en  lee-jin-hyung   L* 37.0 → 40.8               +10%
+ *     laptop  en  jung-keun-woo   L* 42.0 → 44.4                +6%
+ *
+ * A face under this caption gets BRIGHTER, and every one of those readings is a
+ * pass at any drop threshold. The wash is near-black and the type on it is
+ * bone-white at 14–18:1, so replacing a photograph with a caption swaps a field
+ * of mid-tones for a bimodal pair whose mean lands wherever the two happen to
+ * balance. DISC_BANDS's own docstring says this in the neighbouring words — "a
+ * mark's white type drags its mean into the photographs' range … i.e. useless"
+ * — and it is the reason that probe measures the BAND and not the mean.
+ *
+ * So the second measurement is the one with teeth, and it is not a new idea or
+ * a new number: it is `plate.photoMidFraction`, asked while the reader is
+ * pointing. The share of the face in the mid-tone band L* 14…55 is this file's
+ * calibrated photograph detector — a mark measures 0.018–0.079 with /portraits/
+ * blocked, a photograph 0.215–0.585, and there is no overlap. The same people,
+ * same runs:
+ *
+ *     lee-tae-gyun    mid 0.644 → 0.104        lee-jin-hyung  0.714 → 0.068
+ *     ha-seung-jin        0.599 → 0.050        (at rest, mobile en, already
+ *                                               0.046 before anybody pointed)
+ *
+ * That is a photograph turning into a mark, in the units this harness already
+ * uses to say so. DO NOT DELETE THE MEAN-LUMA CHECK AS REDUNDANT, and do not
+ * delete the mid-tone one as belt-and-braces: they fail on different things, and
+ * the one that fails on THIS thing is the second.
+ *
+ * ── WHO GETS POINTED AT ────────────────────────────────────────────────────
+ *
+ * Everybody the pointer can reach. The first version of this suite probed three
+ * people per state — the hub and the two smallest photographs — and measured a
+ * clean 0% on a build where five nodes were being erased, because the erasure
+ * lands on whoever the solver ran out of room for and that is not a person you
+ * can name in advance. Twenty hovers a state is ~18 seconds and it is what the
+ * measurement costs.
+ *
+ * And the SUBJECT of each reading is discovered, not declared: the disc whose
+ * radius grew between the two reads is the one the app's own picker decided the
+ * pointer was on (`photoRadius` scales by 1 + focus·0.09). Aiming at a centre
+ * and assuming the pick landed there is how a suite ends up measuring a node
+ * nobody hovered and calling it green.
+ *
+ * The last two states are the two paths the brief protects. `reduced` cuts every
+ * ease in the painter to a single frame, so a caption arrives at its seat with
+ * no transition to hide behind. `cursor` is the keyboard reader, who has no
+ * HoverCard at all — `hoverId` is published from pointermove only, so the canvas
+ * caption keeps its role line there, which is exactly why it is measured rather
+ * than reasoned about.
+ */
+
+/** Median of `n` reads of every face. One getImageData is a single frame, and
+ *  the veil, the label glide and the focus ramp are all ~200–260ms animations;
+ *  half a second of samples cannot be fooled by whichever frame it caught.
+ *  Median rather than min — `min` on both sides of a ratio flatters the ratio. */
+async function faceCores(page, n = 3, gap = 160) {
+  const reads = [];
+  for (let i = 0; i < n; i++) {
+    reads.push((await page.evaluate(FACE_CORE, 0.6)) ?? []);
+    if (i < n - 1) await page.waitForTimeout(gap);
+  }
+  const mid = (a) => [...a].sort((x, y) => x - y)[(a.length - 1) >> 1];
+  const out = new Map();
+  for (const id of new Set(reads.flat().map((d) => d.id))) {
+    const seen = reads.map((r) => r.find((d) => d.id === id)).filter(Boolean);
+    // Present in every read, or it is not a sample of anything steady.
+    if (seen.length === n)
+      out.set(id, { L: mid(seen.map((d) => d.L)), mid: mid(seen.map((d) => d.mid)), r: mid(seen.map((d) => d.r)) });
+  }
+  return out;
+}
+
+/** The focus pass grows the anchor's photograph by 9% (`photoRadius`). 1.05 is
+ *  half of that: clear of any noise on `r` — which is the painter's own number
+ *  rather than a measurement — and clear of a neighbour, who eases to 0.42 and
+ *  therefore grows 3.8%. */
+const FOCUS_GREW = 1.05;
+
+/** Whoever the app put the focus on, and what happened to their face. */
+function attentionTook(rest, hot) {
+  let best = null;
+  for (const [id, a] of hot) {
+    const b = rest.get(id);
+    if (!b || !b.r) continue;
+    const grew = a.r / b.r;
+    if (grew >= FOCUS_GREW && (best === null || grew > best.grew))
+      best = { id, grew, L0: b.L, L1: a.L, mid0: b.mid, mid1: a.mid };
+  }
+  return best;
+}
+
+async function suiteHover(browser, base) {
+  console.log('\n── what pointing at somebody costs their photograph ──────────────────');
+  const states = [
+    ['desktop', 'ko', {}],
+    ['desktop', 'en', {}],
+    ['mobile', 'ko', {}],
+    ['mobile', 'en', {}],
+    ['desktop', 'ko', { reduced: true }],
+    ['desktop', 'ko', { cursor: true }],
+  ];
+
+  for (const [vpName, lang, opt] of states) {
+    const { ctx, page } = await openPage(browser, base, {
+      viewport: VIEWPORTS[vpName],
+      lang,
+      dpr: vpName === 'mobile' ? 3 : 2,
+      mobile: vpName === 'mobile',
+      reduced: Boolean(opt.reduced),
+    });
+    await enterAndSettle(page);
+    const tag = `${vpName}.${lang}${opt.reduced ? '.reduced' : ''}${opt.cursor ? '.cursor' : ''}`;
+
+    /* One rest baseline per state, taken with the pointer parked and the canvas
+       unfocused. The scene does not move at rest, so re-taking it between every
+       hover would measure the same thing twenty times over. */
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.mouse.move(4, 4);
+    await page.waitForTimeout(700);
+    const rest = await faceCores(page, 3, 220);
+
+    const took = new Map();
+    const record = (hit) => {
+      if (!hit) return;
+      const prev = took.get(hit.id);
+      // Worst reading per person: the lowest mid-tone fraction they were shown.
+      if (!prev || hit.mid1 < prev.mid1) took.set(hit.id, hit);
+    };
+
+    if (opt.cursor) {
+      /* Tab rather than `.focus()`: the painter only lets a cursor dim the
+         scene while the canvas is wearing a real focus ring (`kbdRing`), and it
+         decides that with `:focus-visible`, which a programmatic focus does not
+         raise. */
+      for (let i = 0; i < 20; i++) {
+        const on = await page.evaluate(() => document.activeElement?.classList?.contains('graph-canvas') ?? false);
+        if (on) break;
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(60);
+      }
+      for (const key of ['ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight']) {
+        await page.keyboard.press(key);
+        await page.waitForTimeout(700);
+        record(attentionTook(rest, await faceCores(page)));
+      }
+      await page.evaluate(() => document.activeElement?.blur?.());
+    } else {
+      /* Every face the pointer can reach: fully inside the painter's own
+         uncovered rect, so the pointer lands on canvas rather than on chrome. */
+      const aims = await page.evaluate(() => {
+        const P = window.__atlasPaint;
+        if (!P) return [];
+        const o = P.frame.open;
+        return P.frame.discs
+          .filter(
+            (d) =>
+              d.vis > 0.9 &&
+              d.x - d.r > o.x + 6 &&
+              d.x + d.r < o.x + o.w - 6 &&
+              d.y - d.r > o.y + 6 &&
+              d.y + d.r < o.y + o.h - 6,
+          )
+          .map((d) => ({ id: d.id, x: d.x, y: d.y }));
+      });
+      for (const a of aims) {
+        // Two moves: the picker runs on pointermove, and one move from a parked
+        // pointer is one event the app is free to coalesce with the parking one.
+        await page.mouse.move(a.x - 3, a.y - 3);
+        await page.mouse.move(a.x, a.y);
+        await page.waitForTimeout(700);
+        record(attentionTook(rest, await faceCores(page)));
+      }
+      await page.mouse.move(4, 4);
+    }
+
+    const probed = [...took.values()];
+    /* The denominator guard. A pointer that never lands on anybody makes both
+       checks below vacuously green, which is the one way this suite could lie —
+       and it is not hypothetical: the first version of it did exactly that. */
+    check(`hover.facesProbed.${tag}`, probed.length, {
+      min: opt.cursor ? 3 : 8,
+      note: `faces the app's own picker put the focus on, of ${rest.size} at rest`,
+    });
+
+    /* 1 · the reviewer's shape, kept as filed. Necessary, not sufficient — see
+     *     the table at the top of this suite. */
+    let luma = null;
+    for (const p of probed) {
+      const drop = p.L0 > 0 ? ((p.L0 - p.L1) / p.L0) * 100 : 0;
+      if (luma === null || drop > luma.drop) luma = { ...p, drop };
+    }
+    check(`hover.faceLumaDropPct.${tag}`, luma ? +luma.drop.toFixed(1) : null, {
+      max: 25,
+      unit: '%',
+      note: luma ? `worst: ${luma.id} — L* ${luma.L0} → ${luma.L1} inside r = 0.6·rPhoto` : 'nothing measured',
+    });
+
+    /* 2 · …and the one that fails when the face is replaced rather than merely
+     *     darkened. Threshold and calibration are `plate.photoMidFraction`'s,
+     *     unchanged: a name mark measures 0.018–0.079 with /portraits/ blocked,
+     *     a photograph 0.215–0.585, and 0.15 sits in the empty middle. Read on
+     *     the person the reader is pointing at, who is by construction the one
+     *     node in the frame that is NOT dimmed, so the dim pass cannot be what
+     *     this is measuring. */
+    let worstMid = null;
+    for (const p of probed) if (worstMid === null || p.mid1 < worstMid.mid1) worstMid = p;
+    check(`hover.facePhotoMid.${tag}`, worstMid ? worstMid.mid1 : null, {
+      min: 0.15,
+      note: worstMid
+        ? `weakest face while pointed at: ${worstMid.id} — mid-tone share ${worstMid.mid0} at rest → ${worstMid.mid1}`
+        : 'nothing measured',
+    });
+
+    await ctx.close();
+  }
+}
 /* ── suite 2: the entrance ─────────────────────────────────────────────────
  * dpr 1 deliberately: it is the kindest frame budget this app will ever get,
  * so a number measured here is an UPPER bound on what a retina reader sees.
@@ -1505,6 +1922,7 @@ async function main() {
   const browser = await chromium.launch();
   try {
     await suitePaint(browser, base);
+    await suiteHover(browser, base);
     await suiteReveal(browser, base);
     await suiteChrome(browser, base);
     await suiteWall(browser, base);

@@ -1999,7 +1999,35 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
     // at 8px, which is not a role line, and it doubles the height of the one
     // box that most needs to fit — on a phone with the dossier open there are
     // 210px of uncovered canvas to place it in.
-    const wantsSub = (n.focus > 0.6 && zoomScale >= 1) || alwaysSub;
+    /* …AND NOT FOR THE PERSON A CARD IS ALREADY DESCRIBING.
+     *
+     * `focus > 0.6` is "hovered, or open in the dossier", and in the hovered
+     * half of that the HoverCard is mounted ~40px from the pointer showing this
+     * person's name, this person's role line and a thumbnail of this person's
+     * photograph. The canvas was setting the same role line a second time, on
+     * top of the picture the card is showing a copy of.
+     *
+     * That duplication is not free. It is the mechanism the round-15 blocker
+     * names: promoting to two lines takes a Korean caption from ~70px wide to
+     * ~200px, and a 200px box on a crowded hub either finds nothing honest and
+     * is dropped whole — this file already documents "the hub was the ONE
+     * unnamed disc in the frame" — or lands somewhere it had to pay for.
+     *
+     * So the role line is the part that yields, which is the trade this file
+     * already makes one step later where a two-line box cannot be seated
+     * honestly: "the role line is an elaboration and it is also in the hover
+     * card; the name is the identification". The name stays on the canvas, at
+     * a third of the width.
+     *
+     * Only for the pointer. `alwaysSub` at k ≥ 1.8 is the whole cast growing a
+     * role line together and one node opting out of that reads as a fault; the
+     * DOSSIER is a 530px panel across the room rather than a card at the
+     * pointer, so the caption is the anchor that says which disc it is about
+     * and it keeps its second line; and the KEYBOARD CURSOR never sets
+     * `hoverId` at all (GraphCanvas publishes it from pointermove only), so the
+     * keyboard reader — who has no card — keeps everything. */
+    const carded = s.hoverId === n.id && s.selectedId === null;
+    const wantsSub = (n.focus > 0.6 && zoomScale >= 1 && !carded) || alwaysSub;
     ctx.textAlign = 'center';
     ctx.font = `${W_MED} ${nameSize}px ${FONT}`;
     const name = s.lang === 'en' ? n.labelEn : n.label;
@@ -2215,24 +2243,50 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
         { box: { x: sx - bw / 2 - slide, y: sy + r + 8, w: bw, h: bh }, tx: sx - slide, align: 'center' },
         { box: { x: sx - bw / 2 + slide, y: sy - r - 10 - bh, w: bw, h: bh }, tx: sx + slide, align: 'center' },
         { box: { x: sx - bw / 2 - slide, y: sy - r - 10 - bh, w: bw, h: bh }, tx: sx - slide, align: 'center' },
-        /* AND THE SEAT THAT CANNOT BE WRONG: dead centre, on the person's own
-           photograph.
+        /* THE SEAT THAT CANNOT BE WRONG WAS HERE — dead centre, on the person's
+         * own photograph — and it is gone. Its argument was "its box centre is
+         * the node centre, so no other face can be nearer: it is the one seat
+         * that is honest by construction", and that is true about ATTRIBUTION
+         * and irrelevant to what it actually did.
          *
-         * Its box centre is the node centre, so its distance to its own face is
-         * zero and no other face can be nearer — it is the one seat in the list
-         * that is honest by construction, at any zoom, in any arrangement. That
-         * is worth having precisely because the rest of this round removes the
-         * option of lying: on a 390px phone the twenty plates and their twenty
-         * boxes do not all fit in the Voronoi cells they are allowed, and the
-         * choice there is between a name on its own face and no name at all.
-         * The first is ugly; the second is anonymous, and this cast has no marks
-         * on its discs to fall back on.
+         * What it actually did, measured on the production build:
          *
-         * It is priced at OWN_FACE, above every honest seat and below every
-         * misattributed one, so it is unreachable until the picture has nothing
-         * else — and it is painted with a heavier scrim (see the plate below) so
-         * the type sits ON the photograph rather than in it. */
-        { box: { x: sx - bw / 2, y: sy - bh / 2, w: bw, h: bh }, tx: sx, align: 'center' },
+         *   laptop  en  fitted    jung-keun-woo   caption box over 92% of the face
+         *   laptop  ko  dossier   lee-tae-gyun                     97%
+         *   laptop  en  dossier   lee-tae-gyun                    100%
+         *   desktop ko  dossier   hong-jin-ho                      93%
+         *   mobile  en  fitted    lee-jin-hyung                    94%
+         *
+         * — and on hover it is worse than any of those rows, because the box
+         * grows a role line first: measured on the same build, pointing at
+         * 홍진호 on a 1600×1000 desktop put a 165×37 box over 63% of his 34px
+         * photograph, and the wash under it goes to 94% opacity. The face
+         * becomes a black silhouette with a name printed on it, in shots 03, 04,
+         * 05, 06, and at the CENTRE of the orbit layout in 07.
+         *
+         * There is no zoom at which this seat is right, and the big-disc case is
+         * not the exception it looks like. What a centred box covers is the
+         * MIDDLE of the circle, which on a portrait is the eyes — that is the
+         * seat's definition, not an accident of its size. Nor does the type
+         * shrink away from the problem as the picture grows: `captionLod` caps
+         * at 1.55, so a caption tops out near 19px while the photograph goes on
+         * scaling with k, which makes the seat cheaper to take at high zoom and
+         * no less wrong. `plate.ts` refuses to draw a MARK over a face on
+         * exactly this reasoning — "a photograph IS the identification, and a
+         * name set across someone's eyes is neither" — and the argument does not
+         * get weaker because the ink is a name rather than a monogram.
+         *
+         * So the choice this seat existed to win — "a name on its own face, or
+         * no name at all" — is settled the other way, and it is settled the same
+         * way the ranker already settles a name on a STRANGER's face and a name
+         * on another name: the caption yields. What it costs is `captions.unnamed`
+         * on the few people who had nowhere else, and that number is asserted, so
+         * the cost is visible rather than argued.
+         *
+         * The four INNER-RING seats above are the part of this that was worth
+         * keeping: they stand the box off the photograph by 7px and set it on
+         * the plate's own quiet annulus, which is where an oversized disc's
+         * caption was always supposed to sit. They are untouched. */
       ];
     };
     let spots = buildSpots(boxW, boxH);
@@ -2415,60 +2469,91 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
      *  1.8e4 against PLATE_HIT's 2.5e4. So it decides between seats of the same
      *  KIND and nothing else. */
     const SEAT_PULL = 60;
-    /** A box whose centre is inside its OWN photograph — the last seat in the
-     *  list and the only one that cannot be a misattribution. Priced above every
-     *  honest seat (sixteen plate hits is 4e5, the seat ring tops out at 1.8e4)
-     *  and three orders below MISSEAT, so it is reached only when the picture has
-     *  run out of honest room and is preferred to every seat that would name
-     *  somebody else. Geometric rather than by index: the definition of the seat
-     *  IS "its centre is on its own face", so nothing else has to stay in step
-     *  with it. */
-    const OWN_FACE = 4e6;
     const boxCost = (b: Box): number => {
       const stray = ownerOf(b);
       let cost = stray.who === null ? 0 : MISSEAT + stray.by * MISSEAT_PX;
       cost += Math.min(300, stray.own) * SEAT_PULL;
-      if (stray.own < rPhoto) {
-        /* …AND IT HAS TO FIT ON THE FACE IT IS SITTING ON.
-         *
-         * The seat below justifies itself as "where an oversized disc's caption
-         * is supposed to sit". Measured on the production build, it has never
-         * once been taken on an oversized disc, because a disc with room to
-         * spare has honest room beside it too and an outer seat is always
-         * cheaper. Every case it actually fires in is the opposite one:
-         *
-         *   mobile 390  choi-hye-sun  disc 22.6px  box 75x18  covers 100%
-         *   mobile 390  hong-jin-ho   disc 29.9px  box 69x18  covers  90%
-         *   laptop  en  park-ji-min   disc 24.7px  box 62x18  covers  98%
-         *   desktop 1600 (discs 37-63px)          — never taken, no state
-         *
-         * A box two and a half to three times wider than the photograph is not
-         * a caption resting in a plate's quiet middle. It is the picture with a
-         * name laid across it, overhanging both sides, and the photograph — the
-         * identification this cast has instead of marks on its discs — is gone
-         * underneath it. `plate.ts` refuses to draw a MARK over a face on
-         * exactly this reasoning; the argument does not get weaker because the
-         * ink is a name.
-         *
-         * So the seat keeps its intent and loses the cases that were never its
-         * intent: it is offered only when the box can actually sit within the
-         * picture. Above that width it is not a last resort, it is an erasure,
-         * and it is priced like every other erasure in this ranker.
-         *
-         * This is the trade the block below names — "the first is ugly; the
-         * second is anonymous" — settled with the measurement it was made
-         * without. What it costs is `captions.unnamed` on those few nodes, and
-         * that number is asserted, so the cost is visible rather than argued. */
-        /* NOT GATED YET — the measurement above is real and the fix is one
-         * line (`if (b.w > 2 * rPhoto) return Infinity;` here), but it is a
-         * product call rather than a correctness one and it is with the owner.
-         * Measured consequence of applying it, full 13-state matrix:
-         *     captions.overPlate   5/13 states failing → 1/13
-         *     captions.unnamed     mobile 3 people → 7 of 20 anonymous
-         * There is no middle setting: every own-face seat observed covers
-         * 90–100% of its disc, so at phone zoom the choice is binary. */
-        cost += OWN_FACE;
-      }
+      /* AND A SEAT ON THE READER'S OWN FACE IS NOT PRICED EITHER. It was
+       * OWN_FACE = 4e6 — dear, but affordable, and therefore taken.
+       *
+       * This is the gate the previous round wrote out in full, measured, and
+       * then left in a comment as "NOT GATED YET … it is a product call and it
+       * is with the owner". The call arrived: round 15 filed the consequence as
+       * a blocker twice over, once as "hovering a node erases that person's
+       * photograph" and once as "the label solver seats a caption on its own
+       * face at all". They are one defect at two magnifications.
+       *
+       * The measurements that were sitting in that comment, all on the
+       * production build, all of them this seat and no other:
+       *
+       *   mobile 390  choi-hye-sun  disc 22.6px  box 75x18  covers 100%
+       *   mobile 390  hong-jin-ho   disc 29.9px  box 69x18  covers  90%
+       *   laptop  en  park-ji-min   disc 24.7px  box 62x18  covers  98%
+       *   desktop 1600 (discs 37-63px)          — never taken, no state
+       *
+       * The proposed gate was `b.w > 2 * rPhoto`: offer the seat only when the
+       * box fits within the picture. It would in fact have caught every case
+       * measured — every own-face seat observed on this build had a box two to
+       * five times the width of the disc it sat on — and it is still not the
+       * rule to write, for two reasons.
+       *
+       * The first is that it encodes an accident. It passes whenever the disc
+       * happens to be big enough, which is a fact about this cast at these
+       * zooms and not a fact about what a caption may do; the day a portrait is
+       * drawn larger the seat comes back, on a bigger face.
+       *
+       * The second is that a box which FITS is still a box on the eyes. This
+       * seat's definition is that its centre is the node's centre, so what it
+       * covers is always the middle of the portrait — and "a name set across
+       * someone's eyes is neither a name nor a portrait" is plate.ts's rule
+       * about the middle, not about the width. It does not close
+       * `captions.overPlate` either: that check measures the share of a disc a
+       * caption box is painted over, and a two-line box centred on even the
+       * largest photograph in this app is several times the 0.05 it calls a
+       * graze.
+       *
+       * So it is Infinity, like a stranger's photograph and like another name,
+       * and for the same reason all three are: the caption yields. Geometric
+       * rather than by index — the definition is "its centre is on its own
+       * face", so no seat added later can drift back into this. The seat that
+       * used to be the only way to reach here is gone from buildSpots; this is
+       * what keeps it gone.
+       *
+       * THE INNER RING IS NOT THIS. Those four stand the box off the photograph
+       * by 7px and set it on the plate's own annulus — `strayOwn < rPlate` and
+       * not `< rPhoto` — which is a real intrusion into somebody's rim ticks and
+       * their own laurel, priced at nothing but its area, and correct. It is the
+       * seat this file always meant by "where an oversized disc's caption is
+       * supposed to sit", and it is untouched.
+       *
+       * WHAT IT COSTS, measured on the production build across the harness's
+       * full 13-state matrix, two runs each side:
+       *
+       *   captions.overPlate   5 states at 0.92–1.00  →  1–3 states, worst
+       *                        0.20–0.34. Every "before" reading was type
+       *                        through the middle of a face; every "after" one
+       *                        is a caption's edge over a disc's RIM at 3.4×
+       *                        zoom, where the box is 231–407px and the
+       *                        photograph 97–137px, and two of them are 0.051 /
+       *                        0.053 against a 0.05 graze line. Still open, and
+       *                        a different question — the seat ring above k = 3.
+       *   captions.unnamed     3 states / 4 people  →  5–6 states / 15–16 people
+       *
+       * That second number is the price and it is a real one: on a 390px phone
+       * four of twenty discs now carry no name where none did before, the hub
+       * among them. It is the trade this cast's premise picks. A disc with no
+       * name is a gap and the reader can see that it is one; a face with a name
+       * stamped through it is the identification destroyed in order to repeat
+       * something the HoverCard is already showing 40px away. It is also the
+       * trade the previous round costed out and left in a comment — it guessed
+       * 7 of 20 anonymous on the phone, and it is 4.
+       *
+       * The gain is asserted in pixels rather than argued: `hover.facePhotoMid`,
+       * six states including reduced motion and the keyboard cursor, measures
+       * every face the app puts the focus on and finds 0.40–0.41 of it still
+       * mid-tone — a photograph — where the worst readings before this were
+       * 0.041–0.073, which is the range a blank name mark measures in. */
+      if (stray.own < rPhoto) return Infinity;
       for (let j = 0; j < placed.length; j++) {
         const area = overlapArea(b, placed[j]);
         if (!area) continue;
@@ -2903,21 +2988,44 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
     {
       /* …AND IT CARRIES MORE WHEN THE TYPE IS SET ON THE PLATE ITSELF.
        *
-       * Two seats put the box inside the drawn medallion rather than beside it:
-       * the inner ring, which the ranker reaches for at high zoom, and the
-       * own-face seat of last resort. Both were painted with the same 0.62 wash
-       * as a name floating on backdrop, and 0.62 is not enough to hold type over
-       * a photograph or over the plate's own hairline rings — photographed at
+       * The inner ring puts the box inside the drawn medallion rather than
+       * beside it, and 0.62 — the wash for a name floating on backdrop — is not
+       * enough to hold type over the plate's own hairline rings: photographed at
        * max zoom, the outer ring arc runs visibly through the descenders of
        * 'MBC announcer' and a second ring skims the cap-height of the name above
        * it. The wash is what the name is read against, so it is a function of
-       * what is behind the name: backdrop, record, or face. */
-      const onOwnFace = strayOwn < rPhoto;
+       * what is behind the name.
+       *
+       * THERE ARE NOW TWO CASES HERE AND THERE USED TO BE THREE. The third was
+       * `onOwnFace` — `strayOwn < rPhoto`, the dead-centre seat — at 0.9, and
+       * with the focus/two-line term on top of it, 0.94. A 94%-opaque near-black
+       * ellipse ~109px in radius, painted over a photograph ~31px in radius,
+       * every time the pointer touched a node. The comment beside the seat
+       * argued the type then sat ON the photograph rather than in it; 0.94 is
+       * not "on", it is "instead of", and the shipped screenshots show it.
+       *
+       * It is not clamped here, it is unreachable: `boxCost` returns Infinity
+       * for any box whose centre is on its own face, so no seat this painter can
+       * be handed is one. Clamping would have left the erasure in place at a
+       * lower opacity — the box is still 200px of type across a 62px face at
+       * ANY opacity, which is what `captions.overPlate` measures and what the
+       * solver had to answer.
+       *
+       * `onOwnPlate` stays exactly as it was. That is the legitimate case the
+       * brief protects: type on the annulus at high zoom, over somebody's own
+       * rim ticks and their own laurel, which is their own record.
+       *
+       * THE WASH'S FOOTPRINT IS ALREADY THE BOX. `scale(1, ph/pw)` before an arc
+       * of radius `pw/2` is an ellipse of semi-axes pw/2 × ph/2 — the ellipse
+       * INSCRIBED in the padded glyph rect, touching its four mid-edges and
+       * cutting its corners. So the review's third remedy, "clip the wash to a
+       * rounded rect of boxW+18 × boxH+14", would enlarge this rather than
+       * contain it; the shape was never the fault. The fault was a box centred
+       * on a face, and it is fixed where boxes are chosen. */
       const onOwnPlate = strayOwn < rPlate;
       const plate = Math.min(
         0.94,
-        (onOwnFace ? 0.9 : onOwnPlate ? 0.8 : 0.62) +
-          0.25 * Math.min(1, Math.max(n.focus * 2, useSub ? 1 : 0)),
+        (onOwnPlate ? 0.8 : 0.62) + 0.25 * Math.min(1, Math.max(n.focus * 2, useSub ? 1 : 0)),
       );
       const pw = boxW + 18;
       const ph = boxH + 14;
