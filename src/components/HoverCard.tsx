@@ -20,6 +20,7 @@ import type { SeasonNumber } from '../data/types';
 import { ALL_EDGE_TYPES } from '../state/useAtlas';
 import { PlateKey, Portrait, type PlateMarkKind, type PortraitConnection } from './Portrait';
 import './HoverCard.css';
+import { watched } from '../data/types';
 
 export interface HoverCardProps {
   node: GNode | null;
@@ -181,7 +182,7 @@ function warmSubject(lang: Lang): {
   const score = (p: (typeof people)[number]): number => {
     const seasons = new Set(p.priorSeasons.map((s) => s.season)).size;
     const winner = p.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant') ? 2 : 0;
-    const host = p.priorSeasons.some((s) => s.role === 'host') ? 1 : 0;
+    const host = p.priorSeasons.some(watched) ? 1 : 0;
     return seasons * 3 + winner + host;
   };
   let best = people[0];
@@ -213,7 +214,7 @@ function warmSubject(lang: Lang): {
     ranks: seasons.map(rankOf),
     fields: seasons.map(fieldOf),
     isWinner: best.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant'),
-    isHost: best.priorSeasons.some((s) => s.role === 'host'),
+    isHost: best.priorSeasons.some(watched),
     connections: mine.map((e) => ({ type: e.type, strength: e.strength })),
   };
 }

@@ -34,6 +34,7 @@ import {
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
 import './CommandPalette.css';
+import { watched } from '../data/types';
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -316,7 +317,7 @@ function plateOf(p: Person): {
     ranks: seasons.map((s) => bestOf(s, 'rank')),
     fieldSizes: seasons.map((s) => bestOf(s, 'fieldSize')),
     isWinner: isWinner(p),
-    isHost: runs.some((r) => r.role === 'host'),
+    isHost: runs.some(watched),
   };
 }
 

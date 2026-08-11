@@ -28,7 +28,50 @@ export type Category =
   | 'actor'
   | 'other';
 
-export type Role = 'contestant' | 'host';
+/**
+ * What someone was doing in a season they were not playing.
+ *
+ * This used to be `'contestant' | 'host'`, so anybody who was not competing
+ * became a host — and neither of the two people it applied to hosted anything.
+ * 이상민 sat on season 1's studio panel (브레인 군단) and never entered the
+ * house; 박지민 appeared in season 3 as the 유령 카지노 dealer and 연옥 집사,
+ * which namu.wiki files as 보조 출연 and which production hid as a twist until
+ * episode 6. The plate drew both with the ring the field guide calls
+ * "진행을 맡았던 사람 / has hosted", so the app asserted something untrue about
+ * two real people, and the one who noticed was a reader.
+ *
+ * The distinction is not cosmetic — it decides whether they could have MET the
+ * cast. A panellist watched on a monitor from another building. A dealer sat at
+ * a table the players were sent to. Section 0e of the validator leans on that,
+ * and so does the phrasing of every `co-season` edge.
+ */
+export type Role =
+  /** Played for the prize. */
+  | 'contestant'
+  /** Commentated from the studio. Never in the house. */
+  | 'panel'
+  /** On screen inside the game as a non-playing figure — a dealer, a butler. */
+  | 'crew';
+
+/**
+ * Was this a run at the prize?
+ *
+ * Every surface that prints a rank, a medal or a field size has to ask this,
+ * and eight of them asked it by writing `role === 'host'` inline — which is how
+ * a two-value union quietly became the assertion that a studio panellist and a
+ * casino dealer both hosted a season. One predicate, imported, so widening the
+ * union again cannot leave nine different answers behind.
+ */
+export function played(run: { role: Role }): boolean {
+  return run.role === 'contestant';
+}
+
+/** Present that season without competing — the studio panel or the house's own
+    non-playing figures. The inverse of `played`, named so call sites read as a
+    claim rather than as a negation. */
+export function watched(run: { role: Role }): boolean {
+  return !played(run);
+}
 
 /** One person's run through one earlier season. */
 export interface SeasonRun {

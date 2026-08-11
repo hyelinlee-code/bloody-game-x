@@ -45,6 +45,7 @@ import {
 import { useLang } from '../state/useLang';
 import { PlateKey, Portrait, type PortraitConnection } from './Portrait';
 import './Dossier.css';
+import { watched } from '../data/types';
 
 export interface DossierProps {
   node: GNode | null;
@@ -434,7 +435,7 @@ function FranchiseStrip({
       </span>
       <ul className="dsr-frx__list">
         {chrono.map((r, i) => {
-          const host = r.role === 'host';
+          const host = watched(r);
           const result = host
             ? t(lang, 'dossier.roleHost')
             : r.rank !== undefined
@@ -524,7 +525,7 @@ interface SeasonPlateProps {
 
 function SeasonPlate({ personId, run, index, meta, lang }: SeasonPlateProps): JSX.Element {
   const color = SEASON_COLOR[run.season];
-  const host = run.role === 'host';
+  const host = watched(run);
   const text = runText(personId, run, index, lang);
   /* When this run has no English account the accessor hands back the Korean
      rather than a blank — so say so to the font stack instead of pretending. */

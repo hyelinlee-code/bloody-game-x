@@ -29,6 +29,7 @@ import { HAS_PORTRAITS } from '../graph/portraits';
 import type { BuiltGraph } from '../graph/build';
 import type { SeasonRun, XTeam } from '../data/types';
 import './Gallery.css';
+import { played } from '../data/types';
 
 export interface GalleryProps {
   open: boolean;
@@ -96,7 +97,7 @@ function unit(lang: Lang, n: number, one: UiKey, many: UiKey): string {
  * `fieldSize` on it already. Non-playing runs have no field to be out of.
  */
 function shortPlacement(personId: string, index: number, lang: Lang, run: SeasonRun): string {
-  if (run.role !== 'host' && run.rank) {
+  if (played(run) && run.rank) {
     const of = run.fieldSize ? ` ${t(lang, 'record.ofField').replace('{n}', String(run.fieldSize))}` : '';
     if (run.rank === 1) return `${t(lang, 'gallery.winnerShort')}${of}`;
     if (lang === 'ko') return `${run.rank}${t(lang, 'gallery.rankUnit')}${of}`;
@@ -374,7 +375,7 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                               {runs.map(({ run, i }) => (
                                 <span
                                   key={`${run.season}-${i}`}
-                                  className={`gallery__run${run.rank === 1 && run.role !== 'host' ? ' gallery__run--win' : ''}`}
+                                  className={`gallery__run${run.rank === 1 && played(run) ? ' gallery__run--win' : ''}`}
                                   /* The lettering ramp, not the mark ramp.
                                      'S1' at 10px in SEASON_COLOR[1] (#367f45)
                                      measured 3.74:1 on the card — below the

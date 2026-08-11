@@ -5,6 +5,7 @@ import { peopleEn } from '../data/i18n/people.en';
 import { CATEGORY_COLOR, EDGE_COLOR } from './palette';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
 import type { GLink, GNode } from './types';
+import { watched } from '../data/types';
 
 /** Compact monogram for the inside of a node — the Hangul form. */
 export function monogram(nameKo: string, nameEn: string): string {
@@ -160,7 +161,7 @@ export function buildGraph(data: Dataset): BuiltGraph {
 
   const nodes: GNode[] = data.people.map((p, i) => {
     const isWinner = p.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant');
-    const isHost = p.priorSeasons.some((s) => s.role === 'host');
+    const isHost = p.priorSeasons.some(watched);
     const seasons = [...new Set(p.priorSeasons.map((s) => s.season))].sort();
 
     // Importance blends how connected they are with how much franchise
