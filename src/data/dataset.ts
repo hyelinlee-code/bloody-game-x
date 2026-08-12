@@ -2,6 +2,7 @@ import type { Dataset } from './types';
 import { people } from './people';
 import { edges } from './edges';
 import { franchise, glossary, seasons } from './seasons';
+import { BUILD_DATE } from './buildDate';
 
 export const dataset: Dataset = {
   people,
@@ -70,7 +71,7 @@ export const dataset: Dataset = {
     },
     /* Build-time, not hand-typed. See the BUILD_DATE note in vite.config.ts —
        this line read 2026.07.31 across two weeks of daily edits. */
-    lastUpdated: __BUILD_DATE__,
+    lastUpdated: BUILD_DATE,
     sources: [
       'https://ko.wikipedia.org/wiki/피의_게임',
       'https://namu.wiki/w/피의%20게임(시즌%201)',
