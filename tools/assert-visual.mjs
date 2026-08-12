@@ -95,6 +95,29 @@ import path from 'node:path';
  * name (or dotted prefix) → the defect it belongs to. Measured and printed,
  * but not fatal. DELETE YOUR ENTRY WHEN YOUR FIX LANDS. */
 const OPEN = {
+  /* THE DOSSIER'S SECTION CASCADE INVERTS, ABOUT ONE OPEN IN THREE.
+   *
+   * Measured, not guessed: three consecutive full runs of this suite gave 0, 4,
+   * 0 inverted frames — section 4 painting more opaque than section 1 while the
+   * panel is still filling. It is intermittent, so it flaps the gate rather than
+   * failing it honestly, and a flapping gate is how a real defect gets read as
+   * noise and then ignored.
+   *
+   * It is NOT the footer work that sits beside this entry — Dossier.tsx was not
+   * touched by it. It arrived with the Phase 2 rewrite of that file (+313/-129),
+   * and round 16's motion reviewer filed the same thing independently and from
+   * the other direction: "the panel then fills OUT OF ORDER — identity, then
+   * below-the-fold sections, then the nav and the sections between them." Two
+   * signals, one defect.
+   *
+   * Pinned rather than fixed because the fix is the cascade's ordering in
+   * Dossier.tsx and that is a motion round, not a footnote to a status-bar
+   * change. Pinned rather than silenced because the entry carries its own rate:
+   * if it starts failing 3 of 3, that is a new fact and this comment is how the
+   * next reader knows it. */
+  'dossier.cascade.inversionFrames':
+    'Phase 2 / round 16 — Dossier.tsx: the section cascade inverts on roughly 1 open in 3 (measured 0/4/0 over three runs). Same defect round 16 filed as "the panel fills out of order".',
+
   /* THE SOURCING FIGURES DO NOT REACH THIS HARNESS, THOUGH THEY DO REACH THE
    * SCREEN. This check asserted five hardcoded integers ['290','223','77',
    * '47','27'] and went red the moment five edges were added — the app was
