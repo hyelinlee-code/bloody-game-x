@@ -68,7 +68,9 @@ export const dataset: Dataset = {
       credit: 'Wavve 공식 홈페이지 및 나무위키',
       creditEn: 'Wavve official site and namu.wiki',
     },
-    lastUpdated: '2026.07.31',
+    /* Build-time, not hand-typed. See the BUILD_DATE note in vite.config.ts —
+       this line read 2026.07.31 across two weeks of daily edits. */
+    lastUpdated: __BUILD_DATE__,
     sources: [
       'https://ko.wikipedia.org/wiki/피의_게임',
       'https://namu.wiki/w/피의%20게임(시즌%201)',

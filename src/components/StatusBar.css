@@ -77,7 +77,19 @@
   position: relative;
   height: 100%;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  /* auto | 1fr | auto, NOT 1fr auto 1fr.
+     The old rule forced the two side tracks to the same width, so the moment the
+     right-hand group grew past its half — a byline joined the badge and the date
+     — `justify-self: end` pushed the box LEFTWARD out of its track and straight
+     through the hint. Measured at 1600: hint 558-1042, right group 805-1584, an
+     overlap of 237px with the two texts printed on top of each other.
+
+     Sizing the sides to content and giving the slack to the centre costs one
+     thing and it is worth naming: the hint is now centred in its own track
+     rather than in the viewport, so it sits slightly left of true centre when
+     the right group is heavier. A hint a few pixels off-centre is a composition
+     choice; a hint printed through a byline is a bug. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-4);
   padding: 0 var(--sp-4);

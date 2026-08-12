@@ -18,6 +18,15 @@ function personIds(): string[] {
 }
 
 // https://vite.dev/config/
+/* The atlas prints "UPDATED <date>" in its status bar. That was a hand-typed
+   string in dataset.ts, so it said 2026.07.31 through a fortnight of edits — a
+   freshness claim that goes stale is worse than none, because a reader uses it
+   to decide whether to trust the rest. Stamped at build time instead: Vercel
+   rebuilds on every push, so the date is the deploy's date by construction and
+   nobody can forget to bump it. */
+const BUILD_DATE = new Date().toISOString().slice(0, 10).replace(/-/g, '.')
+
 export default defineConfig({
+  define: { __BUILD_DATE__: JSON.stringify(BUILD_DATE) },
   plugins: [react(), portraits({ knownIds: personIds })],
 })

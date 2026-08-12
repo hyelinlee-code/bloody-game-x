@@ -1628,6 +1628,57 @@ async function suiteReduced(browser, base) {
 
 /* ── suite 4: chrome that animates ─────────────────────────────────────────*/
 async function suiteChrome(browser, base) {
+
+  /* 3z · THE FOOTER DOES NOT PRINT THROUGH ITSELF.
+   *
+   * The status bar carries four things in three grid tracks, and a byline was
+   * added to the right-hand group. The grid was `1fr auto 1fr`, which forces the
+   * two side tracks to the same width, so the moment the right group outgrew its
+   * half `justify-self: end` pushed it LEFTWARD out of its track and through the
+   * centred hint — 237px of overlap at 1600, two texts on top of each other,
+   * shipped to a preview and caught by the owner's eye rather than by this file.
+   *
+   * Asserted with a person SELECTED, because that is the longest the hint ever
+   * gets, and in both languages because English is the binding case: with the
+   * byline shown, English cleared by 16px at 1440 where Korean cleared by 143.
+   * A positive number is not the bar — 16px is a collision that has not happened
+   * yet — so the floor is 24. */
+  for (const lang of ['ko', 'en']) {
+    for (const w of [1440, 1600, 1920]) {
+      /* openPage owns the context — it also seeds bgx.lang, arms the probe and
+         dismisses the cold open, none of which a bare newContext does. */
+      const { ctx, page } = await openPage(browser, base, {
+        viewport: { width: w, height: 900 },
+        lang,
+        dpr: 1,
+      });
+      await page.evaluate(() => { location.hash = '#p=hong-jin-ho'; });
+      await page.waitForTimeout(1500);
+      const m = await page.evaluate(() => {
+        const box = (sel) => {
+          const el = document.querySelector(sel);
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return { l: r.left, r: r.right };
+        };
+        const hint = box('.sb__hint');
+        const right = box('.sb__right');
+        const left = box('.sb__left');
+        const bar = document.querySelector('.statusbar');
+        return {
+          gap: hint && right ? Math.round(right.l - hint.r) : -1,
+          leftGap: hint && left ? Math.round(hint.l - left.r) : -1,
+          overflow: bar ? bar.scrollWidth - bar.clientWidth : -1,
+        };
+      });
+      const tag = `${w}.${lang}`;
+      check(`chrome.footerGap.${tag}`, m.gap, (v) => v >= 24, '>= 24', 'hint must clear the right-hand group');
+      check(`chrome.footerGapLeft.${tag}`, m.leftGap, (v) => v >= 0, '>= 0', 'and the counts on the left');
+      check(`chrome.footerOverflow.${tag}`, m.overflow, (v) => v === 0, '= 0', 'the bar may not scroll sideways');
+      await ctx.close();
+    }
+  }
+
   console.log('\n── chrome entrances ──────────────────────────────────────────────────');
 
   // 3a · the cold open's countdown hairline. It is not a picture of the timer,

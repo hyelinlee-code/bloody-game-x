@@ -55,10 +55,27 @@
   outline-offset: 1px;
 }
 
-/* Under 900px the status bar is already fighting for room and the hint line is
-   the thing a first-time reader needs. The sentence goes; the three marks stay,
-   at a real touch size, because a link nobody can hit is worse than no link. */
-@media (max-width: 900px) {
+/* 1560. This number is measured, and it is my third attempt at it — 900 was a
+   guess and 1400 was a guess with better arithmetic behind it.
+
+   Driven with a person SELECTED, which is the longest the hint ever gets, in
+   both languages. Clearance between the hint's right edge and the right-hand
+   group, byline shown:
+
+     en 1440: 16px   en 1500: 17px   en 1600: 67px   en 1920: 227px
+     ko 1440: 143px  ko 1500: 173px  ko 1600: 223px
+
+   English is the binding case — 'Shift-click a second node to trace the chain
+   between them' has no Korean-length equivalent. 16px is not clearance, it is
+   the absence of a collision by luck: one longer cast name or one reworded hint
+   and the two texts print through each other again, which is exactly the bug
+   this file caused once already.
+
+   So the sentence only shows where there is real slack. assert-visual.mjs holds
+   the number now — chrome.footerGap asserts a positive gap at 1440/1600/1920 in
+   both languages, so the next person to widen this does not have to rediscover
+   it from a screenshot. */
+@media (max-width: 1560px) {
   .credit__by {
     display: none;
   }
