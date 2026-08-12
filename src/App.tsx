@@ -17,6 +17,7 @@ import { PathCard } from './components/PathCard';
 import { Gallery } from './components/Gallery';
 import { findPath } from './state/findPath';
 import { LangContext, useLangState } from './state/useLang';
+import { WatchedProvider } from './state/useWatched';
 import { personName, t } from './data/i18n';
 import './styles/app.css';
 
@@ -59,7 +60,37 @@ const EASE_REVEAL = cubicBezier(1 / 3, 1, 2 / 3, 1);
  *  `startReveal`. */
 const REVEAL_WAIT_MS = 400;
 
+/**
+ * THE ROOT, AND THE ONLY THING IT DOES IS HOLD THE READER'S CONTEXT.
+ *
+ * `WatchedProvider` has to sit ABOVE `Atlas`, in a component of its own, and
+ * that is the whole reason this file grew a second function. A component cannot
+ * consume a context it renders itself: `useAtlas` calls `useWatched()`, and if
+ * the provider were mounted inside the same body that calls it, `useContext`
+ * would walk past it to `null` and the hook would quietly hand back the
+ * detached fallback — the right value at first render and never again. It warns
+ * once in dev and does nothing else, so the failure would have looked exactly
+ * like success in every screenshot.
+ *
+ * Nothing else moves. `LangContext` stays where it was, inside `Atlas`, because
+ * nothing above it reads the language. No DOM is added; a provider renders its
+ * children and nothing of its own, so Rule 0 is satisfied by construction.
+ *
+ * NO CONTROL AND NO DEFAULT CHANGE HERE. The provider seeds from
+ * `currentWatched()`, which is `WATCHED_ALL` for a reader with no stored
+ * preference — Phase 2's default, unchanged. `setWatched` exists on the context
+ * and nothing in this tree calls it; the picker, the cold-open question and the
+ * flipped default are all Phase 4 (PLAN-spoilers.md §7).
+ */
 export default function App() {
+  return (
+    <WatchedProvider>
+      <Atlas />
+    </WatchedProvider>
+  );
+}
+
+function Atlas() {
   const lang = useLangState();
   const atlas = useAtlas(dataset);
   const graphRef = useRef<GraphHandle>(null);

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { lineageOf } from '../data/lineage';
 import { isMeeting, tieCounts } from '../data/edges';
-import { career, ledgerFor, neverFaced, noComparableResult, type Meeting } from '../data/headToHead';
+import { careerSeenBy, ledgerFor, neverFacedSeenBy, type Meeting } from '../data/headToHead';
 import { fill } from '../data/i18n/ui';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'motion/react';
 import type {
@@ -32,20 +32,32 @@ import {
   LINEAGE_LABEL_I18N,
   TEAM_LABEL_I18N,
   edgeText,
+  externalShowText,
   personBio,
   personName,
   personNotableFor,
   personOccupation,
+  priorElsewhereText,
+  runFacts,
   runText,
   t,
   ui,
+  xBillingText,
   type Lang,
   type UiKey,
 } from '../data/i18n';
+import { isVisible, pick } from '../data/redact';
 import { useLang } from '../state/useLang';
+import { useWatched, type WatchedSet } from '../state/useWatched';
 import { PlateKey, Portrait, type PortraitConnection } from './Portrait';
 import './Dossier.css';
-import { watched, type Role } from '../data/types';
+/* ALIASED, NOT TIDIED — the same collision graph/build.ts:10 names and takes
+   the same way out. `watched(run)` from data/types answers "was this person
+   present that season without competing", a fact about a RUN; the `watched`
+   this file now holds everywhere is the reader's set of works. The older,
+   narrower one takes the suffix rather than shadowing the set inside four
+   components. Do not rename it back. */
+import { watched as watchedRun, type Role } from '../data/types';
 
 export interface DossierProps {
   node: GNode | null;
@@ -95,14 +107,14 @@ function rankText(rank: number, lang: Lang): string {
   return `${ui[lang]['dossier.rankPrefix']}${rank}${ui[lang]['dossier.rankSuffix']}`;
 }
 
-/**
- * A short data field that may or may not have an authored English sibling.
- * Where it does, use it; where it does not, the Korean stands rather than the
- * row going blank — the same contract the content accessors use.
- */
-function pickRun(lang: Lang, ko: string, en: string | undefined): string {
-  return lang === 'en' && en && en.trim() ? en : ko;
-}
+/* `pickRun(lang, ko, en)` used to live here — the file's own copy of "use the
+   English sibling where one was authored". Its five call sites were the five
+   short bilingual fields on `SeasonRun`, `PriorElsewhere` and `ExternalShow`,
+   and every one of them is now `runFacts` / `priorElsewhereText` /
+   `externalShowText`, which make the same choice on the RAW strings and then
+   gate the survivor. It is gone rather than kept for one more caller, because
+   the thing it did — read a field straight off the record — is exactly what
+   this round is closing. */
 
 /** Korean counts glue to their counter; English wants the space. */
 function gap(lang: Lang): string {
@@ -280,13 +292,23 @@ function isLink(s: string): boolean {
    graph, so it is fed from the same record: one season arc per prior season
    sized by how far they got, one rim tick per verified connection. */
 
-/** Best rank per entry of `seasons`, in the same order the plate draws them. */
-function ranksFor(node: GNode): (number | undefined)[] {
+/** Best rank per entry of `seasons`, in the same order the plate draws them.
+ *
+ * THROUGH `runFacts`, NOT OFF THE RECORD, because arc length IS the number.
+ * The plate scales each arc against its field, so a reader can read a placing
+ * back off the picture — which is why `fieldSize` sits on
+ * `OUTCOME_FIELDS.SeasonRun` beside `rank` and why sealing one without the
+ * other still leaks (PLAN-spoilers.md §3). The accessor gates the pair
+ * together; this only has to stop reading around it.
+ */
+function ranksFor(node: GNode, lang: Lang, watched: WatchedSet): (number | undefined)[] {
   return node.seasons.map((s) => {
     let best: number | undefined;
     for (const run of node.person.priorSeasons) {
-      if (run.season !== s || run.rank === undefined) continue;
-      best = best === undefined ? run.rank : Math.min(best, run.rank);
+      if (run.season !== s) continue;
+      const { rank } = runFacts(run, lang, watched);
+      if (rank === undefined) continue;
+      best = best === undefined ? rank : Math.min(best, rank);
     }
     return best;
   });
@@ -297,17 +319,33 @@ function ranksFor(node: GNode): (number | undefined)[] {
     so every arc in the app was drawn against the 13-seat default — which makes
     a 4th of 10 shorter than a 4th of 13 and a 3rd of 18 the same length as a
     3rd of 13, i.e. exactly the comparison the encoding exists to support. */
-function fieldsFor(node: GNode): (number | undefined)[] {
+function fieldsFor(node: GNode, lang: Lang, watched: WatchedSet): (number | undefined)[] {
   return node.seasons.map((s) => {
     for (const run of node.person.priorSeasons) {
-      if (run.season === s && run.fieldSize) return run.fieldSize;
+      if (run.season !== s) continue;
+      const { fieldSize } = runFacts(run, lang, watched);
+      if (fieldSize) return fieldSize;
     }
     return undefined;
   });
 }
 
-function connectionsFor(relations: { link: GLink }[]): PortraitConnection[] {
-  return relations.map((r) => ({ type: r.link.type, strength: r.link.edge.strength }));
+/**
+ * One rim tick per connection — and a tick is `{ type, strength }`, so the rim
+ * is a census BY TYPE and prints a sealed verdict as a tally.
+ *
+ * `graph/build.ts`'s `countsAsTie` asks two questions of an edge; this asks the
+ * second one only, and deliberately. The first — `isMeeting` — is NOT applied
+ * here today: this rim ticks every relation the panel was given, parallels
+ * included, and adding that filter would move pixels at the default set, which
+ * Rule 0 forbids this phase. The visibility half moves nothing at the default
+ * (52 of 52 edges resolve to a scope satisfied by `WATCHED_ALL`) and is the
+ * half that leaks the moment a set is narrowed.
+ */
+function connectionsFor(relations: { link: GLink }[], watched: WatchedSet): PortraitConnection[] {
+  return relations
+    .filter((r) => isVisible(r.link.edge.scopes?.type ?? r.link.edge.scope, watched))
+    .map((r) => ({ type: r.link.type, strength: r.link.edge.strength }));
 }
 
 /* ── input modality ───────────────────────────────────────────────────────
@@ -413,16 +451,39 @@ function FranchiseStrip({
   runs: SeasonRun[];
   lang: Lang;
 }): JSX.Element | null {
+  const { watched } = useWatched();
   const chrono = useMemo(() => [...runs].sort((a, b) => a.season - b.season), [runs]);
+  /* Every number this strip prints, gated once and in draw order. `watched` is
+     in the dependency list because it is an input to the value, not context for
+     it: a memo that omits it keeps painting the previous reader's ranks, and
+     the direction that matters is a reader NARROWING their set. */
+  const facts = useMemo(
+    () => chrono.map((r) => runFacts(r, lang, watched)),
+    [chrono, lang, watched],
+  );
+  /* 최고 3위 is an aggregate of the chips, so it is taken over the chips this
+     reader may see. Off the raw record it would restate a sealed finish as a
+     summary — the one number left standing after every plate beneath it went
+     quiet. */
   const best = useMemo(() => {
     let b: number | undefined;
-    for (const r of runs) {
-      if (r.role !== 'contestant' || r.rank === undefined) continue;
-      b = b === undefined ? r.rank : Math.min(b, r.rank);
+    for (let i = 0; i < chrono.length; i++) {
+      const rank = facts[i]?.rank;
+      if (chrono[i].role !== 'contestant' || rank === undefined) continue;
+      b = b === undefined ? rank : Math.min(b, rank);
     }
     return b;
-  }, [runs]);
+  }, [chrono, facts]);
+  /* HOW MANY SEASONS, NOT HOW THEY WENT. Appearing in a season is structure and
+     the plan keeps it (PLAN-spoilers.md §2), so this counts the same seasons at
+     every watched-set. */
   const played = useMemo(() => new Set(runs.map((r) => r.season)).size, [runs]);
+  /* The career share, recomputed over what this reader may be told. `career` —
+     the module constant — is `careerSeenBy(WATCHED_ALL)` frozen at import and
+     is marked @deprecated for exactly this call site: it printed '86%' and
+     'outlasted 25 of the 29 players' to a reader who had watched nothing,
+     identically at every set, because the denominator never moved. */
+  const record = careerSeenBy(watched)[personId];
 
   if (chrono.length === 0) return null;
 
@@ -435,11 +496,17 @@ function FranchiseStrip({
       </span>
       <ul className="dsr-frx__list">
         {chrono.map((r, i) => {
-          const host = watched(r);
+          const host = watchedRun(r);
+          const { rank, fieldSize } = facts[i];
+          /* A sealed rank falls to 'dossier.onRecord' — '기록' / 'On record' —
+             which is the string this chip already used for a run with no
+             ordinal, and is true of a sealed one too: they were in it, and
+             this reader is not being told how it went. No new state, no new
+             key; the third, named one is Phase 3's. */
           const result = host
             ? t(lang, roleKey(r.role))
-            : r.rank !== undefined
-              ? rankText(r.rank, lang)
+            : rank !== undefined
+              ? rankText(rank, lang)
               : t(lang, 'dossier.onRecord');
           /* The denominator, because this strip builds its own short form out
              of `rank` and therefore drops the one records.ts writes into every
@@ -447,13 +514,16 @@ function FranchiseStrip({
              same ordinal, and not the same result. The summary line below is
              left alone: its 최고 is an aggregate of these chips and its
              denominator is already sitting three centimetres to the left. */
-          const of = !host && r.rank !== undefined && r.fieldSize
-            ? t(lang, 'record.ofField').replace('{n}', String(r.fieldSize))
+          const of = !host && rank !== undefined && fieldSize
+            ? t(lang, 'record.ofField').replace('{n}', String(fieldSize))
             : '';
           return (
             <li
               key={`${r.season}-${i}`}
-              className={`dsr-frx__i${host ? ' is-host' : ''}${r.rank === 1 ? ' is-gold' : ''}`}
+              /* `is-gold` is the win, drawn instead of said. It answers to the
+                 gated rank like the words beside it, or the chip goes quiet
+                 and keeps its brass. */
+              className={`dsr-frx__i${host ? ' is-host' : ''}${rank === 1 ? ' is-gold' : ''}`}
               style={cssVars({ '--c': SEASON_COLOR[r.season] })}
             >
               <span className="dsr-frx__s">
@@ -483,7 +553,7 @@ function FranchiseStrip({
             ordered. Players outlasted over players faced, summed across every
             ranked run, can be — and the sentence behind the percentage is the
             title, because 86% on its own does not say what it is a share of. */}
-        {career[personId]?.share !== undefined && (
+        {record?.share !== undefined && (
           <>
             <span className="dsr-frx__dot" aria-hidden="true">
               ·
@@ -491,19 +561,13 @@ function FranchiseStrip({
             {t(lang, 'career.share')}{' '}
             <b
               className="mono tnum"
-              title={fill(t(lang, 'career.outlasted'), {
-                n: career[personId].faced,
-                k: career[personId].outlasted,
-              })}
+              title={fill(t(lang, 'career.outlasted'), { n: record.faced, k: record.outlasted })}
             >
-              {Math.round((career[personId].share ?? 0) * 100)}%
+              {Math.round((record.share ?? 0) * 100)}%
             </b>
             <span className="sr-only">
               {' '}
-              {fill(t(lang, 'career.outlasted'), {
-                n: career[personId].faced,
-                k: career[personId].outlasted,
-              })}
+              {fill(t(lang, 'career.outlasted'), { n: record.faced, k: record.outlasted })}
             </span>
           </>
         )}
@@ -524,11 +588,26 @@ interface SeasonPlateProps {
 }
 
 function SeasonPlate({ personId, run, index, meta, lang }: SeasonPlateProps): JSX.Element {
+  const { watched } = useWatched();
   const color = SEASON_COLOR[run.season];
-  const host = watched(run);
-  const text = runText(personId, run, index, lang);
+  const host = watchedRun(run);
+  const text = runText(personId, run, index, lang, watched);
+  /* The six outcome fields `runText` does not return. The medal, the team and
+     the exit episode all used to come straight off the record, which is why a
+     reader who had watched nothing still read '3위 · 저택팀 · 결승, 한 라운드도
+     못 이겼다' under a placement line the accessor had already sealed. */
+  const facts = runFacts(run, lang, watched);
   /* When this run has no English account the accessor hands back the Korean
-     rather than a blank — so say so to the font stack instead of pretending. */
+     rather than a blank — so say so to the font stack instead of pretending.
+     ⚠ THIS TEST IS THE IDENTITY TRICK AND IT IS NOW ONLY HALF RIGHT: gated,
+     `text.arc` stops equalling `run.arc` both when an English account exists
+     AND when the Korean one was withheld or rebuilt from its parts, so a
+     redacted Korean paragraph inside an English panel loses its `lang` attr
+     and its metrics. It cannot leak — the attribute is typography — and it
+     cannot be fixed from here without a second copy of the accessor's
+     record-zip. `runText` needs the `translated` flag its five new neighbours
+     return; named in the handoff, same for `personBio` and `personNotableFor`
+     below. */
   const ko = lang === 'en' && text.arc === run.arc ? 'ko' : undefined;
   return (
     <li className={`dsr-plate${host ? ' dsr-plate--host' : ''}`} style={cssVars({ '--c': color })}>
@@ -537,7 +616,7 @@ function SeasonPlate({ personId, run, index, meta, lang }: SeasonPlateProps): JS
           {t(lang, 'dossier.seasonPrefix')} {run.season}
           {meta?.year && <span className="mono tnum dsr-plate__yr">{meta.year}</span>}
         </span>
-        {run.rank !== undefined && <Medal rank={run.rank} lang={lang} />}
+        {facts.rank !== undefined && <Medal rank={facts.rank} lang={lang} />}
         {host && <span className="dsr-tag dsr-tag--host">{t(lang, roleKey(run.role))}</span>}
       </div>
 
@@ -545,17 +624,21 @@ function SeasonPlate({ personId, run, index, meta, lang }: SeasonPlateProps): JS
         {text.placement}
       </p>
 
-      {(run.team || run.eliminatedEpisode || !host) && (
+      {/* `role` stays raw and stays visible on purpose — the painters have to
+          keep knowing whether a run was a run at the prize, or a redacted
+          contestant is drawn with the mark that means "present, not
+          competing" (works.ts, `OUTCOME_FIELDS.SeasonRun`). So the row still
+          renders for a contestant whose team and exit are both sealed, saying
+          only that they played. */}
+      {(facts.team || facts.eliminatedEpisode || !host) && (
         <p className="dsr-plate__meta">
-          {run.team && (
+          {facts.team && (
             <span>
-              {t(lang, 'dossier.teamPrefix')} <span>{pickRun(lang, run.team, run.teamEn)}</span>
+              {t(lang, 'dossier.teamPrefix')} <span>{facts.team}</span>
             </span>
           )}
           {!host && <span>{t(lang, 'dossier.roleContestant')}</span>}
-          {run.eliminatedEpisode && (
-            <span>{pickRun(lang, run.eliminatedEpisode, run.eliminatedEpisodeEn)}</span>
-          )}
+          {facts.eliminatedEpisode && <span>{facts.eliminatedEpisode}</span>}
         </p>
       )}
 
@@ -602,7 +685,17 @@ function showKey(title: string): string {
     .replace(/[^\p{Letter}\p{Number}]+/gu, '');
 }
 
-/** Every title carried by a full account, in both spellings. */
+/**
+ * Every title carried by a full account, in both spellings.
+ *
+ * ⚠ IT READS THE RAW RECORD, AND MUST. This is a JOIN, not a display: it folds
+ * a short `otherShows` row away when the section above already gave that
+ * programme a paragraph. Point it at `priorElsewhereText().primary` and a
+ * reader whose headline is sealed stops matching, the fold stops happening, and
+ * the table grows a duplicate row at exactly the moment the page is supposed to
+ * be saying less. Structure joins on structure; only the printed string leaves
+ * through the accessor, three functions down in `ElsewherePlate`.
+ */
 function coveredTitles(entries: PriorElsewhere[]): Set<string> {
   const out = new Set<string>();
   for (const e of entries) {
@@ -622,6 +715,7 @@ interface ElsewherePlateProps {
 }
 
 function ElsewherePlate({ e, lang, lead }: ElsewherePlateProps): JSX.Element {
+  const { watched } = useWatched();
   /* Per-entry sources, folded away, the way the person's own sources are: a
      paragraph this specific has to be able to show its working, but the
      working is not what the reader came for. */
@@ -629,14 +723,25 @@ function ElsewherePlate({ e, lang, lead }: ElsewherePlateProps): JSX.Element {
   const listId = useId();
   const other = otherLang(lang);
 
-  const primary = lang === 'en' ? e.show : e.showKo;
-  const secondary = lang === 'en' ? e.showKo : e.show;
-  const result = pickRun(lang, e.result, e.resultEn);
-  const arc = pickRun(lang, e.arc, e.arcEn);
+  /* THE HEADLINE IS GATED HERE and is not on the `otherShows` row below, which
+     looks inconsistent and is the opposite: this `show` is not a programme
+     title, it is an editorial line — '진 경연 셋, 이긴 서바이벌 하나' states
+     three eliminations and a win in the title bar of the block. And this is
+     where twenty of Phase 1's eighty splits finally get a reader: 이상민's
+     account spans 더 지니어스 1, 2 and 4, so the whole paragraph is invisible
+     to a season-1-only reader while its parts hand that reader back the one
+     sentence about the season they watched. */
+  const { primary, secondary, result, arc, resultTranslated, arcTranslated } =
+    priorElsewhereText(e, lang, watched);
   /* Where no English was authored the Korean stands rather than the plate
-     going blank — and it is tagged, so it keeps Hangul metrics. */
-  const koArc = lang === 'en' && arc === e.arc ? 'ko' : undefined;
-  const koRes = lang === 'en' && result === e.result ? 'ko' : undefined;
+     going blank — and it is tagged, so it keeps Hangul metrics.
+     THE FLAG, NOT `arc === e.arc`: once the string is gated, a sealed English
+     arc and a Korean fallback BOTH stop equalling the record, so the identity
+     trick starts answering "was anything withheld" and silently drops the
+     attribute on every fallback paragraph the moment a set is narrowed. The
+     accessor knows which of the two happened and returns it. */
+  const koArc = lang === 'en' && !arcTranslated ? 'ko' : undefined;
+  const koRes = lang === 'en' && !resultTranslated ? 'ko' : undefined;
   const koRun = lang === 'en' ? 'ko' : undefined;
   const sources = e.sources ?? [];
 
@@ -700,11 +805,20 @@ function ElsewherePlate({ e, lang, lead }: ElsewherePlateProps): JSX.Element {
 /* ── elsewhere row ────────────────────────────────────────────────────────── */
 
 function ShowRow({ s, lang }: { s: ExternalShow; lang: Lang }): JSX.Element {
+  const { watched } = useWatched();
   /* Both titles exist for most rows; the reader's language leads and the other
-     one stays as the subtitle, the same way a person's name behaves. */
+     one stays as the subtitle, the same way a person's name behaves. NEITHER
+     TITLE IS GATED, and neither is the year: on this record the title is
+     participation, and `show` is also headToHead.ts's join key across the two
+     i18n halves of a row. What is at stake is the one cell on the right. */
   const primary = lang === 'en' ? s.show : s.showKo || s.show;
   const secondary = lang === 'en' ? (s.showKo ?? '') : s.showKo ? s.show : '';
   const other = otherLang(lang);
+  /* Two thirds of this column survives at any set — 고정 출연, 진행, 게스트,
+     멘토 are roles and scope to `[]`. The rows that go quiet are the four 더
+     지니어스 rows, the only ones in the dataset carrying a rank outside the
+     franchise. */
+  const { result } = externalShowText(s, lang, watched);
   return (
     <li className="dsr-show">
       <span className="dsr-show__name">
@@ -717,9 +831,7 @@ function ShowRow({ s, lang }: { s: ExternalShow; lang: Lang }): JSX.Element {
       </span>
       <span className="dsr-show__side">
         {s.year && <span className="mono tnum dsr-show__yr">{s.year}</span>}
-        {s.result && (
-          <span className="dsr-show__res">{pickRun(lang, s.result, s.resultEn)}</span>
-        )}
+        {result && <span className="dsr-show__res">{result}</span>}
       </span>
     </li>
   );
@@ -876,14 +988,27 @@ interface SeasonFinish {
  * showed nothing at all. The two people's records already hold the answer, so
  * ask them instead of asking the edge. Newest season first, the same order the
  * franchise strip uses.
+ *
+ * IT PRINTS TWO PEOPLE'S FINISHES, so it asks for both through `runFacts` and
+ * keeps only the seasons where BOTH survive the reader's set. A row needs a
+ * pair to compare; one visible rank beside a sealed one is not a comparison,
+ * and printing it under a '시즌 2 성적' key would state the sealed one by
+ * omission. Nine of these rows sat on 홍진호's panel at every watched-set.
  */
-function sharedSeasonFinishes(a: Person, b: Person): SeasonFinish[] {
+function sharedSeasonFinishes(
+  a: Person,
+  b: Person,
+  lang: Lang,
+  watched: WatchedSet,
+): SeasonFinish[] {
   const ranked = (p: Person) => {
     const m = new Map<SeasonNumber, number>();
     for (const r of p.priorSeasons) {
-      if (r.role !== 'contestant' || r.rank === undefined) continue;
+      if (r.role !== 'contestant') continue;
+      const { rank } = runFacts(r, lang, watched);
+      if (rank === undefined) continue;
       const prev = m.get(r.season);
-      m.set(r.season, prev === undefined ? r.rank : Math.min(prev, r.rank));
+      m.set(r.season, prev === undefined ? rank : Math.min(prev, rank));
     }
     return m;
   };
@@ -907,23 +1032,42 @@ interface RelRowProps {
 }
 
 function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Element {
+  const { watched } = useWatched();
   const e = link.edge;
   const color = EDGE_COLOR[link.type];
   const dashed = e.season === 0;
-  const directed = e.directed === true || link.type === 'betrayal';
+  /* ── the type and the arrowhead ──────────────────────────────────────────
+     THE LINE IS STRUCTURE AND STAYS. What is a verdict is what the line is
+     CALLED — works.ts lists `type` and `directed` on `OUTCOME_FIELDS.Edge`
+     because '배신' is a judgement about a named person and an arrow is that
+     judgement with a direction — and neither of the two reaches this file
+     through `edgeText`, which returns only the label and the description.
+     graph/build.ts asks this same question of this same scope to decide
+     whether an edge may be COUNTED as a tie; the card that names it was still
+     naming it. A sealed one degrades to a neutral tie, per the manifest: the
+     row keeps its place, its season and its people, and loses the word. */
+  const typeScope = e.scopes?.type ?? e.scope;
+  const typeLabel = pick(EDGE_LABEL_I18N[lang][link.type], typeScope, watched);
+  const directedByRecord = e.directed === true && isVisible(e.scopes?.directed ?? e.scope, watched);
+  const directedByType = link.type === 'betrayal' && isVisible(typeScope, watched);
+  const directed = directedByRecord || directedByType;
   /* On a directed edge the source is the actor — so the person whose file we
      are reading is either the one who did it, or the one it was done to. */
   const subjectIsActor = link.source.id === subject.id;
   const unsure = e.confidence !== 'high';
-  const finishes = sharedSeasonFinishes(subject, other.person);
+  const finishes = sharedSeasonFinishes(subject, other.person, lang, watched);
 
-  const text = edgeText(e, lang);
+  const text = edgeText(e, lang, watched);
   const otherName = personName(other.person, lang);
   const secondary = otherLang(lang);
   const actor = personName(link.source.person, lang).primary;
+  /* The note under the arrow NAMES THE TYPE in a verb — '배신함: 김경훈' — so
+     it answers to the type's gate and not to the arrow's. Where the direction
+     survives and the word does not, the arrow stands alone: it still says who
+     acted on whom, which is what `directed` claims, without saying what. */
   const note = t(lang, directionKey(link.type));
   /* Korean names the actor after the role, English before the verb. */
-  const dirNote = lang === 'ko' ? `${note}: ${actor}` : `${actor} ${note}`;
+  const dirNote = typeLabel ? (lang === 'ko' ? `${note}: ${actor}` : `${actor} ${note}`) : '';
 
   return (
     <li className="dsr-rel" style={cssVars({ '--c': color })}>
@@ -939,8 +1083,8 @@ function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Elem
                 initials={lang === 'en' ? other.initialsEn : other.initials}
                 category={other.category}
                 seasons={other.seasons}
-                ranks={ranksFor(other)}
-                fieldSizes={fieldsFor(other)}
+                ranks={ranksFor(other, lang, watched)}
+                fieldSizes={fieldsFor(other, lang, watched)}
                 isWinner={other.isWinner}
                 isHost={other.isHost}
                 noTies={other.noTies}
@@ -957,7 +1101,7 @@ function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Elem
           </span>
 
           <span className="dsr-rel__tags">
-            <span className="dsr-chip dsr-chip--edge">{EDGE_LABEL_I18N[lang][link.type]}</span>
+            {typeLabel && <span className="dsr-chip dsr-chip--edge">{typeLabel}</span>}
             <span className="dsr-tag">
               {e.season > 0
                 ? `${t(lang, 'dossier.seasonPrefix')} ${e.season}`
@@ -1003,7 +1147,7 @@ function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Elem
                   {personName(link.target.person, lang).primary}
                 </span>
               </span>
-              <span className="dsr-rel__dirnote">{dirNote}</span>
+              {dirNote && <span className="dsr-rel__dirnote">{dirNote}</span>}
             </span>
           )}
 
@@ -1038,6 +1182,19 @@ function DossierPanel({
   onBack,
 }: PanelProps): JSX.Element {
   const { lang } = useLang();
+  /* ── the reader's set, THROUGH THE HOOK ────────────────────────────────
+     Not `currentWatched()`. That is a module global with no subscription
+     attached: a component that reads it renders the right answer once and then
+     keeps painting it, and the direction that breaks is a reader NARROWING
+     their set — outcome text left on screen after the correction a person
+     makes the moment they realise they are about to be spoiled. `useContext`
+     is what tells React this panel depends on the set.
+
+     It is threaded EXPLICITLY into every accessor below and into the
+     dependency list of every memo that consumes one. An omitted dep here is
+     the same stale-in-the-leak-direction bug wearing a lint warning's clothes;
+     `ledgerFor(p.id)` memoised on `[p.id]` alone was exactly that. */
+  const { watched } = useWatched();
   const reduce = useReducedMotion() ?? false;
   const sheet = useSheet();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -1303,9 +1460,17 @@ function DossierPanel({
   const name = personName(p, lang);
   const occupation = personOccupation(p, lang);
   const occupationOther = personOccupation(p, other);
-  const bio = personBio(p, lang);
+  const billing = xBillingText(p.x, lang, watched);
+  const bio = personBio(p, lang, watched);
+  /* Both of these are the identity trick, and both are now half right for the
+     reason spelled out on `SeasonPlate`'s `ko`. They decide a `lang` attribute
+     and nothing else, so the failure is Korean set on English metrics rather
+     than a leak — but the fix is the same `translated` flag the five new
+     accessors return, and it belongs in i18n/index.ts. Named in the handoff.
+     (`personNotableFor` preserves ARRAY IDENTITY when nothing is dropped,
+     deliberately, so the second comparison keeps working at the default.) */
   const bioUntranslated = lang === 'en' && bio === p.bio;
-  const notable = personNotableFor(p, lang);
+  const notable = personNotableFor(p, lang, watched);
   const notableUntranslated = lang === 'en' && notable === p.notableFor;
   const elsewhere = useMemo(() => p.priorElsewhere ?? [], [p.priorElsewhere]);
   /* The short table is a credits list; the section above it is the account.
@@ -1331,26 +1496,40 @@ function DossierPanel({
      — they have met, and nobody numbered either finish (김남희 and 홍진호 were
      two of ten in the same house on 더 타임 호텔; saying they have never faced
      each other would be false). Rows — there is a record to print. */
-  const ledger = useMemo(() => ledgerFor(p.id), [p.id]);
-  const coldCast = neverFaced.includes(p.id);
-  /* The two lists partition everyone whose ledger is empty, and the sentence
-     is chosen by testing membership rather than by guessing from the row
-     count: 'never been in a field with anyone' is a fact about this person,
-     'met, and nobody numbered either finish' is a fact about the sources. If a
-     future edit ever leaves someone in neither, this resolves to null and the
-     section does not render at all — an empty ledger with no explanation is a
-     blank the reader has to interpret, and the wrong explanation is worse.
+  const ledger = useMemo(() => ledgerFor(p.id, watched), [p.id, watched]);
+  const coldCast = neverFacedSeenBy(watched).includes(p.id);
+  /* ── AND THE THIRD STATE HAD NO SENTENCE ────────────────────────────────
+     This used to read `neverFaced.includes(p.id) ? … : noComparableResult
+     .includes(p.id) ? … : null` against the two WATCHED_ALL-pinned constants
+     while the rows above came from a `ledgerFor` that followed the reader. Two
+     lists answering about the whole atlas and a ledger answering about this
+     reader do not partition anything: measured at `bgx.watched='[]'`, five of
+     six people I drove — 홍진호 11 rows, 박지민 8, 윤비 6, 김경훈 3, 이상민 2 —
+     went to zero rows, matched NEITHER pinned list, resolved to `null`, and the
+     whole section vanished from the document AND from the jump nav with nothing
+     said. The comment this replaces predicted that outcome exactly and called
+     it 'a blank the reader has to interpret'.
+
+     Asked with ONE set the two lists are exhaustive again, by construction in
+     headToHead.ts: an empty ledger means no visible meeting, and `build()`
+     puts everyone with no visible meeting into `neverFaced` or, failing that,
+     into `noComparableResult`. So the second membership test is exactly
+     `!coldCast` here and is not asked; what it bought was the `null` branch,
+     which is the blank. `faced.noResult` — '같은 판에 있었던 적은 있지만,
+     순위로 비교할 기록은 없습니다' — is the sentence headToHead.ts's own
+     docblock nominates for the narrowed reader, and it is an existing key: this
+     round adds no string to ui.ts, which is a file it does not own.
+
+     WHAT IT STILL OWES, and Phase 3 owns it: for a reader whose set sealed a
+     result, 'nobody numbered either finish' is the wrong reason for the right
+     silence. A sealed state that names its own scope is the fix; a component
+     may not invent one this phase.
 
      The heading stays 기록된 결과 in both cases. The cold FINDING is stated
      once, in the connections section below, where the reader is asking about
      ties; repeating it here gave 강지후 the same headline twice in one
      document. */
-  const facedEmptySub: UiKey | null = coldCast
-    ? 'faced.none'
-    : noComparableResult.includes(p.id)
-      ? 'faced.noResult'
-      : null;
-  const showFaced = ledger.length > 0 || facedEmptySub !== null;
+  const facedEmptySub: UiKey = coldCast ? 'faced.none' : 'faced.noResult';
   const nameOf = useMemo(() => {
     const m = new Map(dataset.people.map((q) => [q.id, personName(q, lang).primary]));
     return (id: string): string => m.get(id) ?? id;
@@ -1381,7 +1560,11 @@ function DossierPanel({
     /* `ties.met`, not `relations.length`: the chip is the same number the
        gallery calls a verified connection, and a parallel record is not one. */
     { id: A.rel, label: t(lang, 'dossier.connections'), n: ties.met },
-    ...(showFaced ? [{ id: A.faced, label: t(lang, 'faced.title'), n: ledger.length }] : []),
+    /* Unconditional now, like the two beside it: the section it points at
+       always renders, because the empty case always has a sentence. It was
+       already unconditional in practice at the default — the three-way test
+       above resolved to a key for all twenty people — so nothing moves here. */
+    { id: A.faced, label: t(lang, 'faced.title'), n: ledger.length },
     { id: A.rec, label: t(lang, 'dossier.franchiseRecord'), n: runs.length },
     ...(elsewhere.length > 0
       ? [{ id: A.out, label: t(lang, 'dossier.elsewhereRecord'), n: elsewhere.length }]
@@ -1554,12 +1737,12 @@ function DossierPanel({
                 initials={lang === 'en' ? node.initialsEn : node.initials}
                 category={node.category}
                 seasons={node.seasons}
-                ranks={ranksFor(node)}
-                fieldSizes={fieldsFor(node)}
+                ranks={ranksFor(node, lang, watched)}
+                fieldSizes={fieldsFor(node, lang, watched)}
                 isWinner={node.isWinner}
                 isHost={node.isHost}
                 noTies={node.noTies}
-                connections={connectionsFor(relations)}
+                connections={connectionsFor(relations, watched)}
                 variant="mark"
                 imageUrl={p.portraitUrl}
               />
@@ -1642,7 +1825,7 @@ function DossierPanel({
               isWinner={node.isWinner}
               isHost={node.isHost}
               noTies={node.noTies}
-              connections={connectionsFor(relations)}
+              connections={connectionsFor(relations, watched)}
             />
           </motion.header>
 
@@ -1685,16 +1868,21 @@ function DossierPanel({
             </div>
 
             {/* The billing line reads as a caption on the casting announcement.
-                Where no English was authored the Korean stands, tagged. */}
-            {p.x.billing && (
-              <blockquote
-                className="dsr-quote"
-                lang={lang === 'en' && p.x.billingEn ? 'en' : koRun}
-              >
+                Where no English was authored the Korean stands, tagged.
+
+                THE BLOC AND ITS TWO LABELS ABOVE ARE NOT GATED AND MUST NOT BE
+                — they are the pre-premiere announcement itself. This one line
+                is, because what makes a casting interesting is almost always a
+                result: '첫 번째 우승자', '앞의 한 명은 우승했다', '데스매치를
+                58대 12로 이기고도'. The second of those is a result about
+                SOMEBODY ELSE, which is why the tag sits on the line and not on
+                whoever's card it lands on. */}
+            {billing.billing && (
+              <blockquote className="dsr-quote" lang={billing.translated ? 'en' : koRun}>
                 <span className="dsr-quote__mark" aria-hidden="true">
                   “
                 </span>
-                <p>{lang === 'en' && p.x.billingEn ? p.x.billingEn : p.x.billing}</p>
+                <p>{billing.billing}</p>
               </blockquote>
             )}
 
@@ -1760,35 +1948,31 @@ function DossierPanel({
               this person beside the other nineteen. See the block comment
               above FacedRow for why it is derived and not written, and why the
               heading takes the weaker of the two claims its rows make. */}
-          {showFaced && (
-            <Section k="faced.title" lang={lang} count={ledger.length} anchorId={A.faced} variants={sv(6)}>
-              {ledger.length > 0 ? (
-                <>
-                  <ul className="dsr-h2hs">
-                    {ledger.map((row) => (
-                      <FacedRow
-                        key={row.opponentId}
-                        row={row}
-                        subjectId={p.id}
-                        nameOf={nameOf}
-                        lang={lang}
-                        onSelect={onSelect}
-                      />
-                    ))}
-                  </ul>
-                  <p className="dsr-note">{t(lang, 'faced.note')}</p>
-                </>
-              ) : (
-                facedEmptySub && (
-                  <div className="dsr-empty">
-                    <span className="dsr-empty__ko">{t(lang, 'faced.eyebrow')}</span>
-                    <Gloss k="faced.eyebrow" lang={lang} className="dsr-empty__en" />
-                    <span className="dsr-empty__sub">{t(lang, facedEmptySub)}</span>
-                  </div>
-                )
-              )}
-            </Section>
-          )}
+          <Section k="faced.title" lang={lang} count={ledger.length} anchorId={A.faced} variants={sv(6)}>
+            {ledger.length > 0 ? (
+              <>
+                <ul className="dsr-h2hs">
+                  {ledger.map((row) => (
+                    <FacedRow
+                      key={row.opponentId}
+                      row={row}
+                      subjectId={p.id}
+                      nameOf={nameOf}
+                      lang={lang}
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </ul>
+                <p className="dsr-note">{t(lang, 'faced.note')}</p>
+              </>
+            ) : (
+              <div className="dsr-empty">
+                <span className="dsr-empty__ko">{t(lang, 'faced.eyebrow')}</span>
+                <Gloss k="faced.eyebrow" lang={lang} className="dsr-empty__en" />
+                <span className="dsr-empty__sub">{t(lang, facedEmptySub)}</span>
+              </div>
+            )}
+          </Section>
 
           {/* ── F. the record elsewhere ─────────────────────────────────
               Sits directly under the franchise record because it answers the

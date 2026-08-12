@@ -26,15 +26,27 @@ import {
   personName,
   personNotableFor,
   personOccupation,
-  runText,
+  /* `runText` is deliberately gone: it was imported for the season-record
+     haystack in `scorePerson` tier 5, and the whole point of that tier's
+     rewrite is that the palette no longer reads a run's placement in either
+     language. Re-adding the import is the first symptom of the leak coming
+     back. */
+  runFacts,
+  xBillingText,
   t,
   ui,
   type Lang,
   type UiKey,
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
+import { useWatched, type WatchedSet } from '../state/useWatched';
 import './CommandPalette.css';
-import { watched } from '../data/types';
+/* ALIASED, NOT TIDIED — the same rename `graph/build.ts` made, for the same
+   collision. `watched(run)` from data/types answers "was this person present
+   without competing"; `watched` everywhere below is the reader's set of works.
+   Both are in scope in `plateOf`, and `runs.some(watched)` inside a function
+   that also holds the reader's set reads as the wrong thing entirely. */
+import { watched as watchedRun } from '../data/types';
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -111,7 +123,7 @@ interface PersonHit {
   reason: string;
 }
 
-function scorePerson(p: Person, q: string, lang: Lang): PersonHit | null {
+function scorePerson(p: Person, q: string, lang: Lang, watched: WatchedSet): PersonHit | null {
   const nameKo = p.nameKo || '';
   const nameEn = p.nameEn || '';
   const lko = nameKo.toLowerCase();
@@ -150,10 +162,18 @@ function scorePerson(p: Person, q: string, lang: Lang): PersonHit | null {
   const catHay = BOTH.map((l) => CATEGORY_LABEL_I18N[l][p.category] ?? '');
   if (anyHit(q, [...catHay, p.category])) return plain(560, CATEGORY_LABEL_I18N[lang][p.category] ?? '');
 
-  // 4 — what they are known for. The two lists are authored in step, so a hit
-  //     on the English line can be reported with the Korean one and vice versa.
-  const notableKo = personNotableFor(p, 'ko');
-  const notableEn = personNotableFor(p, 'en');
+  /* 4 — what they are known for. The two lists are authored in step, so a hit
+   *     on the English line can be reported with the Korean one and vice versa.
+   *
+   * SCOPED PER BULLET, and the reader's set is passed explicitly rather than
+   * left to the accessor's `currentWatched()` default — that default is a
+   * module global with no subscription, and a component that reads it renders
+   * the right answer once and then never again. 이상민's four bullets are a
+   * Genius title, a count of Genius seasons, a season 1 panel seat and being
+   * the leader of Roo'Ra: at a narrow set he keeps the band and loses the
+   * championship, and the tier keeps working on what is left. */
+  const notableKo = personNotableFor(p, 'ko', watched);
+  const notableEn = personNotableFor(p, 'en', watched);
   const notableUi = lang === 'en' ? notableEn : notableKo;
   for (let i = 0; i < Math.max(notableKo.length, notableEn.length); i++) {
     if (anyHit(q, [notableKo[i], notableEn[i]])) {
@@ -167,19 +187,69 @@ function scorePerson(p: Person, q: string, lang: Lang): PersonHit | null {
     }
   }
 
-  if (p.x?.billing && p.x.billing.toLowerCase().includes(q)) return plain(480, p.x.billing);
+  /* The line under the bloc, THROUGH THE ACCESSOR. This tier both matched and
+   * printed `p.x.billing` straight off the record, and that record is where the
+   * casting announcement keeps its results: '첫 번째 우승자. 이제 모두가 그의
+   * 플레이를 봤다.' on 이태균, '「더 지니어스」 마지막 시즌의 준우승자.' on
+   * 김경훈, '앞의 한 명은 우승했다.' on 신승용 — which is a result about
+   * SOMEBODY ELSE, and is exactly why the scope sits on the line rather than on
+   * whose card it appears under. Measured at `bgx.watched='[]'`: all three
+   * printed in full, in `.cp__sub`, to a reader who had watched nothing.
+   *
+   * KOREAN ON BOTH SIDES OF THE TEST, on purpose and not by oversight. This
+   * tier has only ever indexed and printed `billing`, never `billingEn` — even
+   * in the English UI, where it prints the Korean line today. Passing `lang`
+   * would make `xBillingText` return the English half whenever one exists,
+   * which changes both what the drawer matches and what it prints AT THE
+   * DEFAULT watched-set. Rule 0 outranks the tidier reading; widening this tier
+   * to both tables is a change on its own merits and not one to smuggle in
+   * under a redaction fix. */
+  const billing = p.x ? xBillingText(p.x, 'ko', watched).billing : '';
+  if (billing && billing.toLowerCase().includes(q)) return plain(480, billing);
 
-  // 5 — their record in seasons 1–3, in either language.
-  const runs = p.priorSeasons ?? [];
-  for (let i = 0; i < runs.length; i++) {
-    const r = runs[i];
-    const en = runText(p.id, r, i, 'en');
-    const hay = `시즌${r.season} 시즌 ${r.season} season${r.season} s${r.season} ${r.placement ?? ''} ${
-      en.placement
-    } ${r.team ?? ''}`;
+  /* 5 — WHICH seasons they played. Never how they did in them.
+   *
+   * This tier used to index the run itself — `r.placement`, the English
+   * `runText(…).placement`, and `r.team` — which made the drawer an oracle no
+   * sealed panel can close. Measured over the real corpus before this change:
+   * 탈락 / eliminated returned exactly the three season-2 eliminations, 히든
+   * 플레이어 returned exactly the two people that twist was about, 1위 returned
+   * the two franchise winners, and 13위 returned the one person who came last.
+   * The reason line then printed the finish back in full — "시즌 2 · 우승 ·
+   * 13명 중 1위" / "Season 2 · Winner — 1st of 13" — so the drawer did not
+   * merely admit the answer existed, it read it out. 146 of the 184 outcome
+   * queries measured moved when this loop stopped carrying the record.
+   *
+   * `team` goes with placement even though it looks structural, because
+   * works.ts's OUTCOME_FIELDS lists `team` / `teamEn` for exactly this reason
+   * and the data agrees: all 14 team strings in the corpus carry their
+   * season's scope and not one has a `[]` override. '저택팀 → 야생팀' is a
+   * defection written as an arrow; '히든 플레이어 (저택 잠입)' is the season 2
+   * twist stated on one of the people it was a twist about.
+   *
+   * What is left is participation — which seasons a person was in — and that
+   * is already public on every other surface: the portrait plate two columns
+   * left draws one arc per season. So 시즌2 / season2 / s2 still find the
+   * seven people who played it, which is the query this tier exists to serve.
+   *
+   * The reason line falls back to the key written for a run with no placement
+   * text. That branch was unreachable until now (all 16 runs carry a
+   * placement) and is the only branch from here on.
+   *
+   * WHAT USED TO BE LEFT OPEN HERE IS NOW CLOSED ELSEWHERE IN THIS FILE, and
+   * the note is kept rather than deleted because it names where to look. Tier 4
+   * (`notableFor`), tier 7 (`bio`) and the billing tier above are read through
+   * `data/i18n` and are handed the reader's set explicitly, so 우승 no longer
+   * answers with a franchise winner whose panels are sealed — the gate does the
+   * stripping, which is why they were never stripped here. The winner pip and
+   * the plate's rank arcs both come off `runFacts` now; see `isWinner` and
+   * `plateOf`. Phase 3 still owns what a sealed plate should LOOK like — this
+   * only stops it asserting a finish. */
+  for (const r of p.priorSeasons ?? []) {
+    const hay = `시즌${r.season} 시즌 ${r.season} season${r.season} s${r.season}`;
     if (hay.toLowerCase().includes(q)) {
-      const shown = runText(p.id, r, i, lang).placement || t(lang, 'palette.reasonAppearedFallback');
-      return plain(460, `${t(lang, 'dossier.seasonPrefix')} ${r.season} · ${shown}`);
+      const how = t(lang, 'palette.reasonAppearedFallback');
+      return plain(460, `${t(lang, 'dossier.seasonPrefix')} ${r.season} · ${how}`);
     }
   }
 
@@ -191,7 +261,7 @@ function scorePerson(p: Person, q: string, lang: Lang): PersonHit | null {
   // 7 — the profile itself. Last real tier: a bio hit is weak evidence, but a
   //     reader searching "StarCraft" would rather see the four people it is
   //     written about than nothing at all.
-  if (anyHit(q, [personBio(p, 'ko'), personBio(p, 'en')])) {
+  if (anyHit(q, [personBio(p, 'ko', watched), personBio(p, 'en', watched)])) {
     return plain(360, t(lang, 'palette.reasonProfile'));
   }
 
@@ -272,8 +342,28 @@ const QUICK_START = 5;
    reads as the drawer closing rather than as a dropped frame. */
 const EXIT_MS = 120;
 
-function isWinner(p: Person): boolean {
-  return (p.priorSeasons ?? []).some((s) => s.rank === 1 && s.role === 'contestant');
+/**
+ * Did they win one — AS FAR AS THIS READER HAS BEEN TOLD.
+ *
+ * `rank` comes off `runFacts`, which gates it against the run's own scope, so
+ * this is one question with one answer for the whole row: the '우승' pip beside
+ * the name and the laurel on the chip plate are the same claim drawn twice, and
+ * gating one while leaving the other raw is how the palette ends up
+ * contradicting itself on a single line. Measured at `bgx.watched='[]'`, 이진형
+ * carried the pip and the laurel with every panel about him sealed.
+ *
+ * `role` STAYS RAW and that is deliberate — it is the one outcome-shaped field
+ * `OUTCOME_FIELDS.SeasonRun` leaves off the manifest, because a painter that
+ * cannot tell a contestant from a panellist draws a redacted competitor with
+ * the mark that means "present, not competing" (PLAN-spoilers.md §3).
+ *
+ * Fails closed with everything else: a run whose `rank` is withheld returns
+ * `undefined`, `undefined === 1` is false, and no mark is drawn.
+ */
+function isWinner(p: Person, lang: Lang, watched: WatchedSet): boolean {
+  return (p.priorSeasons ?? []).some(
+    (s) => s.role === 'contestant' && runFacts(s, lang, watched).rank === 1,
+  );
 }
 
 /* ── the plate, not a fourth drawing of a person ──────────────────────────
@@ -294,8 +384,27 @@ function isWinner(p: Person): boolean {
    palette's job is recognition, so the row keeps the marks that identify a
    person (ring hue, season arcs, laurel, the newcomer's dashed ring) and drops
    the one that is a quantity; the count is already printed in words two
-   columns right, as "11 ties". */
-function plateOf(p: Person): {
+   columns right, as "11 ties".
+
+   ── AND THE ARCS ARE A RANK, so they are read through `runFacts` ───────────
+   `ranks` and `fieldSizes` feed arc length as `rank / fieldSize`, which is
+   exactly invertible: an arc is the finish, drawn. Reading them off the record
+   here would have left the palette printing in pixels precisely what the tier-5
+   rewrite stopped it from printing in words. `runFacts` gates the pair
+   together — `rankPair` runs `fieldSize` through its own gate and then through
+   `rank`'s, so a denominator can never outlive its numerator — and `bestOf`
+   then does the same min-per-season it always did over whatever survives.
+
+   THIS IS NOT PHASE 3's THIRD PLATE STATE. Nothing new is drawn: a withheld
+   rank is `undefined`, which is the value this plate has always taken for a
+   panel seat or a dealer, and `Portrait` already draws that case as a beaded
+   ring. Designing a mark that says "sealed" rather than "no finish" is Phase 3
+   and is deliberately not attempted here. */
+function plateOf(
+  p: Person,
+  lang: Lang,
+  watched: WatchedSet,
+): {
   seasons: SeasonNumber[];
   ranks: (number | undefined)[];
   fieldSizes: (number | undefined)[];
@@ -304,11 +413,15 @@ function plateOf(p: Person): {
 } {
   const runs = p.priorSeasons ?? [];
   const seasons = [...new Set(runs.map((r) => r.season))].sort() as SeasonNumber[];
+  /* One gated read per run, indexed alongside `runs`, so `bestOf` keeps
+     comparing seasons off the raw record and numbers off the accessor. */
+  const facts = runs.map((r) => runFacts(r, lang, watched));
   const bestOf = <K extends 'rank' | 'fieldSize'>(s: SeasonNumber, k: K): number | undefined => {
     let best: number | undefined;
-    for (const r of runs) {
-      if (r.season !== s || r[k] === undefined) continue;
-      best = best === undefined ? r[k] : Math.min(best, r[k] as number);
+    for (let i = 0; i < runs.length; i++) {
+      const v = facts[i][k];
+      if (runs[i].season !== s || v === undefined) continue;
+      best = best === undefined ? v : Math.min(best, v);
     }
     return best;
   };
@@ -316,8 +429,10 @@ function plateOf(p: Person): {
     seasons,
     ranks: seasons.map((s) => bestOf(s, 'rank')),
     fieldSizes: seasons.map((s) => bestOf(s, 'fieldSize')),
-    isWinner: isWinner(p),
-    isHost: runs.some(watched),
+    isWinner: isWinner(p, lang, watched),
+    /* WHICH seasons, and whether they were competing in them, are
+       participation and stay raw — see `isWinner`. */
+    isHost: runs.some(watchedRun),
   };
 }
 
@@ -335,6 +450,22 @@ export function CommandPalette({
 }: CommandPaletteProps): JSX.Element | null {
   const { query, setQuery, resetFilters, graph, selectedId, mode, visible } = atlas;
   const { lang } = useLang();
+  /* WHAT THIS READER HAS SEEN, THROUGH THE HOOK — never `currentWatched()`.
+   *
+   * Every accessor below takes a `watched` parameter defaulting to that module
+   * global, and letting the default apply inside a component is the silent
+   * failure mode `state/useWatched.ts` devotes a docblock to: the global has no
+   * subscription, so the drawer would render one correct redaction at mount and
+   * then hold it while the rest of the tree moved on. The direction that hurts
+   * is a reader NARROWING their set — the correction somebody makes the instant
+   * they realise they are about to be spoiled — and a stale drawer answers that
+   * with the finishes still in it. `useWatched()` is `useContext`, so
+   * `setWatched` re-renders this component; the provider is mounted in App.tsx.
+   *
+   * It is then passed EXPLICITLY into `scorePerson`, `plateOf` and `isWinner`,
+   * and listed in the `groups` dependency array below. An omitted dep there
+   * neither warns nor throws — it just keeps the previous reader's rows. */
+  const { watched } = useWatched();
   const reduced = Boolean(useReducedMotion());
 
   const uid = useId();
@@ -399,7 +530,33 @@ export function CommandPalette({
         hit,
         degree: ties.met,
         parallel: ties.parallel,
-        run: () => handlers.current.onSelect(hit.person.id),
+        /* ── committing a person releases the search text ────────────────
+           `query` is not the palette's own state: it is `atlas.query`, which
+           is also the graph filter (useAtlas.ts, `visible`) and the TopBar's
+           match count, and it is deep-linked as `?q=`. The drawer says so —
+           '뒤편 그래프도 함께 필터링 중 · 닫아도 유지됩니다' / 'Filtering the
+           graph behind this too … and it stays filtered after you close' —
+           and that promise is about DISMISSING the drawer, which still keeps
+           the filter. It was being kept on commit too, and there it is not a
+           promise, it is a trap: typing a name and pressing Enter framed the
+           person on an atlas filtered to that one name, so the reader landed
+           on a single node with none of its ties drawn. Reproduced at 20/20
+           people and 52 ties before Enter, 1/20 and 0 after.
+
+           Choosing a destination is the moment the search text has done its
+           job, so it is dropped here rather than on close. Only the person
+           rows do it: a view or a command leaves a typed filter standing,
+           because there the reader's text and their action are about
+           different things and the filter is still coherent. `reset` already
+           clears the query through `resetFilters`.
+
+           This is the palette's half. The structural half is not in this
+           file — see the handoff note: one piece of state is serving both a
+           transient search box and a durable filter. */
+        run: () => {
+          setQuery('');
+          handlers.current.onSelect(hit.person.id);
+        },
       };
     };
 
@@ -568,7 +725,7 @@ export function CommandPalette({
     } else {
       const hits: PersonHit[] = [];
       for (const p of list) {
-        const hit = scorePerson(p, q, lang);
+        const hit = scorePerson(p, q, lang, watched);
         if (hit) hits.push(hit);
       }
       hits.sort(
@@ -611,7 +768,17 @@ export function CommandPalette({
       });
     }
     return out;
-  }, [q, lang, dataset.people, graph, selectedId, mode, resetFilters]);
+    /* `setQuery` joins the list for `toPersonRow`'s commit. It is a `useState`
+       setter held across renders by useAtlas, so it is stable and the memo
+       still only recomputes on the things that change the rows.
+
+       `watched` IS ONE OF THEM. `scorePerson` reads four gated fields through
+       it — the notableFor bullets, the billing line, the bio, and the rank
+       behind the pip — so a set that changes without this dep changes what the
+       rows are ALLOWED to say while the memo hands back the rows they used to
+       say it with. The set's identity is preserved by `setWatched` precisely so
+       this comparison is a pointer test and not a rebuild per render. */
+  }, [q, lang, watched, dataset.people, graph, selectedId, mode, resetFilters, setQuery]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.rows), [groups]);
   const indexOf = useMemo(() => new Map(flat.map((r, i) => [r.key, i])), [flat]);
@@ -949,7 +1116,7 @@ export function CommandPalette({
     if (row.kind === 'person') {
       const p = row.person;
       const lin = lineageOf(p);
-      const won = isWinner(p);
+      const won = isWinner(p, lang, watched);
       const occupation = personOccupation(p, lang) || CATEGORY_LABEL_I18N[lang][p.category] || '';
       const name = personName(p, lang);
       /* Two clauses where there used to be one number. A person with no
@@ -975,7 +1142,7 @@ export function CommandPalette({
               category={p.category}
               variant="chip"
               imageUrl={p.portraitUrl}
-              {...plateOf(p)}
+              {...plateOf(p, lang, watched)}
             />
           </span>
           <span className="cp__body">

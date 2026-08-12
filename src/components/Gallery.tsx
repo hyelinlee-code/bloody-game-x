@@ -15,6 +15,7 @@ import {
   CATEGORY_LABEL_I18N,
   personName,
   personOccupation,
+  runFacts,
   runText,
   t,
   TEAM_LABEL_I18N,
@@ -23,6 +24,7 @@ import {
   type UiKey,
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
+import { useWatched, type WatchedSet } from '../state/useWatched';
 import { tieCounts } from '../data/edges';
 import { SEASON_COLOR, SEASON_INK } from '../graph/palette';
 import { HAS_PORTRAITS } from '../graph/portraits';
@@ -40,6 +42,10 @@ export interface GalleryProps {
 }
 
 const TEAM_ORDER: XTeam[] = ['season1', 'season2', 'season3', 'challenger', 'rookie'];
+
+/** What `runFacts` hands back, named so it can be computed once per run and
+    spent twice — on the printed placement and on the winner's brass. */
+type RunFacts = ReturnType<typeof runFacts>;
 
 /**
  * '출연진 · THE CAST' in Korean; just 'THE CAST' in English, where the Latin
@@ -95,14 +101,44 @@ function unit(lang: Lang, n: number, one: UiKey, many: UiKey): string {
  * S1 7위, which is mid-table of ten, reading as the better run of the two.
  * `record.ofField` is the string for it in both languages, and the run has
  * `fieldSize` on it already. Non-playing runs have no field to be out of.
+ *
+ * ── AND THE NUMBERS COME THROUGH THE GATE NOW ──────────────────────────────
+ * `run.rank` and `run.fieldSize` were read straight off the record here, which
+ * is why fourteen finishes printed on this wall for a reader who had watched
+ * nothing. `runFacts` is the accessor for them and it hands back the pair or
+ * neither — a denominator can never outlive its numerator. At the default
+ * watched-set it returns exactly what the record holds, so nothing moves.
  */
-function shortPlacement(personId: string, index: number, lang: Lang, run: SeasonRun): string {
-  if (played(run) && run.rank) {
-    const of = run.fieldSize ? ` ${t(lang, 'record.ofField').replace('{n}', String(run.fieldSize))}` : '';
-    if (run.rank === 1) return `${t(lang, 'gallery.winnerShort')}${of}`;
-    if (lang === 'ko') return `${run.rank}${t(lang, 'gallery.rankUnit')}${of}`;
+function shortPlacement(
+  personId: string,
+  index: number,
+  lang: Lang,
+  run: SeasonRun,
+  facts: RunFacts,
+  watched: WatchedSet,
+): string {
+  if (played(run)) {
+    /* A PLAYED RUN WHOSE RANK IS WITHHELD PRINTS NOTHING AND MUST NOT FALL
+       THROUGH to the role branch below. `played` reads `run.role`, which is
+       deliberately never gated — the painters have to keep knowing whether a
+       run was a run at the prize — so the fall-through would hand a redacted
+       contestant either the head of a sealed placement string ('') or, worse,
+       'gallery.hostShort', which says in as many words that they were there
+       and not competing. An absent string is an absence; '비참가' is a claim,
+       and on a contestant it is a false one.
+
+       This branch is reachable only under redaction: all fourteen contestant
+       runs in records.ts carry a rank and a fieldSize (measured), so at the
+       default set the early return never fires and this function returns the
+       same bytes it always did. */
+    if (!facts.rank) return '';
+    const of = facts.fieldSize
+      ? ` ${t(lang, 'record.ofField').replace('{n}', String(facts.fieldSize))}`
+      : '';
+    if (facts.rank === 1) return `${t(lang, 'gallery.winnerShort')}${of}`;
+    if (lang === 'ko') return `${facts.rank}${t(lang, 'gallery.rankUnit')}${of}`;
     /* 11th–13th take 'th'; everything else follows the last digit. */
-    const n = run.rank;
+    const n = facts.rank;
     const tens = n % 100;
     const suffix = tens >= 11 && tens <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
     return `${n}${suffix}${of}`;
@@ -112,7 +148,7 @@ function shortPlacement(personId: string, index: number, lang: Lang, run: Season
      in season 3, so neither can be flattened to "Host". Take the head of the
      placement string, which is where the record puts the role, and drop the
      apposition that follows it. */
-  const head = runText(personId, run, index, lang).placement.split(/\s+[·—]\s+/)[0].trim();
+  const head = runText(personId, run, index, lang, watched).placement.split(/\s+[·—]\s+/)[0].trim();
   return head || t(lang, 'gallery.hostShort');
 }
 
@@ -123,6 +159,15 @@ function shortPlacement(personId: string, index: number, lang: Lang, run: Season
  */
 export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProps): JSX.Element | null {
   const { lang } = useLang();
+  /* THE HOOK, NOT `currentWatched()`. This is a subscription: when the reader
+     narrows their answer the context changes identity, this component
+     re-renders, and every accessor below is called again with the new set.
+     Read through the module global instead and the wall would keep painting
+     the finishes the reader has just said they have not seen — see the note on
+     `currentWatched` in state/useWatched.ts. `watched` is threaded EXPLICITLY
+     into every accessor on this surface for the same reason: an accessor left
+     on its default parameter reads the global and is invisible to React. */
+  const { watched } = useWatched();
   const ref = useRef<HTMLDivElement>(null);
   const restore = useRef<HTMLElement | null>(null);
   /* Build-time constant — `public/portraits/` is read by a Vite plugin, so
@@ -315,6 +360,24 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                             initials={lang === 'en' ? n.initialsEn : n.initials}
                             category={n.category}
                             seasons={n.seasons}
+                            /* ⚠ RAW ON PURPOSE, AND IT IS A LEAK PHASE 3 OWNS.
+                               `ranks` and `fieldSizes` below still come off the
+                               record, so the plate's season arc is drawn to
+                               its true length and a sealed 우승 is still a full
+                               sweep. Routing them through `runFacts` would hand
+                               the painter `undefined`, and `undefined` already
+                               MEANS something on this plate — the beaded arc
+                               that the about sheet's legend glosses as '그 시즌은
+                               경쟁하지 않았다 (순위 없음)'. A redacted contestant
+                               would be drawn with the mark for "present, not
+                               competing", which is a false claim rather than a
+                               withheld one, and trading a leak for a lie is not
+                               a trade this phase may make. The third plate state
+                               is PLAN-spoilers.md §7 Phase 3, in the same commit
+                               as the legend row that explains it; i18n/index.ts
+                               says the same thing above `runText`. Named in the
+                               handoff so it is a scheduled item and not an
+                               oversight. */
                             ranks={n.seasons.map((s) => runs.find((r) => r.run.season === s)?.run.rank)}
                             /* Season 1 seated 10, season 3 seated 18, and the
                                plate normalises arc length against the field —
@@ -372,25 +435,46 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                         <span className="gallery__line">
                           {runs.length > 0 ? (
                             <span className="gallery__runs">
-                              {runs.map(({ run, i }) => (
-                                <span
-                                  key={`${run.season}-${i}`}
-                                  className={`gallery__run${run.rank === 1 && played(run) ? ' gallery__run--win' : ''}`}
-                                  /* The lettering ramp, not the mark ramp.
-                                     'S1' at 10px in SEASON_COLOR[1] (#367f45)
-                                     measured 3.74:1 on the card — below the
-                                     4.5:1 floor for text this small, and
-                                     palette.ts says in as many words that
-                                     SEASON_COLOR is MARKS ONLY. SEASON_INK
-                                     is the same three hues lifted for
-                                     letterforms; the season pip above the row
-                                     keeps the mark colour. */
-                                  style={{ '--run': SEASON_INK[run.season] } as CSSProperties}
-                                >
-                                  <span className="gallery__run-s">S{run.season}</span>
-                                  <span className="gallery__run-p">{shortPlacement(p.id, i, lang, run)}</span>
-                                </span>
-                              ))}
+                              {runs.map(({ run, i }) => {
+                                /* Computed once and spent twice — the printed
+                                   placement and the brass that says "this one
+                                   was a win". The class used to read
+                                   `run.rank === 1` straight off the record,
+                                   which lit the winner's ink on a card whose
+                                   text was about to be sealed. */
+                                const facts = runFacts(run, lang, watched);
+                                const place = shortPlacement(p.id, i, lang, run, facts, watched);
+                                return (
+                                  <span
+                                    key={`${run.season}-${i}`}
+                                    className={`gallery__run${facts.rank === 1 && played(run) ? ' gallery__run--win' : ''}`}
+                                    /* The lettering ramp, not the mark ramp.
+                                       'S1' at 10px in SEASON_COLOR[1] (#367f45)
+                                       measured 3.74:1 on the card — below the
+                                       4.5:1 floor for text this small, and
+                                       palette.ts says in as many words that
+                                       SEASON_COLOR is MARKS ONLY. SEASON_INK
+                                       is the same three hues lifted for
+                                       letterforms; the season pip above the row
+                                       keeps the mark colour. */
+                                    style={{ '--run': SEASON_INK[run.season] } as CSSProperties}
+                                  >
+                                    <span className="gallery__run-s">S{run.season}</span>
+                                    {/* The season chip stays whatever happens —
+                                        being in a season is participation and is
+                                        never redacted. Only the finish beside it
+                                        goes, and it goes by not rendering rather
+                                        than by rendering empty: an empty
+                                        `.gallery__run-p` still carries the row's
+                                        gap and reads as a figure that failed to
+                                        load. At the default this is never '' —
+                                        all fourteen contestant runs are ranked
+                                        and both role runs name their role — so
+                                        the wall is byte-identical. */}
+                                    {place && <span className="gallery__run-p">{place}</span>}
+                                  </span>
+                                );
+                              })}
                             </span>
                           ) : (
                             <span className="gallery__line-what">{t(lang, 'dossier.emptyRecord')}</span>

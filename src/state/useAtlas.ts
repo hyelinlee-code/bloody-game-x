@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Category, Dataset, EdgeType, SeasonNumber, XTeam } from '../data/types';
+import type { Category, Dataset, EdgeType, Person, SeasonNumber, XTeam } from '../data/types';
 import { buildGraph, type BuiltGraph } from '../graph/build';
 import { TEAM_ORDER } from '../data/lineage';
 import type { LayoutMode } from '../graph/types';
+import { personBio, personNotableFor } from '../data/i18n';
+import { useWatched, type WatchedSet } from './useWatched';
 
 export const ALL_CATEGORIES: Category[] = [
   'comedian',
@@ -103,8 +105,58 @@ function toggleIn<T>(set: Set<T>, value: T): Set<T> {
   return next;
 }
 
-/** Everything a person can be found by. */
-function searchIndex(p: Dataset['people'][number]): string {
+/**
+ * Everything a person can be found by — THE THIRD SEARCH CORPUS.
+ *
+ * There are three haystacks in this app and for four rounds only two of them
+ * had an owner. `CommandPalette.tsx` builds its own per-tier matcher, `edges.ts`
+ * is joined on rather than searched, and this one — the one behind `#q=`, the
+ * top bar's spoken match count, the canvas filter and the cast wall's dimming —
+ * indexed the finish. Measured against the real corpus at `bgx.watched='[]'`,
+ * i.e. a reader who has watched nothing: `탈락` named 현성주 / 박지민 / 하승진,
+ * the three season-2 eliminations; `13위` named the one person who came last;
+ * `저택팀` named the side of a house. Byte-identical at every watched-set,
+ * because none of it was ever asked a question about the reader.
+ *
+ * A search box that answers a question no panel on the page will answer is an
+ * oracle, and it is the worst kind: the reader does not have to open anything,
+ * they only have to type a word they were trying to avoid. Two things close it.
+ *
+ * 1. THE RUN LINE CARRIES PARTICIPATION AND NOTHING ELSE. `placement` and
+ *    `team` are gone; `시즌N` / `seasonN` stay, because WHICH seasons somebody
+ *    played is public on every other surface — the portrait plate draws one arc
+ *    per season on the cast wall, the canvas and the dossier crest. `team` goes
+ *    with the placement even though it looks structural, for the reason
+ *    `OUTCOME_FIELDS` lists it and `CommandPalette`'s tier 5 spells out: all 14
+ *    team strings in the corpus carry their season's scope, and '저택팀 →
+ *    야생팀' is a defection while '히든 플레이어 (저택 잠입)' is the season 2
+ *    twist stated on one of the people it was a twist about.
+ *
+ * 2. THE PROSE IS READ THROUGH THE ACCESSORS, not off the record. `bio` and
+ *    `notableFor` are the two indexed fields that are gated per work in
+ *    `data/i18n`, and reading them raw here made the index disagree with the
+ *    page: at `[]`, `우승` still returned eight people whose bios say so on
+ *    surfaces that had already stopped saying it. `personNotableFor` is scoped
+ *    per bullet, so a person keeps their band and loses their championship.
+ *
+ * KOREAN ON BOTH, DELIBERATELY. This index has only ever held `p.bio` and
+ * `p.notableFor` — never `bioEn`, never the English bullets — and widening it
+ * to both tables would change which people `#q=` returns at the DEFAULT
+ * watched-set. That is Rule 0, and it is not this change's to spend. The
+ * language-independent haystack is `CommandPalette`'s; this one is the graph
+ * filter and it keeps the shape it has.
+ *
+ * ── RULE 0 AND THE ONE PLACE IT DOES NOT REACH ──────────────────────────────
+ * Emptying a corpus changes results at the default too — `#q=탈락` returns
+ * nobody now, for everybody. PHASE2-CONTRACT.md §0 ("every rendered byte is
+ * identical at the default") and §3 ("strip placements from the search
+ * corpora") cannot both hold over this function, and the lead has ruled: the
+ * strip is an INTENDED, user-visible change, because no sealed panel can close
+ * an oracle. Rule 0 still binds every other line in this file, and the accessor
+ * routing in (2) satisfies it on its own — at `WATCHED_ALL` both accessors
+ * return the raw strings, so only the run line moves at the default.
+ */
+function searchIndex(p: Person, watched: WatchedSet): string {
   return [
     p.nameKo,
     p.nameEn,
@@ -113,12 +165,17 @@ function searchIndex(p: Dataset['people'][number]): string {
     p.occupation,
     p.occupationKo,
     p.category,
-    p.bio,
+    personBio(p, 'ko', watched),
     p.x.teamLabelKo,
     p.x.teamLabelEn,
-    ...(p.notableFor ?? []),
+    ...personNotableFor(p, 'ko', watched),
+    /* Titles and years are participation, and `show` is additionally the join
+       key `headToHead.ts` uses across the two i18n halves of a row — sealing it
+       would break a lookup rather than protect a claim. The four outcome fields
+       on that record (`result`, `resultEn`, `rank`, `fieldSize`) were never
+       indexed here and still are not. */
     ...(p.otherShows ?? []).flatMap((s) => [s.show, s.showKo ?? '']),
-    ...p.priorSeasons.map((s) => `시즌${s.season} season${s.season} ${s.placement} ${s.team ?? ''}`),
+    ...p.priorSeasons.map((s) => `시즌${s.season} season${s.season}`),
   ]
     .filter(Boolean)
     .join(' ')
@@ -126,13 +183,31 @@ function searchIndex(p: Dataset['people'][number]): string {
 }
 
 export function useAtlas(data: Dataset): AtlasState {
-  const graph = useMemo(() => buildGraph(data), [data]);
+  /* THE SUBSCRIPTION, and it has to be a hook rather than `currentWatched()`.
+   *
+   * This is where the whole tree's exposure enters React. `buildGraph` and the
+   * accessors below all take a default-parameter `watched = currentWatched()`,
+   * and reading that module global here would give the right answer once, at
+   * first render, and then tell React nothing — so a reader who NARROWED their
+   * set would keep the previous graph and the previous index on screen. That
+   * staleness is a leak, not a lag. `useWatched()` is `useContext`, so the
+   * provider's `setWatched` re-renders this hook's host and everything under
+   * it; see the long note on `currentWatched` in state/useWatched.ts.
+   *
+   * The provider is mounted in App.tsx ABOVE the component that calls this. It
+   * has to be: a component cannot consume a context it renders itself. */
+  const { watched } = useWatched();
+
+  /* `watched` is in the dependency list, not merely in the body. An omitted dep
+     here does not warn and does not throw — it silently keeps the previous
+     reader's degrees, rim ticks, cold band and disc radii on the canvas. */
+  const graph = useMemo(() => buildGraph(data, watched), [data, watched]);
 
   const index = useMemo(() => {
     const m = new Map<string, string>();
-    for (const p of data.people) m.set(p.id, searchIndex(p));
+    for (const p of data.people) m.set(p.id, searchIndex(p, watched));
     return m;
-  }, [data]);
+  }, [data, watched]);
 
   const [mode, setMode] = useState<LayoutMode>('web');
   const [selectedId, setSelectedId] = useState<string | null>(null);

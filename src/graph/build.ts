@@ -1,11 +1,21 @@
 import type { Dataset, Edge, Person } from '../data/types';
 import { dataset } from '../data/dataset';
 import { isMeeting } from '../data/edges';
+import { isVisible, type WatchedSet } from '../data/redact';
 import { peopleEn } from '../data/i18n/people.en';
 import { CATEGORY_COLOR, EDGE_COLOR } from './palette';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
 import type { GLink, GNode } from './types';
-import { watched } from '../data/types';
+import { currentWatched } from '../state/useWatched';
+/* ALIASED, NOT TIDIED. `watched(run)` from data/types answers "was this person
+   present that season without competing" — a fact about a RUN. Phase 2's
+   `watched` is the reader's set of works. Both belong in this function and the
+   parameter would shadow the import, so the older, narrower one takes the
+   suffix. Do not rename it back: `p.priorSeasons.some(watched)` inside a
+   function whose parameter is a Set is a type error today and a silent wrong
+   answer the moment someone makes the types line up. The same collision is
+   waiting in CommandPalette.tsx:320 and HoverCard.tsx:185/217. */
+import { watched as watchedRun } from '../data/types';
 
 /** Compact monogram for the inside of a node — the Hangul form. */
 export function monogram(nameKo: string, nameEn: string): string {
@@ -121,7 +131,56 @@ export interface BuiltGraph {
   edgesOf: Map<string, GLink[]>;
 }
 
-export function buildGraph(data: Dataset): BuiltGraph {
+/**
+ * Does this edge count as one verified connection FOR THIS READER?
+ *
+ * Two conditions, and they protect two different things.
+ *
+ *   1. `isMeeting` — is the claim "these two were in a room" at all? A
+ *      `parallel` edge exists to assert the opposite. Unchanged from before,
+ *      imported from data/edges.ts rather than restated; six surfaces agree
+ *      about it.
+ *   2. `isVisible` — may this reader be told? A tie count is a claim built out
+ *      of `type`, and `type` is outcome-bearing: works.ts lists it in
+ *      `OUTCOME_FIELDS.Edge` precisely because `betrayal` is a verdict about a
+ *      named person. Counting a tie whose type is sealed prints the sealed
+ *      claim as a number.
+ *
+ * THE SCOPE IT ASKS ABOUT IS THE TYPE'S, not the record's, and where they
+ * differ the type's is the narrower and the right one: `e.scopes.type ?? e.scope`
+ * is the same resolution types.ts documents for every per-field override and
+ * that validate-data.mjs §10c and §10e use. An edge may seal its headline and
+ * its account while leaving the bare fact of a meeting visible; that edge still
+ * counts. No edge in the corpus carries a `scopes.type` today (measured: 0 of
+ * 52), so this resolves to `e.scope` for all of them — it is written for the
+ * first one that does, not for a case that exists.
+ *
+ * FAIL CLOSED, AND WHAT THAT COSTS. `isVisible(undefined, …)` is false for
+ * every watched-set INCLUDING the default, so an edge with no scope at all
+ * would drop out of `degree` for everybody and move a disc's radius — a Rule 0
+ * violation, not merely an over-redaction. That is not softened here, because
+ * softening it would put a leak behind a shrug; it is prevented upstream, where
+ * validate-data.mjs §10c fails the build for any edge whose `type` carries
+ * neither `scopes.type` nor `scope`. Measured against today's corpus: 52 of 52
+ * edges resolve to a defined scope and 0 are hidden at `WATCHED_ALL`. If that
+ * sweep is ever weakened, this line is what turns the hole into a visible one.
+ */
+function countsAsTie(e: Edge, watched: WatchedSet): boolean {
+  return isMeeting(e.type) && isVisible(e.scopes?.type ?? e.scope, watched);
+}
+
+/**
+ * `watched` DEFAULTS, so no call site breaks this phase.
+ *
+ * `currentWatched()` is the module-level mirror, and its one sanctioned
+ * position is exactly this: a default-parameter slot in a module with no JSX.
+ * Read the note on it in state/useWatched.ts before copying this line anywhere
+ * else — the graph is rebuilt from `useAtlas`'s `useMemo`, so when Phase 4
+ * mounts the provider, THAT call site has to start passing `useWatched().watched`
+ * and adding it to the memo's dependency list. Until it does, the default is
+ * `WATCHED_ALL` and every count below is the count this app has always printed.
+ */
+export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()): BuiltGraph {
   /* `degree` COUNTS MEETINGS. It is the root: the canvas's accessible node
      list reads it out as 관계 n개, `noTies` is decided from it, and every
      count downstream descends from the same adjacency. A `parallel` edge is
@@ -150,8 +209,23 @@ export function buildGraph(data: Dataset): BuiltGraph {
        radius — and the rail's node key says in as many words that size is the
        connection count. A non-meeting is not connectedness, so it is not
        summed either. It costs the three cold plates 1 point of a 44-point
-       maximum, i.e. 0.28px of radius, and makes the legend's claim true. */
-    if (!isMeeting(e.type)) continue;
+       maximum, i.e. 0.28px of radius, and makes the legend's claim true.
+
+       A tie this reader may not be told about is not connectedness they can
+       see, so it is not summed either — same gate, same line, because degree
+       and strength must never disagree about which edges exist.
+
+       NOTHING BELOW THIS LOOP CHANGED. `maxStrength`, `conn`, `history`,
+       `weight` and `radius: 24 + weight * 20` are the same expressions with a
+       shorter list feeding them, which is the whole of the brief: subtract
+       edges, do not re-tune the map from edges to size. Note the one honest
+       consequence, since it is a property of the existing arithmetic rather
+       than of this line: `maxStrength` is a max over the survivors, so it
+       renormalises. Hiding the busiest person's ties does not shrink everyone
+       — it promotes whoever is busiest among what is left. That is the same
+       relative reading the graph has always given, applied to a smaller set,
+       and re-tuning it would be exactly the change this file may not make. */
+    if (!countsAsTie(e, watched)) continue;
     degree.set(e.source, (degree.get(e.source) ?? 0) + 1);
     degree.set(e.target, (degree.get(e.target) ?? 0) + 1);
     strengthSum.set(e.source, (strengthSum.get(e.source) ?? 0) + e.strength);
@@ -161,7 +235,7 @@ export function buildGraph(data: Dataset): BuiltGraph {
 
   const nodes: GNode[] = data.people.map((p, i) => {
     const isWinner = p.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant');
-    const isHost = p.priorSeasons.some(watched);
+    const isHost = p.priorSeasons.some(watchedRun);
     const seasons = [...new Set(p.priorSeasons.map((s) => s.season))].sort();
 
     // Importance blends how connected they are with how much franchise
@@ -203,8 +277,10 @@ export function buildGraph(data: Dataset): BuiltGraph {
          radius is very nearly a straight gain in on-screen size rather than
          something the fit takes back. */
       radius: 24 + weight * 20,
-      /* Meetings. Read `degree` as "verified connections" everywhere it is
-         consumed — that is now what it holds. */
+      /* Meetings THIS READER MAY BE TOLD ABOUT. Read `degree` as "verified
+         connections you can see from where you are" everywhere it is consumed
+         — at the default watched-set that is every verified connection, which
+         is the number this app has always printed. */
       degree: degree.get(p.id) ?? 0,
       x: Math.cos(a) * r,
       y: Math.sin(a) * r,
@@ -219,7 +295,16 @@ export function buildGraph(data: Dataset): BuiltGraph {
          headToHead.ts, computed there off the same predicate, so the plate's
          dashed rim, the canvas's cold band and the dossier's cold notice all
          fire for the same people for the same reason. Written once, from
-         `degree`, so the two cannot disagree. */
+         `degree`, so the two cannot disagree.
+
+         IT IS NOW A FUNCTION OF THE READER as well as of the data, and that is
+         the state a narrow watched-set is supposed to produce: someone whose
+         every tie is sealed walks in cold, which is the honest description of
+         what that reader can see, and the canvas already has a band for it.
+         `neverFaced` in headToHead.ts is p2:ledger's file and gains the same
+         parameter; the two agree only for as long as they are asked the same
+         question with the same set, which the shared `isMeeting` + scope rule
+         is what makes possible. */
       noTies: (degree.get(p.id) ?? 0) === 0,
       /* Seasons and finishes are known now; the tie arrays need the links, so
          they are filled in below once `edgesOf` exists. */
@@ -304,10 +389,21 @@ export function buildGraph(data: Dataset): BuiltGraph {
      tally the legend has already named. The three plates it empties get the
      dashed no-ties rim instead, which is the mark for exactly that state.
      Portrait.tsx filters its own `connections` prop the same way; both painters
-     have to, because they are handed different lists. */
+     have to, because they are handed different lists.
+
+     AND SEALED TIES ARE NOT TICKED, by the same predicate that decides
+     `degree`. This is not scope creep, it is what makes `noTies` mean
+     anything: `noTies` is read off `degree`, so a plate whose every edge is
+     sealed would otherwise carry `noTies: true` AND a rim of ticks — the
+     dashed no-ties rim and five marks contradicting it, on one disc, in one
+     object. Worse, a tick is `{ type, strength }` and `tieTypes` is a census
+     BY TYPE, so an unfiltered rim prints the sealed verdict as a tally: three
+     of these edges are betrayals. One predicate for the count and the picture
+     of the count, or they drift the way this comment's first paragraph
+     describes. */
   for (const n of nodes) {
     const mine = (edgesOf.get(n.id) ?? [])
-      .filter((l) => isMeeting(l.type))
+      .filter((l) => countsAsTie(l.edge, watched))
       .sort((a, b) => b.edge.strength - a.edge.strength);
     n.plate.ties = mine.map((l) => ({ type: l.type, strength: l.edge.strength }));
     const byType = new Map<string, number>();

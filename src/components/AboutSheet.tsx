@@ -31,7 +31,7 @@ import {
 } from '../graph/plateGeometry';
 import { HAS_PORTRAITS, onPortraitLoad, photoGain, portraitUrl } from '../graph/portraits';
 import { isMeeting } from '../data/edges';
-import { career, careerTable, neverFaced } from '../data/headToHead';
+import { careerSeenBy, careerTableSeenBy, neverFacedSeenBy } from '../data/headToHead';
 import { fill } from '../data/i18n/ui';
 import {
   CATEGORY_LABEL_I18N,
@@ -40,15 +40,18 @@ import {
   franchiseText,
   glossaryTerm,
   personName,
+  runFacts,
   runText,
   seasonText,
   seasonTitle,
+  seasonWinner,
   t,
   ui,
   type Lang,
   type UiKey,
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
+import { useWatched, type WatchedSet } from '../state/useWatched';
 import { ALL_CATEGORIES, ALL_EDGE_TYPES } from '../state/useAtlas';
 import './AboutSheet.css';
 
@@ -271,13 +274,52 @@ const SEASON_NUMBERS: SeasonNumber[] = [1, 2, 3];
    where, when" are the first two questions a franchise fan asks, and the atlas
    held the data to answer both while offering neither. */
 
+/**
+ * WHAT AN EMPTY TRACK RECORD SAYS.
+ *
+ * A reader who has watched nothing gets this table with its two result columns
+ * dashed out and its season cells blank, and a table full of dashes with no
+ * sentence attached reads as a data set that failed to load — which is the one
+ * impression a reference work cannot afford, and the exact charge the reader who
+ * wrote in already levelled at this app. So the empty state is told rather than
+ * shown, and it is told once above the table instead of per cell.
+ *
+ * It says two things and refuses a third. It says the finishes are missing
+ * because of the reader's own answer, so the blanks are not a gap in the
+ * research. It says what is still on the page — who was in which season, and in
+ * what role — because that is participation and is never redacted, and a reader
+ * who thinks the whole table is gone will not scan it. It does NOT count them:
+ * 'eleven finishes are hidden' is itself a fact about how many ranked runs the
+ * corpus holds, and an empty state that leaks the shape of what it is hiding has
+ * missed the point of being an empty state.
+ *
+ * ⚠ THIS STRING BELONGS IN `data/i18n/ui.ts` AND IS NOT THERE. Every other line
+ * of copy in this app is a `UiKey`, and `UiKey` is a closed union, so adding one
+ * means editing `ui.ts` — a file this owner was not given and which a second,
+ * half-landed component (`Credit.tsx`, which calls two `credit.*` keys that do
+ * not exist) is already queued to edit. Two owners in `ui.ts` in one session is
+ * the collision the contract's ownership rule exists to prevent, so the copy is
+ * parked here, in a file that is mine, rather than raced there. It is a
+ * mechanical lift into `ui.ts` as `about.recordSealedNote` the moment one owner
+ * holds that file. Named in the handoff.
+ */
+const RECORD_SEALED_NOTE: Record<Lang, string> = {
+  ko: '아직 보지 않았다고 표시한 시즌의 성적은 이 표에서 빠집니다. 누가 어느 시즌에 있었는지와 어떤 자리였는지는 그대로 남아 있습니다.',
+  en: 'Finishes from the seasons you have not marked as watched are left out of this table. Who was in which season, and in what role, is still here.',
+};
+
 type SortKey = 'name' | 'seasons' | 'best' | 'share' | 'ties';
 
 interface RecordCell {
-  /** '우승' / '4th' / '진행' — the short form, in the reader's language. */
+  /** '우승' / '4th' / '진행' — the short form, in the reader's language.
+      Empty when the finish is withheld: the cell then falls to the same '—'
+      an unplayed season gets. Telling those two states apart on the page is
+      Phase 3's sealed mark, not this phase's. */
   label: string;
   /** '/ 13명 중' — the field the rank was taken from, where there is one. */
   of: string;
+  /** GATED. Drives the brass on a win and the muted ink on a role, so it is
+      `runFacts().rank` and never `run.rank`. */
   rank?: number;
   season: SeasonNumber;
 }
@@ -308,23 +350,55 @@ interface RecordRow {
   careerRank: number;
   /** Ties that are a `parallel` record, i.e. explicitly not a meeting. */
   parallelTies: number;
+  /**
+   * How many of this person's played seasons have a finish this reader may not
+   * be told. Zero for every row at the default set, which is what makes the
+   * note this feeds invisible until somebody narrows their answer.
+   *
+   * Counted rather than flagged because the sum across the table is the number
+   * the note is about — 'this table is missing finishes' is a different and
+   * much less honest sentence than nothing at all when the answer is one.
+   */
+  sealedRuns: number;
 }
+
+/** What `runFacts` hands back, named so it can be computed once per run and
+    spent on the cell, its denominator, the best-finish column and the sort. */
+type RunFacts = ReturnType<typeof runFacts>;
 
 /** A finish in one notation, in the reader's language. The rank only; the
     denominator is `fieldOf` below, because this table sets the two at
-    different ranks of ink. */
-function shortFinish(p: Person, run: SeasonRun, index: number, lang: Lang): string {
-  if (run.role === 'contestant' && run.rank) {
-    if (run.rank === 1) return t(lang, 'gallery.winnerShort');
-    if (lang === 'ko') return `${run.rank}${t(lang, 'gallery.rankUnit')}`;
-    const tens = run.rank % 100;
-    const suffix = tens >= 11 && tens <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][run.rank % 10] ?? 'th');
-    return `${run.rank}${suffix}`;
+    different ranks of ink.
+    THE RANK ARRIVES GATED — see `runFacts` — rather than being read off the
+    record here, which is what printed eight placements and four 우승 into this
+    table for a reader who had watched nothing. */
+function shortFinish(
+  p: Person,
+  run: SeasonRun,
+  index: number,
+  lang: Lang,
+  facts: RunFacts,
+  watched: WatchedSet,
+): string {
+  if (run.role === 'contestant') {
+    /* WITHHELD IS EMPTY, AND MUST NOT FALL THROUGH to the role branch. `role`
+       is deliberately never gated, so a redacted contestant reaching the lines
+       below would be labelled off a sealed placement string — '' — and then
+       off `gallery.hostShort`, which asserts they were there and not playing.
+       That is a false claim standing in for a withheld one. All fourteen
+       contestant runs carry a rank (measured), so at the default set this
+       early return is unreachable and the column is byte-identical. */
+    if (!facts.rank) return '';
+    if (facts.rank === 1) return t(lang, 'gallery.winnerShort');
+    if (lang === 'ko') return `${facts.rank}${t(lang, 'gallery.rankUnit')}`;
+    const tens = facts.rank % 100;
+    const suffix = tens >= 11 && tens <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][facts.rank % 10] ?? 'th');
+    return `${facts.rank}${suffix}`;
   }
   /* A non-playing run has no number and the roles are not interchangeable —
      a studio panel seat is not a dealer's chair — so the head of the record's
      own placement string is used rather than a flattened "Host". */
-  const head = runText(p.id, run, index, lang).placement.split(/\s+[·—]\s+/)[0].trim();
+  const head = runText(p.id, run, index, lang, watched).placement.split(/\s+[·—]\s+/)[0].trim();
   return head || t(lang, 'gallery.hostShort');
 }
 
@@ -339,10 +413,15 @@ function shortFinish(p: Person, run: SeasonRun, index: number, lang: Lang): stri
  * quieter than the rank it qualifies: the ordinal is the figure being scanned,
  * the denominator is what makes it a fact. Empty where there is no placing or
  * no recorded field.
+ *
+ * IT TAKES THE GATED PAIR, and the pair is why `runFacts` returns both together:
+ * `rank / fieldSize` is exactly invertible, so a denominator that outlived its
+ * numerator would hand back the finish it was hiding. The rank check below is
+ * therefore belt to `runFacts`'s braces rather than a second opinion.
  */
-function fieldOf(run: SeasonRun, lang: Lang): string {
-  if (run.role !== 'contestant' || !run.rank || !run.fieldSize) return '';
-  return t(lang, 'record.ofField').replace('{n}', String(run.fieldSize));
+function fieldOf(run: SeasonRun, lang: Lang, facts: RunFacts): string {
+  if (run.role !== 'contestant' || !facts.rank || !facts.fieldSize) return '';
+  return t(lang, 'record.ofField').replace('{n}', String(facts.fieldSize));
 }
 
 /* The sheet enters over 420ms; it used to leave in a single frame. Exits run
@@ -543,6 +622,17 @@ interface TabDef {
 
 export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Element | null {
   const { lang } = useLang();
+  /* THE HOOK, NOT `currentWatched()`, AND THREADED EXPLICITLY EVERYWHERE BELOW.
+     This is the subscription: the context changing identity is the only thing
+     that tells React this sheet has to paint again. Every accessor and every
+     `*SeenBy` call on this surface is handed `watched` by hand and every memo
+     that consumes one carries it in its dependency array — an omitted dep here
+     is not a lint nit, it is the track-record table keeping eight placements on
+     screen after the reader has just said they have not seen those seasons.
+     Leaving an accessor on its default parameter would read the module global,
+     which React knows nothing about; see the note on `currentWatched` in
+     state/useWatched.ts. */
+  const { watched } = useWatched();
   const reduced = Boolean(useReducedMotion());
   const uid = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -622,7 +712,15 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       bucket.set(e.source, (bucket.get(e.source) ?? 0) + 1);
       bucket.set(e.target, (bucket.get(e.target) ?? 0) + 1);
     }
-    const careerOrder = new Map(careerTable.map((c, i) => [c.id, i]));
+    /* `careerTableSeenBy`, not the pinned `careerTable`: the ordering IS a
+       result. The pinned constant ranks whole careers off finishes the reader
+       may not have been told, so at a narrow set the rows would have come out
+       in an order that answers the question the cells refuse to. It returns 0
+       rows for a reader who has watched nothing, and `careerRank` then falls to
+       Infinity for everybody, which the sort below already handles as "not a
+       bad career, an unmeasured one" — the neutral ordering, by name. */
+    const careerOrder = new Map(careerTableSeenBy(watched).map((c, i) => [c.id, i]));
+    const career = careerSeenBy(watched);
     const rows: RecordRow[] = [];
     for (const p of dataset.people ?? []) {
       const runs = p.priorSeasons ?? [];
@@ -631,16 +729,27 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       const cells = new Map<SeasonNumber, RecordCell>();
       let best = Infinity;
       let bestLabel = '';
+      let sealedRuns = 0;
       runs.forEach((run, i) => {
+        /* One call per run, spent five ways: the cell label, its denominator,
+           the cell's own rank, the best-finish column and the sealed count. */
+        const facts = runFacts(run, lang, watched);
+        const label = shortFinish(p, run, i, lang, facts, watched);
+        /* THE CELL IS STILL SET even when the finish is withheld. It is what
+           the chronology spine counts — `r.cells.has(season)` is "was this
+           person in that season", which is participation and is never
+           redacted — so dropping the entry here would have quietly emptied the
+           연표 as well as the table. */
         cells.set(run.season, {
-          label: shortFinish(p, run, i, lang),
-          of: fieldOf(run, lang),
-          rank: run.rank,
+          label,
+          of: fieldOf(run, lang, facts),
+          rank: facts.rank,
           season: run.season,
         });
-        if (run.role === 'contestant' && run.rank && run.rank < best) {
-          best = run.rank;
-          bestLabel = shortFinish(p, run, i, lang);
+        if (run.role === 'contestant' && !facts.rank) sealedRuns += 1;
+        if (run.role === 'contestant' && facts.rank && facts.rank < best) {
+          best = facts.rank;
+          bestLabel = label;
         }
       });
       const c = career[p.id];
@@ -659,10 +768,11 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
         outlasted: c?.outlasted ?? 0,
         titles: c?.titles ?? 0,
         careerRank: careerOrder.get(p.id) ?? Infinity,
+        sealedRuns,
       });
     }
     return rows;
-  }, [dataset.edges, dataset.people, lang]);
+  }, [dataset.edges, dataset.people, lang, watched]);
 
   const sortedRecords = useMemo<RecordRow[]>(() => {
     const byName = (a: RecordRow, b: RecordRow): number =>
@@ -701,14 +811,30 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
 
   const hasRecords = records.length > 0;
 
+  /**
+   * How many finishes this table is not printing.
+   *
+   * Zero at the default watched-set — all fourteen contestant runs are ranked
+   * and every rank is visible — so the note it feeds does not exist for anybody
+   * who has not narrowed their answer, and Rule 0 holds by construction. It is
+   * a sum over rows rather than a boolean because it also has to be zero, not
+   * merely false, on the partial sets: a reader who has seen season 1 and
+   * nothing else is missing eleven of them and should be told once, not per
+   * cell.
+   */
+  const sealedFinishes = useMemo(
+    () => records.reduce((n, r) => n + r.sealedRuns, 0),
+    [records],
+  );
+
   /* The three the `parallel` edge type was invented for, named. */
   const coldCast = useMemo(
     () =>
-      neverFaced
+      neverFacedSeenBy(watched)
         .map((id) => (dataset.people ?? []).find((p) => p.id === id))
         .filter((p): p is Person => p !== undefined)
         .map((p) => ({ id: p.id, ...personName(p, lang) })),
-    [dataset.people, lang],
+    [dataset.people, lang, watched],
   );
 
   const tabs = useMemo<TabDef[]>(() => {
@@ -1275,10 +1401,20 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       <p className="abt-prose">{t(lang, 'about.seasonsBody')}</p>
       <div className="abt-seasons">
         {seasons.map((s) => {
+          /* `seasonTitle` takes no watched-set and wants none: a season's title
+             is the name of a programme, not a result. `seasonText` gates the
+             prize and the signature moment and so is handed the set by hand. */
           const title = seasonTitle(s, lang);
-          const text = seasonText(s, lang);
-          const winnerLead = lang === 'en' ? s.winnerNameEn || s.winnerNameKo : s.winnerNameKo;
-          const winnerSub = lang === 'en' ? s.winnerNameKo : s.winnerNameEn;
+          const text = seasonText(s, lang, watched);
+          /* THE MOST SPOILING FIELD IN THE DATASET, and this panel printed it
+             raw: '우승 / Winner' in brass beside a name, three times, on the one
+             tab a reader opens to find out what this franchise IS. `winnerId`
+             comes through the same accessor and is gated with the names,
+             because the 'X 출연' pip beside a sealed name is not a name but it
+             does narrow twenty people to one bloc. Sealed, all three resolve to
+             '' / undefined and `<Fact>` renders null — the row simply is not
+             there. At the default they are what the record holds. */
+          const winner = seasonWinner(s, lang, watched);
           return (
             /* SEASON_COLOR, not the dataset's own `accent`: this panel is the
                surface that TEACHES the season hues, and the two had already
@@ -1316,12 +1452,19 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
                 <Fact
                   lang={lang}
                   k="about.factWinner"
-                  value={winnerLead}
-                  valueLang={lang === 'en' && s.winnerNameEn ? 'en' : 'ko'}
-                  sub={winnerSub}
+                  value={winner.primary}
+                  /* `translated` off the accessor, not `lang === 'en' &&
+                     s.winnerNameEn`: once the name is gated, "is this the
+                     English one?" can no longer be recovered by looking at the
+                     string, because a sealed English name and a Korean
+                     fallback both come back as something that is not
+                     `winnerNameEn`. The flag is the answer, and it is computed
+                     on the raw record before the gate. */
+                  valueLang={winner.translated ? 'en' : 'ko'}
+                  sub={winner.secondary}
                   subLang={lang === 'en' ? 'ko' : 'en'}
                   tone="brass"
-                  pip={s.winnerId && castIds.has(s.winnerId) ? pairText(lang, 'about.inThisCast') : undefined}
+                  pip={winner.id && castIds.has(winner.id) ? pairText(lang, 'about.inThisCast') : undefined}
                 />
               </dl>
               {has(text.signatureMoment) && (
@@ -1383,6 +1526,11 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       <>
         <SecH lang={lang} k="about.recordHeading" />
         <p className="abt-prose">{t(lang, 'about.recordBody')}</p>
+        {/* Above the spine and the table rather than under them, because it is
+            the frame a reader needs before they scan a column of dashes, not a
+            footnote explaining one afterwards. `sealedFinishes` is 0 at the
+            default set, so this element does not exist on the default page. */}
+        {sealedFinishes > 0 && <p className="abt-note">{RECORD_SEALED_NOTE[lang]}</p>}
 
         {/* the chronological spine — 2021 to now, in one line */}
         <SecSub lang={lang} k="about.recordSpine" />
@@ -1484,7 +1632,19 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
                     const cell = r.cells.get(n);
                     return (
                       <td className="abt-rec__cell" key={n}>
-                        {cell ? (
+                        {/* `cell.label` AND NOT JUST `cell`. A withheld finish
+                            keeps its cell — the spine counts those — but has no
+                            string to set, and rendering the chip empty would
+                            print a bordered, season-tinted box around nothing:
+                            a mark that says "there is a result here" while
+                            refusing to say what, which is a louder claim than
+                            the dash. It falls to the same '—' an unplayed
+                            season gets. Those two states are deliberately not
+                            distinguished this phase; the sealed mark that tells
+                            them apart is Phase 3, in the commit that also adds
+                            the legend row explaining it. At the default every
+                            cell has a label, so this reads as it always did. */}
+                        {cell && cell.label ? (
                           <span
                             className={`abt-rec__run${cell.rank === 1 ? ' abt-rec__run--win' : ''}${
                               cell.rank ? '' : ' abt-rec__run--role'
@@ -1600,7 +1760,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       <SecH lang={lang} k="about.glossaryHeading" />
       <dl className="abt-glossary">
         {glossary.map((g) => {
-          const entry = glossaryTerm(g, lang);
+          const entry = glossaryTerm(g, lang, watched);
           return (
             <div className="abt-gloss" key={`${g.termKo}-${g.termEn}`}>
               <dt className="abt-gloss__term">

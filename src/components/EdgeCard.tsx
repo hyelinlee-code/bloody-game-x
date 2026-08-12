@@ -4,7 +4,9 @@ import { EDGE_COLOR } from '../graph/palette';
 import { EDGE_LABEL_I18N, edgeText, personName, t } from '../data/i18n';
 import { fill } from '../data/i18n/ui';
 import { haveFaced, meetingsFor } from '../data/headToHead';
+import { isVisible, pick } from '../data/redact';
 import { useLang } from '../state/useLang';
+import { useWatched } from '../state/useWatched';
 import { Portrait } from './Portrait';
 import './EdgeCard.css';
 
@@ -90,6 +92,11 @@ function boxToSegment(bx: number, by: number, bw: number, bh: number, s: EdgeCar
 
 export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeCardProps): JSX.Element | null {
   const { lang } = useLang();
+  /* Through the hook, never `currentWatched()`. This card is the surface most
+     likely to be on screen when a reader changes their mind — it follows the
+     cursor — and a module global carries no subscription, so it would keep
+     printing the verdict it was first rendered with. See state/useWatched.ts. */
+  const { watched } = useWatched();
   const touch = useTouchOnly();
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 320, h: 210 });
@@ -143,10 +150,35 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
   if (!link) return null;
 
   const e = link.edge;
-  const text = edgeText(e, lang);
+  const text = edgeText(e, lang, watched);
   const color = EDGE_COLOR[link.type];
   const a = personName(link.source.person, lang);
   const b = personName(link.target.person, lang);
+  /* ── the word, and the arrowhead ─────────────────────────────────────────
+     THE TIE IS STRUCTURE AND STAYS ON THE CARD. What it is CALLED is not:
+     works.ts lists `type` and `directed` on `OUTCOME_FIELDS.Edge` because
+     '배신' is a verdict about a named person and '→' is that verdict with a
+     direction, and both degrade to a neutral tie rather than to no tie.
+
+     `edgeText` gates the headline and the account and deliberately returns
+     neither of these — the docblock there says they reach the canvas through
+     graph/build.ts instead. So this was the state the round was called for:
+     graph/build.ts had already stopped COUNTING a betrayal whose scope is
+     sealed (`countsAsTie`, same `scopes?.type ?? scope` resolution as here),
+     while this card went on printing the word for it. The graph stopped
+     counting the betrayal and the card still named it.
+
+     `pick`, not a second predicate — one gate, in data/redact.ts. */
+  const typeScope = e.scopes?.type ?? e.scope;
+  const typeLabel = pick(EDGE_LABEL_I18N[lang][link.type], typeScope, watched);
+  /* `link.directed` is `Boolean(e.directed) || e.type === 'betrayal'`, resolved
+     in build.ts off the raw record, so the two halves are unpicked here and
+     each asked about the field it actually came from. Where neither survives
+     the pair reads '—', which is what an undirected tie has always looked
+     like. */
+  const directed =
+    (e.directed === true && isVisible(e.scopes?.directed ?? e.scope, watched)) ||
+    (link.type === 'betrayal' && isVisible(typeScope, watched));
   /* ── what this pair has already settled ──────────────────────────────────
      The card describes the tie; the ledger says how it came out. Those are
      different facts and until now only the first reached a screen: the
@@ -158,12 +190,11 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
      and the predicate is already decided once, per pair, in headToHead.ts.
      Capped at three: this is a cursor-tethered card, not a document, and the
      dossier's ledger holds the full record. */
-  const results = haveFaced(link.source.id, link.target.id)
-    ? meetingsFor(link.source.id)
+  const results = haveFaced(link.source.id, link.target.id, watched)
+    ? meetingsFor(link.source.id, watched)
         .filter((m) => m.winner === link.target.id || m.loser === link.target.id)
         .slice(0, 3)
     : [];
-  const directed = link.directed;
   const unsure = e.confidence !== 'high';
   const where =
     e.season > 0 ? `${t(lang, 'dossier.seasonPrefix')} ${e.season}` : t(lang, 'common.outsideHouse');
@@ -221,7 +252,7 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
         </div>
 
         <ul className="edgecard__tags">
-          <li className="edgecard__chip">{EDGE_LABEL_I18N[lang][link.type]}</li>
+          {typeLabel ? <li className="edgecard__chip">{typeLabel}</li> : null}
           <li className="edgecard__tag">{where}</li>
           {unsure ? (
             <li className="edgecard__tag edgecard__tag--unsure" title={t(lang, 'dossier.unverifiedTie')}>
