@@ -682,6 +682,14 @@ export const ui = {
     'lang.toggle': '언어 전환',
     'lang.ko': '한국어',
     'lang.en': 'English',
+    /* ── the byline ────────────────────────────────────────────────────────
+       An atlas that counts its own citations to one decimal place and fails
+       the build when the sourcing paragraph drifts should not be anonymous.
+       One sentence per language rather than a name slotted into a template:
+       Korean puts the maker after the thing, English puts them after "by", and
+       a shared template gives you one natural line and one translated one. */
+    'credit.by': '만든 사람 · Hyelin Lee · 피드백과 문의 환영합니다',
+    'credit.linkPrefix': 'Hyelin Lee —',
   },
 
   en: {
@@ -1167,6 +1175,9 @@ export const ui = {
     'lang.toggle': 'Switch language',
     'lang.ko': 'Korean',
     'lang.en': 'English',
+    /* See the Korean entry. */
+    'credit.by': 'Built with love by Hyelin Lee · any feedback or inquiry welcomed',
+    'credit.linkPrefix': 'Hyelin Lee on',
   },
 } as const;
 

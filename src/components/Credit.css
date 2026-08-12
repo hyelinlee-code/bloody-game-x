@@ -1,0 +1,99 @@
+/* The byline, riding the status bar's right-hand group.
+
+   Set one step below the ledger it sits beside: this is the only element on the
+   bar that is about the app rather than about the data, so it reads at --ink-low
+   and lifts to --ink-mid on hover. A byline that competed with TIES 52 for
+   attention would be worse than no byline. */
+
+.credit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.credit__by {
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  white-space: nowrap;
+  /* Korean and Latin ride the same line here, so the tracking is the Hangul
+     step — a Latin caps step would space 'Hyelin Lee' against 만든 사람. */
+  letter-spacing: var(--tr-caps-ko);
+}
+
+.credit__links {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.credit__link {
+  display: inline-grid;
+  place-items: center;
+  /* 13px mark inside a 28px box. The mark is the size the bar can carry; the box
+     is the size a thumb needs, and they are allowed to differ — the bar is 34px
+     tall so a 44px target cannot fit without growing it, and growing it costs
+     the graph exactly the height this component was placed here to avoid. 28 is
+     what the bar affords; the phone gets the real target, below. */
+  width: 28px;
+  height: 28px;
+  border-radius: var(--rad-sm);
+  color: var(--ink-low);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    background var(--d-fast) var(--ease-out);
+}
+
+.credit__link:hover,
+.credit__link:focus-visible {
+  color: var(--ink-hi);
+  background: var(--glass-2);
+}
+
+.credit__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Under 900px the status bar is already fighting for room and the hint line is
+   the thing a first-time reader needs. The sentence goes; the three marks stay,
+   at a real touch size, because a link nobody can hit is worse than no link. */
+@media (max-width: 900px) {
+  .credit__by {
+    display: none;
+  }
+  .credit__link {
+    /* Exactly the bar's own height. Measured at 390x844: bar 810-844, link 34,
+       zero overflow top or bottom and scrollWidth === clientWidth, so it sits
+       flush rather than clipped.
+
+       The bar does NOT grow to hold this, and an earlier version of this comment
+       claimed it did. It cannot: --statusbar-h feeds --inset-bottom, which is
+       the camera's uncovered rect, and the phone build already only fills 40.4%
+       of its available height. Four more pixels of chrome is four fewer for the
+       graph. */
+    width: 34px;
+    height: 34px;
+  }
+  /* 34 drawn, 44 hittable. The same trick .frail__close and .fmini use, for the
+     same reason — the visual box is what the bar affords and the hit box is what
+     a thumb needs, and they are allowed to differ. The bleed is vertical only:
+     horizontally the three sit 2px apart and a sideways bleed would make
+     neighbours overlap, so a tap between two marks would land on whichever
+     happened to paint last. */
+  .credit__link::after {
+    content: '';
+    position: absolute;
+    inset-block: -5px;
+    inset-inline: 0;
+  }
+  .credit__link {
+    position: relative;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credit__link {
+    transition: none;
+  }
+}

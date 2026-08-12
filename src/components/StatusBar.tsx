@@ -3,6 +3,7 @@ import type { Dataset } from '../data/types';
 import type { AtlasState } from '../state/useAtlas';
 import { personName, t, ui } from '../data/i18n';
 import { useLang } from '../state/useLang';
+import { Credit } from './Credit';
 import './StatusBar.css';
 
 export interface StatusBarProps {
@@ -183,6 +184,10 @@ export function StatusBar({ atlas, dataset, onReset, introDone }: StatusBarProps
 
         {/* ── scope badge ── */}
         <div className="sb__right">
+          {/* Who made it. Sits ahead of the badge so the right-hand group
+              reads maker -> promise -> freshness rather than interrupting the
+              two data statements with a byline. */}
+          <Credit lang={lang} />
           <span className="sb__badge" title={spoilerTitle}>
             <svg className="sb__shield" width="11" height="12" viewBox="0 0 11 12" aria-hidden="true" focusable="false">
               <path
