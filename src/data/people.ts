@@ -443,9 +443,13 @@ export const people: Person[] = [
     bio: '하이라이트 레코즈 소속 래퍼로 뉴욕대학교 철학과를 졸업했다. 태권도 주니어 올림픽 금메달 이력도 있다. 「쇼미더머니」 6·777·8에 출연했고, 카카오TV 웹예능 「생존남녀」에서 우승하며 서바이벌 예능에도 이름을 올렸다.',
     notableFor: ['뉴욕대 철학과 졸업', "웹예능 「생존남녀」 우승", '태권도 주니어 올림픽 금메달', '하이라이트 레코즈'],
     otherShows: [
-      { show: 'Show Me The Money 6', showKo: '쇼미더머니 6', year: '2017', result: '3차 예선 탈락', resultEn: 'Out in the third preliminary', scope: ['smtm-6'] },
-      { show: 'Show Me The Money 777', showKo: '쇼미더머니 777', year: '2018', result: '음원 미션 탈락', resultEn: 'Out at the track mission', scope: ['smtm-777'] },
-      { show: 'Show Me The Money 8', showKo: '쇼미더머니 8', year: '2019', result: '크루 리벤지 배틀 탈락', resultEn: 'Out in the crew revenge battle', scope: ['smtm-8'] },
+      /* `[]`, not an id: 쇼미더머니 left the registry — see works.ts on which
+         programmes this atlas is willing to seal. An empty scope is an author's
+         assertion that nothing here is at stake, which is a different value
+         from `undefined` and is the one that shows the row. */
+      { show: 'Show Me The Money 6', showKo: '쇼미더머니 6', year: '2017', result: '3차 예선 탈락', resultEn: 'Out in the third preliminary', scope: [] },
+      { show: 'Show Me The Money 777', showKo: '쇼미더머니 777', year: '2018', result: '음원 미션 탈락', resultEn: 'Out at the track mission', scope: [] },
+      { show: 'Show Me The Money 8', showKo: '쇼미더머니 8', year: '2019', result: '크루 리벤지 배틀 탈락', resultEn: 'Out in the crew revenge battle', scope: [] },
       { show: 'Survival Men and Women', showKo: '생존남녀: 갈라진 세상', result: '우승', resultEn: 'Winner', scope: ['survival-men-women'] },
     ],
     priorSeasons: records['yoon-bi'] ?? [],
@@ -462,16 +466,16 @@ export const people: Person[] = [
         arc: '래퍼로서의 방송 이력은 세 번의 탈락으로 되어 있다 — 2017년 「쇼미더머니6」 3차 예선, 2018년 「쇼미더머니777」 음원 미션, 2019년 「쇼미더머니8」 크루 리벤지 배틀. 정작 그가 우승한 프로그램은 랩 경연이 아니라 서바이벌이다: 카카오TV 웹예능 「생존남녀: 갈라진 세상」에서 우승했다. 피의 게임 바깥의 서바이벌을 이겨 본 적이 있는 사람은 이 스무 명 중 많지 않고, 시즌2에서 저택을 통째로 가져간 플레이를 미리 설명해 주는 것도 쇼미더머니 쪽 이력이 아니라 이쪽이다. 하이라이트 레코즈 소속이고, 뉴욕대학교 철학과를 나왔으며, 태권도 주니어 올림픽 금메달도 갖고 있다.',
         arcEn:
           "His record as a rapper on television is three eliminations: the third preliminary of Show Me The Money 6 (쇼미더머니6) in 2017, the track mission of Show Me The Money 777 in 2018, the crew revenge battle of Show Me The Money 8 in 2019. The programme he actually won was not a rap contest but a survival — Survival Men and Women: A World Divided (생존남녀: 갈라진 세상), the Kakao TV web series. Not many of the twenty have won a survival show outside this franchise, and it is that credit rather than the Show Me The Money ones that explains the season 2 run in which he took the entire mansion. He records for Highlight Records, read philosophy at New York University, and holds a junior Olympic gold in taekwondo.",
-        scope: ['smtm-6', 'smtm-777', 'smtm-8', 'survival-men-women', 'bg2'],
-        scopes: { show: ['smtm-6', 'smtm-777', 'smtm-8', 'survival-men-women'], showKo: ['smtm-6', 'smtm-777', 'smtm-8', 'survival-men-women'], result: ['smtm-6', 'smtm-777', 'smtm-8', 'survival-men-women'], resultEn: ['smtm-6', 'smtm-777', 'smtm-8', 'survival-men-women'] },
+        scope: ['survival-men-women', 'bg2'],
+        scopes: { show: ['survival-men-women'], showKo: ['survival-men-women'], result: ['survival-men-women'], resultEn: ['survival-men-women'] },
         arcParts: [
-          { text: "래퍼로서의 방송 이력은 세 번의 탈락으로 되어 있다 — 2017년 「쇼미더머니6」 3차 예선, 2018년 「쇼미더머니777」 음원 미션, 2019년 「쇼미더머니8」 크루 리벤지 배틀. ", scope: ['smtm-6', 'smtm-777', 'smtm-8'] },
+          { text: "래퍼로서의 방송 이력은 세 번의 탈락으로 되어 있다 — 2017년 「쇼미더머니6」 3차 예선, 2018년 「쇼미더머니777」 음원 미션, 2019년 「쇼미더머니8」 크루 리벤지 배틀. ", scope: [] },
           { text: "정작 그가 우승한 프로그램은 랩 경연이 아니라 서바이벌이다: 카카오TV 웹예능 「생존남녀: 갈라진 세상」에서 우승했다. ", scope: ['survival-men-women'] },
           { text: "피의 게임 바깥의 서바이벌을 이겨 본 적이 있는 사람은 이 스무 명 중 많지 않고, 시즌2에서 저택을 통째로 가져간 플레이를 미리 설명해 주는 것도 쇼미더머니 쪽 이력이 아니라 이쪽이다. ", scope: ['survival-men-women', 'bg2'] },
           { text: "하이라이트 레코즈 소속이고, 뉴욕대학교 철학과를 나왔으며, 태권도 주니어 올림픽 금메달도 갖고 있다.", scope: [] },
         ],
         arcEnParts: [
-          { text: "His record as a rapper on television is three eliminations: the third preliminary of Show Me The Money 6 (쇼미더머니6) in 2017, the track mission of Show Me The Money 777 in 2018, the crew revenge battle of Show Me The Money 8 in 2019. ", scope: ['smtm-6', 'smtm-777', 'smtm-8'] },
+          { text: "His record as a rapper on television is three eliminations: the third preliminary of Show Me The Money 6 (쇼미더머니6) in 2017, the track mission of Show Me The Money 777 in 2018, the crew revenge battle of Show Me The Money 8 in 2019. ", scope: [] },
           { text: "The programme he actually won was not a rap contest but a survival — Survival Men and Women: A World Divided (생존남녀: 갈라진 세상), the Kakao TV web series. ", scope: ['survival-men-women'] },
           { text: "Not many of the twenty have won a survival show outside this franchise, and it is that credit rather than the Show Me The Money ones that explains the season 2 run in which he took the entire mansion. ", scope: ['survival-men-women', 'bg2'] },
           { text: "He records for Highlight Records, read philosophy at New York University, and holds a junior Olympic gold in taekwondo.", scope: [] },
@@ -646,8 +650,9 @@ export const people: Person[] = [
     bio: '활동명 XITSUH로 활동하는 래퍼 겸 인터넷 방송인이다. 미국 브리검영대학교에 진학했다 중퇴했고, Mnet 「쇼미더머니5」로 이름을 알렸다. 피의 게임에는 시즌2와 시즌3에 연달아 출연했다.',
     notableFor: ['피의 게임 시즌2·3 연속 출연', "기록으로 판을 읽는 '메모광' 플레이", '「쇼미더머니5」 출연'],
     otherShows: [
-      { show: 'Show Me The Money 4', showKo: '쇼미더머니 4', year: '2015', result: '4차 예선 탈락', resultEn: 'Out in the fourth preliminary', scope: ['smtm-4'] },
-      { show: 'Show Me The Money 5', showKo: '쇼미더머니 5', year: '2016', result: '준결승 진출', resultEn: 'Reached the semi-final', scope: ['smtm-5'] },
+      /* `[]` since 쇼미더머니 left the registry — works.ts holds the rule. */
+      { show: 'Show Me The Money 4', showKo: '쇼미더머니 4', year: '2015', result: '4차 예선 탈락', resultEn: 'Out in the fourth preliminary', scope: [] },
+      { show: 'Show Me The Money 5', showKo: '쇼미더머니 5', year: '2016', result: '준결승 진출', resultEn: 'Reached the semi-final', scope: [] },
       { show: 'High School Rapper', showKo: '고등래퍼', year: '2017', result: '멘토', resultEn: 'Mentor', scope: [] },
       /* Three edges lean on facts that were only ever on the other person's
          page: the Netflix run he shares with 허성범, and the hold'em he took
@@ -670,14 +675,13 @@ export const people: Person[] = [
         arc: '방송 이력은 두 번의 예선 성적 사이에 있다. 2015년 「쇼미더머니4」에서는 4차 예선에서 떨어졌고, 이듬해 「쇼미더머니5」에서는 준결승까지 올라갔다 — 이름을 알린 것은 이 한 시즌이다. 2017년 「고등래퍼」에서는 참가자가 아니라 멘토석에 앉았다. 활동명 XITSUH 옆에 붙은 또 하나의 이름이 Mr.Note이고, 피의 게임에서 그를 설명하는 것도 랩이 아니라 이쪽이다: 기록으로 판을 읽는 이른바 메모광 플레이. 하우스 바깥에서도 판은 이어져서, 2026년 넷플릭스 「데스게임: 천만원을 걸어라」와 후속작 「데스게임2: 최후의 승자」에 연달아 참가자로 나갔고, 현성주의 아르테포커 1:1 홀덤 챌린지에는 도전자로 앉았다. 이 모든 것보다 앞에 미국 브리검영대학교 진학과 중퇴가 있다.',
         arcEn:
           "His television record sits between two preliminary results. He went out in the fourth preliminary of Show Me The Money 4 (쇼미더머니4) in 2015 and reached the semi-final of Show Me The Money 5 the following year — that one season is what made his name. By 2017 he was on High School Rapper (고등래퍼) in the mentor's chair rather than the contestant's. Beside the stage name XITSUH sits a second one, Mr.Note, and it is the second that explains him in this house rather than the rap: reading a board by writing it down. The board kept going outside the house too — he was a contestant on Netflix's Death Game: Bet Ten Million Won (데스게임: 천만원을 걸어라) in 2026 and its sequel Death Game 2: The Last Winner, and sat down as the challenger in Hyun Seong-joo's Arte Poker one-on-one hold'em challenge. Before all of it, an American university, Brigham Young, entered and left.",
-        scope: ['smtm-4', 'smtm-5'],
-        scopes: { show: [], showKo: [] },
+        scope: [],
         arcParts: [
-          { text: "방송 이력은 두 번의 예선 성적 사이에 있다. 2015년 「쇼미더머니4」에서는 4차 예선에서 떨어졌고, 이듬해 「쇼미더머니5」에서는 준결승까지 올라갔다 — 이름을 알린 것은 이 한 시즌이다. ", scope: ['smtm-4', 'smtm-5'] },
+          { text: "방송 이력은 두 번의 예선 성적 사이에 있다. 2015년 「쇼미더머니4」에서는 4차 예선에서 떨어졌고, 이듬해 「쇼미더머니5」에서는 준결승까지 올라갔다 — 이름을 알린 것은 이 한 시즌이다. ", scope: [] },
           { text: "2017년 「고등래퍼」에서는 참가자가 아니라 멘토석에 앉았다. 활동명 XITSUH 옆에 붙은 또 하나의 이름이 Mr.Note이고, 피의 게임에서 그를 설명하는 것도 랩이 아니라 이쪽이다: 기록으로 판을 읽는 이른바 메모광 플레이. 하우스 바깥에서도 판은 이어져서, 2026년 넷플릭스 「데스게임: 천만원을 걸어라」와 후속작 「데스게임2: 최후의 승자」에 연달아 참가자로 나갔고, 현성주의 아르테포커 1:1 홀덤 챌린지에는 도전자로 앉았다. 이 모든 것보다 앞에 미국 브리검영대학교 진학과 중퇴가 있다.", scope: [] },
         ],
         arcEnParts: [
-          { text: "His television record sits between two preliminary results. He went out in the fourth preliminary of Show Me The Money 4 (쇼미더머니4) in 2015 and reached the semi-final of Show Me The Money 5 the following year — that one season is what made his name. ", scope: ['smtm-4', 'smtm-5'] },
+          { text: "His television record sits between two preliminary results. He went out in the fourth preliminary of Show Me The Money 4 (쇼미더머니4) in 2015 and reached the semi-final of Show Me The Money 5 the following year — that one season is what made his name. ", scope: [] },
           { text: "By 2017 he was on High School Rapper (고등래퍼) in the mentor's chair rather than the contestant's. Beside the stage name XITSUH sits a second one, Mr.Note, and it is the second that explains him in this house rather than the rap: reading a board by writing it down. The board kept going outside the house too — he was a contestant on Netflix's Death Game: Bet Ten Million Won (데스게임: 천만원을 걸어라) in 2026 and its sequel Death Game 2: The Last Winner, and sat down as the challenger in Hyun Seong-joo's Arte Poker one-on-one hold'em challenge. Before all of it, an American university, Brigham Young, entered and left.", scope: [] },
         ],
       },

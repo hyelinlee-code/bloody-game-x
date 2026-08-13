@@ -65,7 +65,26 @@ import type {
  *      현성주's '세계 포커 대회 우승 경력자로' is a SPLIT rather than a tag: the
  *      clause is structure and the death match after it is `bg2`.
  *
- *   3. NEVER-BROADCAST IS NOT WITHHELD. 프로젝트 지니어스 was shot in May 2022
+ *   3. A MUSIC COMPETITION IS NOT THIS ATLAS'S SUBJECT. 쇼미더머니 was in the
+ *      registry as five ids and is out, by the owner's call, and the rule the
+ *      call establishes is worth stating because it is the only one here that
+ *      turns on GENRE rather than on the shape of a claim: this atlas exists to
+ *      say who already knew whom before a brain-survival house, and a reader
+ *      guards their viewing of the shows it is about. Nobody arrives at a
+ *      pre-premiere cast map for 피의 게임 part-way through a 2015 rap contest,
+ *      waiting to find out which preliminary 서출구 went out in.
+ *
+ *      THE COST, STATED, because this is the one carve-out that costs
+ *      something. Five elimination rows — 윤비's three and 서출구's two — are
+ *      now shown to every reader at every setting, and they ARE results under
+ *      §2's own table. They are scoped `[]` rather than left untagged, so they
+ *      read as somebody's decision rather than as a forgotten tag; fail-closed
+ *      is untouched. WHERE THIS RULE STOPS: it retires programmes whose genre
+ *      is not this one, not results that are merely small. A death match, a
+ *      poker final table and a dating show's ending stay, because the readers
+ *      of this atlas are watching those.
+ *
+ *   4. NEVER-BROADCAST IS NOT WITHHELD. 프로젝트 지니어스 was shot in May 2022
  *      and never released, and four of the twenty are on its cast list. There is
  *      no outcome to withhold because there is no programme to watch, and the
  *      edges built on it say so themselves — 이 선이 말하는 것은 결과가 아니라
@@ -79,8 +98,9 @@ import type {
  * protection.
  *
  * GRANULARITY: ONE ID PER WORK AS THE DATASET ITSELF ROWS IT. 더 지니어스 is
- * four rows in `otherShows`, so it is four ids; 쇼미더머니 is five rows, so it
- * is five. 포커 신들의 전쟁 is ONE row covering 시즌2 and 시즌3, so it is one id
+ * four rows in `otherShows`, so it is four ids — a reader who saw 게임의 법칙
+ * and stopped can say exactly that. 포커 신들의 전쟁 is ONE row covering
+ * 시즌2 and 시즌3, so it is one id
  * — splitting it here would invent a distinction the data does not make and
  * would leave one half of it with nothing to point at. Follow the rows; when
  * the rows change, change this.
@@ -142,13 +162,13 @@ export interface Work {
    *                 and people watch them in order, so the control is a ladder
    *                 with four stops (none → S1 → S2 → S3).
    *   'outside'   — everything else. UNORDERED: nobody watches 대학전쟁 because
-   *                 they finished 쇼미더머니, so the control is a checklist.
+   *                 they finished 솔로지옥, so the control is a checklist.
    */
   kind: 'franchise' | 'outside';
   /**
    * Slug shared by every season of one programme, so a checklist can collapse
-   * five 쇼미더머니 rows under one heading without matching on title strings.
-   * Absent for one-off works.
+   * the four 더 지니어스 rows under one heading without matching on title
+   * strings. Absent for one-off works.
    *
    * IT IS NOT A SCOPE AND MUST NOT BECOME ONE. A reader who saw 대학전쟁 시즌1
    * and not 시즌3 has to be able to say so; grouping is presentation, and the
@@ -193,22 +213,6 @@ export const WORKS = {
   /** 김경훈 준우승, 홍진호 4위, 김유현 9위, 이상민 3화 탈락 — and the two
    *  authored duels in edges.ts that are not franchise duels. */
   'genius-4': { titleKo: '더 지니어스: 그랜드 파이널', titleEn: 'The Genius: Grand Final', kind: 'outside', group: 'genius', year: '2015' },
-
-  /* ── 쇼미더머니 ───────────────────────────────────────────────────────────
-     Five seasons, five rows, five eliminations-or-better. An elimination round
-     is a result under the plan's own table, so these are in even though the
-     genre is not the one this atlas is about. */
-
-  /** 서출구 4차 예선 탈락. */
-  'smtm-4': { titleKo: '쇼미더머니 4', titleEn: 'Show Me The Money 4', kind: 'outside', group: 'smtm', year: '2015' },
-  /** 서출구 준결승 진출 — the season that made his name. */
-  'smtm-5': { titleKo: '쇼미더머니 5', titleEn: 'Show Me The Money 5', kind: 'outside', group: 'smtm', year: '2016' },
-  /** 윤비 3차 예선 탈락. */
-  'smtm-6': { titleKo: '쇼미더머니 6', titleEn: 'Show Me The Money 6', kind: 'outside', group: 'smtm', year: '2017' },
-  /** 윤비 음원 미션 탈락. */
-  'smtm-777': { titleKo: '쇼미더머니 777', titleEn: 'Show Me The Money 777', kind: 'outside', group: 'smtm', year: '2018' },
-  /** 윤비 크루 리벤지 배틀 탈락. */
-  'smtm-8': { titleKo: '쇼미더머니 8', titleEn: 'Show Me The Money 8', kind: 'outside', group: 'smtm', year: '2019' },
 
   /* ── other survivals, and two dating shows ───────────────────────────────
      A dating format's ending is who ends up with whom, which is exactly what

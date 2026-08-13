@@ -10,7 +10,7 @@ import { useWatched, WATCHED_ALL } from '../state/useWatched';
 import './WatchedPicker.css';
 
 /**
- * THE CONTROL. One question — "what have you watched?" — and nineteen answers.
+ * THE CONTROL. One question — "what have you watched?" — and fourteen answers.
  *
  * WHY THE QUESTION IS SHAPED THIS WAY. It is never "how spoiled do you want to
  * be", because the reader knows their own viewing history and does not know
@@ -74,13 +74,11 @@ const SECTIONS: Section[] = (() => {
   const franchise = ALL_WORK_IDS.filter((id) => WORKS[id].kind === 'franchise');
   const inGroup = (g: string) => ALL_WORK_IDS.filter((id) => (WORKS[id] as { group?: string }).group === g);
   const genius = inGroup('genius');
-  const smtm = inGroup('smtm');
-  const claimed = new Set<WorkId>([...franchise, ...genius, ...smtm]);
+  const claimed = new Set<WorkId>([...franchise, ...genius]);
   const rest = ALL_WORK_IDS.filter((id) => !claimed.has(id));
   const all: Section[] = [
     { key: 'watched.groupFranchise', footKey: 'watched.groupFranchiseFoot', ids: [...franchise] },
     { key: 'watched.groupGenius', ids: [...genius] },
-    { key: 'watched.groupSmtm', ids: [...smtm] },
     { key: 'watched.groupRest', footKey: 'watched.groupRestFoot', ids: [...rest] },
   ];
   return all.filter((s) => s.ids.length > 0);

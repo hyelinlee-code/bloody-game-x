@@ -1034,6 +1034,26 @@ if (warnings.length) {
     if (!known.has(id)) fail('scope names "' + id + '", which is not a WorkId in works.ts');
   }
 
+  /* 10a-bis. THE RETIRED GENRES. works.ts's inclusion test §3 takes 쇼미더머니
+     out of the registry by the owner's call: this atlas is a map of a brain
+     survival house, and nobody guards a 2015 rap contest's preliminary rounds
+     the way they guard a season they are part-way through. The rule turns on
+     GENRE, which is the one thing in that test a future author cannot re-derive
+     from the shape of a claim — so it is checked here rather than left to a
+     docblock somebody has to have read. Restoring the ids would put five
+     sections' worth of eliminations back behind a tick nobody wants; if that is
+     the intent, delete this list in the same commit and say why. */
+  const RETIRED = [
+    ['smtm', '쇼미더머니 — a music competition, not this atlas\'s subject (works.ts inclusion test §3)'],
+  ];
+  for (const [prefix, why] of RETIRED) {
+    for (const id of ALL_WORK_IDS) {
+      if (id === prefix || id.startsWith(prefix + '-')) {
+        fail('works.ts carries a retired work id "' + id + '": ' + why);
+      }
+    }
+  }
+
   /* 10a. THE BYTE-IDENTITY INVARIANT — what makes phase 1 invisible by
      construction rather than by promise. A split may not alter one character
      of what renders today. */
