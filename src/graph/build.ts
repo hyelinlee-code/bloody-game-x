@@ -1,7 +1,8 @@
 import type { Dataset, Edge, Person } from '../data/types';
 import { dataset } from '../data/dataset';
-import { isMeeting } from '../data/edges';
-import { isVisible, type WatchedSet } from '../data/redact';
+import { countsAsTie } from '../data/edges';
+import type { WatchedSet } from '../data/redact';
+import { runFacts } from '../data/i18n';
 import { peopleEn } from '../data/i18n/people.en';
 import { CATEGORY_COLOR, EDGE_COLOR } from './palette';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
@@ -13,8 +14,11 @@ import { currentWatched } from '../state/useWatched';
    parameter would shadow the import, so the older, narrower one takes the
    suffix. Do not rename it back: `p.priorSeasons.some(watched)` inside a
    function whose parameter is a Set is a type error today and a silent wrong
-   answer the moment someone makes the types line up. The same collision is
-   waiting in CommandPalette.tsx:320 and HoverCard.tsx:185/217. */
+   answer the moment someone makes the types line up. The two files this note
+   used to name as waiting — CommandPalette.tsx and HoverCard.tsx — have both
+   hit the collision now and both took this same alias, so the convention is
+   settled rather than predicted: `watchedRun` is the run predicate, `watched`
+   is the reader. */
 import { watched as watchedRun } from '../data/types';
 
 /** Compact monogram for the inside of a node — the Hangul form. */
@@ -131,43 +135,25 @@ export interface BuiltGraph {
   edgesOf: Map<string, GLink[]>;
 }
 
-/**
- * Does this edge count as one verified connection FOR THIS READER?
+/* ── `countsAsTie` NOW LIVES IN data/edges.ts, AND THAT IS THE POINT ─────────
  *
- * Two conditions, and they protect two different things.
+ * This file held a private copy: `isMeeting(e.type) && isVisible(e.scopes?.type
+ * ?? e.scope, watched)`, under thirty lines of docblock arguing that six
+ * surfaces have to agree about the rule. The argument was right and the copy
+ * was the thing it argued against — the rule was authored twice, in a painter
+ * and beside the data, and `tieCounts` was gated in only one of them, so at
+ * `bgx.watched='[]'` a dossier's headline and the canvas behind it printed
+ * different totals off one dataset.
  *
- *   1. `isMeeting` — is the claim "these two were in a room" at all? A
- *      `parallel` edge exists to assert the opposite. Unchanged from before,
- *      imported from data/edges.ts rather than restated; six surfaces agree
- *      about it.
- *   2. `isVisible` — may this reader be told? A tie count is a claim built out
- *      of `type`, and `type` is outcome-bearing: works.ts lists it in
- *      `OUTCOME_FIELDS.Edge` precisely because `betrayal` is a verdict about a
- *      named person. Counting a tie whose type is sealed prints the sealed
- *      claim as a number.
- *
- * THE SCOPE IT ASKS ABOUT IS THE TYPE'S, not the record's, and where they
- * differ the type's is the narrower and the right one: `e.scopes.type ?? e.scope`
- * is the same resolution types.ts documents for every per-field override and
- * that validate-data.mjs §10c and §10e use. An edge may seal its headline and
- * its account while leaving the bare fact of a meeting visible; that edge still
- * counts. No edge in the corpus carries a `scopes.type` today (measured: 0 of
- * 52), so this resolves to `e.scope` for all of them — it is written for the
- * first one that does, not for a case that exists.
- *
- * FAIL CLOSED, AND WHAT THAT COSTS. `isVisible(undefined, …)` is false for
- * every watched-set INCLUDING the default, so an edge with no scope at all
- * would drop out of `degree` for everybody and move a disc's radius — a Rule 0
- * violation, not merely an over-redaction. That is not softened here, because
- * softening it would put a leak behind a shrug; it is prevented upstream, where
- * validate-data.mjs §10c fails the build for any edge whose `type` carries
- * neither `scopes.type` nor `scope`. Measured against today's corpus: 52 of 52
- * edges resolve to a defined scope and 0 are hidden at `WATCHED_ALL`. If that
- * sweep is ever weakened, this line is what turns the hole into a visible one.
- */
-function countsAsTie(e: Edge, watched: WatchedSet): boolean {
-  return isMeeting(e.type) && isVisible(e.scopes?.type ?? e.scope, watched);
-}
+ * So the predicate is imported now, from beside `isMeeting` and the edge
+ * vocabulary it is a fact about. Nothing in the two loops below changed: the
+ * body is identical, the resolution `scopes.type ?? scope` is identical, and
+ * fail-closed still costs what data/edges.ts says it costs. What changed is
+ * that `degree`, the rim ticks, the dossier's headline and the cast wall now
+ * agree BY CONSTRUCTION instead of by two authors keeping two functions in
+ * step. Do not restore a local copy; if the graph ever needs a different
+ * question, give it a different name and say why.
+ * ─────────────────────────────────────────────────────────────────────────── */
 
 /**
  * `watched` DEFAULTS, so no call site breaks this phase.
@@ -234,12 +220,30 @@ export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()
   const maxStrength = Math.max(1, ...strengthSum.values());
 
   const nodes: GNode[] = data.people.map((p, i) => {
-    const isWinner = p.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant');
+    const isWinner = wonASeason(p, watched);
     const isHost = p.priorSeasons.some(watchedRun);
     const seasons = [...new Set(p.priorSeasons.map((s) => s.season))].sort();
 
-    // Importance blends how connected they are with how much franchise
-    // history they carry. Both matter; neither should dominate.
+    /* Importance blends how connected they are with how much franchise
+       history they carry. Both matter; neither should dominate.
+
+       THE ARITHMETIC IS UNTOUCHED AND `isWinner` IS NOT. Read the two terms:
+       `seasons.length` is participation, which the plan keeps at every
+       watched-set — the plain fact that somebody was in a season is structure
+       — and `isWinner` is a verdict, which is why the flag above is now a
+       function of the reader. The 0.45 is 62% of the whole history term, so
+       until this round the graph STATED THE VERDICT IN GEOMETRY: at the empty
+       set, 윤비 and 이진형 have one season each and not one visible tie between
+       them, and the discs came out at r=26.09 and r=29.51. Same inputs, +13.1%
+       radius, and the entire difference was who won season 2. No text gating
+       reaches a radius; the number simply had to stop being computed off a raw
+       rank.
+
+       What that costs, and it is the honest cost: at the empty set the two
+       champions lose 0.45 of history and shrink by up to 3.42 world units, so
+       the cast reads flatter. That IS the redacted reading — a reader who has
+       watched nothing is looking at twenty people they know nothing about — and
+       the alternative is a graph that whispers the ending through size. */
     const conn = (strengthSum.get(p.id) ?? 0) / maxStrength;
     const history = Math.min(1, seasons.length / 2) * 0.55 + (isWinner ? 0.45 : 0);
     const weight = Math.min(1, conn * 0.62 + history * 0.38);
@@ -310,8 +314,21 @@ export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()
          they are filled in below once `edgesOf` exists. */
       plate: {
         seasons,
-        ranks: seasons.map((s) => bestRank(p, s)),
-        fieldSizes: seasons.map((s) => fieldOf(p, s)),
+        /* The painter's copy of the finish, and the reason `bestRank` and
+           `fieldOf` grew a parameter: an arc's SWEEP is `rank / fieldSize`
+           drawn to scale, which is exactly invertible, so a plate handed a raw
+           rank prints the placing whatever the text around it says. At the
+           empty set this was still holding 이태균 `ranks: [1]`.
+
+           A withheld rank arrives here as `undefined`, which the plate already
+           draws as the beaded ring — the mark for "no finish to record", which
+           a panel seat draws today. That is the correct INTERIM and not the
+           final answer: sealed and never-competed are different states and
+           Phase 3 owns the third mark that tells them apart. Drawing the
+           beaded ring meanwhile says less than the truth, which is the side to
+           be wrong on. */
+        ranks: seasons.map((s) => bestRank(p, s, watched)),
+        fieldSizes: seasons.map((s) => fieldOf(p, s, watched)),
         ties: [],
         tieTypes: [],
         isHost,
@@ -414,28 +431,86 @@ export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()
   return { nodes, links, byId, adjacency, edgesOf };
 }
 
+/* ── the three readings of a rank, and all three go through ONE accessor ─────
+ *
+ * `runFacts` in data/i18n/index.ts is the only function in the app that answers
+ * "what is this run's finish, for this reader". The three below spend it and
+ * none of them re-derives it, which matters more here than the usual
+ * anti-duplication argument, for two reasons:
+ *
+ *   · THE PAIR IS AN INTERLOCK, NOT TWO FIELDS. `runFacts` composes `pick`
+ *     twice so a `fieldSize` passes its own gate AND the RANK's — a denominator
+ *     may never outlive the number it qualifies, because the plate draws
+ *     `rank / fieldSize` as an arc length and the pair is invertible
+ *     (PLAN-spoilers.md §3). That composition is private to i18n/index.ts.
+ *     Restating `pick(r.rank, r.scopes?.rank ?? r.scope, …)` here would be one
+ *     `pick` where there have to be three, and the bug would be invisible:
+ *     right at the default set, wrong only for a narrowed reader.
+ *   · IT IS THE SAME QUESTION SEARCH ALREADY ASKS. `CommandPalette.tsx:363`
+ *     has its own `isWinner(p, lang, watched)` off `runFacts`; the graph asking
+ *     it differently is how a rail and a disc come to disagree about a person.
+ *
+ * The `'ko'` is not a language choice. `runFacts` returns two bilingual strings
+ * beside the rank pair and this reads neither; the rank and its field size are
+ * numbers and are identical on both sides. Passing the source-of-record
+ * language keeps that visible rather than threading a `Lang` through a painter
+ * that has no text in it.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
 /**
- * Best finish in a given season, or undefined when there is no finish to
- * record — a studio-panel seat, a dealer, a host. The plate draws that case as
- * a beaded ring rather than as a bottom-of-table stub, so the difference
- * between "no rank" and "last place" has to survive all the way to here.
+ * Best finish in a given season THIS READER MAY BE TOLD, or undefined when
+ * there is no finish to record — a studio-panel seat, a dealer, a host — and
+ * now also when there is one and it is sealed. The plate draws that case as a
+ * beaded ring rather than as a bottom-of-table stub, so the difference between
+ * "no rank" and "last place" has to survive all the way to here.
  */
-function bestRank(p: Person, season: number): number | undefined {
+function bestRank(p: Person, season: number, watched: WatchedSet): number | undefined {
   let best: number | undefined;
   for (const r of p.priorSeasons) {
-    if (r.season !== season || typeof r.rank !== 'number') continue;
-    if (best === undefined || r.rank < best) best = r.rank;
+    if (r.season !== season) continue;
+    const { rank } = runFacts(r, 'ko', watched);
+    if (typeof rank !== 'number') continue;
+    if (best === undefined || rank < best) best = rank;
   }
   return best;
 }
 
 /** Field size for that person's run in that season — the denominator a rank is
-    meaningless without. */
-function fieldOf(p: Person, season: number): number | undefined {
+    meaningless without, and which `runFacts` will not hand back once the rank
+    beside it is gone. */
+function fieldOf(p: Person, season: number, watched: WatchedSet): number | undefined {
   for (const r of p.priorSeasons) {
-    if (r.season === season && typeof r.fieldSize === 'number') return r.fieldSize;
+    if (r.season !== season) continue;
+    const { fieldSize } = runFacts(r, 'ko', watched);
+    if (typeof fieldSize === 'number') return fieldSize;
   }
   return undefined;
+}
+
+/**
+ * Has this person won a season of the franchise, AS FAR AS THIS READER KNOWS?
+ *
+ * ONE FLAG, SIX RENDERED SURFACES. The canvas laurel (`plate.ts`, where it also
+ * widens the plate's own reach); the dossier's brass chip, its crest and the
+ * crest it draws for the other person in a relation row; the cast wall; the
+ * edge card's two portraits; the hover card's brass tag and plate — and,
+ * invisibly and worst, the disc's own radius, which no text gating could ever
+ * have reached (see `history` above). Three handoffs called this "one line in
+ * build.ts" and the line stayed unwritten, so at the empty watched-set the
+ * atlas drew a gold ring round the two champions and told the reader nothing
+ * about why.
+ *
+ * `role` IS READ RAW AND THAT IS DELIBERATE. `OUTCOME_FIELDS.SeasonRun` leaves
+ * `role` off the manifest on purpose — the painters have to keep knowing
+ * whether a run was a run at the prize, or a redacted contestant gets drawn
+ * with the beaded mark that means "present, not competing" and the app asserts
+ * something false about a named person. So the gate goes on the rank, which is
+ * the verdict, and the role stays structure. Reordered to test the cheap
+ * structural half first; `rank === 1 && role === 'contestant'` is the same
+ * predicate.
+ */
+function wonASeason(p: Person, watched: WatchedSet): boolean {
+  return p.priorSeasons.some((r) => r.role === 'contestant' && runFacts(r, 'ko', watched).rank === 1);
 }
 
 /** Stable slug from a Korean or Latin name. */

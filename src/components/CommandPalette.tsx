@@ -513,8 +513,17 @@ export function CommandPalette({
        lineup. `tieCounts` is the rule, read from data/edges.ts: the count is
        meetings, and the parallel record is carried beside it rather than folded
        into it. Straight off `edgesOf.length` is how the palette disagreed with
-       the dossier about the same person. */
-    const tiesOf = (id: string) => tieCounts(graph.edgesOf.get(id) ?? []);
+       the dossier about the same person.
+
+       AND IT TAKES THE READER'S SET. Without one this line printed 홍진호 ·
+       연결 13건 at every watched-set, including a reader who had watched
+       nothing — the cold-start list, before a key is typed, is the first thing
+       the palette shows anybody. It is also the ORDERING key three lines down,
+       so an ungated count ranked the cold start by history the reader cannot
+       see. Passed explicitly, never left to `tieCounts`'s module-mirror
+       default: `groups` is a `useMemo` and `watched` is in its dependency list,
+       which is what makes the drawer re-rank when the set changes. */
+    const tiesOf = (id: string) => tieCounts(graph.edgesOf.get(id) ?? [], watched);
     /* The ordering key — the cold-start list and the search tiebreak — is the
        verified count too, so "the people with the most history to pull on" is
        ranked by history someone can actually pull on. */

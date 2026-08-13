@@ -32,6 +32,10 @@ import {
 import { HAS_PORTRAITS, onPortraitLoad, photoGain, portraitUrl } from '../graph/portraits';
 import { isMeeting } from '../data/edges';
 import { careerSeenBy, careerTableSeenBy, neverFacedSeenBy } from '../data/headToHead';
+/* The status bar's byline row, reused whole. See the colophon panel below and
+   the export note in Credit.tsx: one array, so the three destinations, their
+   marks and their labels cannot drift between the two surfaces that draw them. */
+import { LINKS } from './Credit';
 import { fill } from '../data/i18n/ui';
 import {
   CATEGORY_LABEL_I18N,
@@ -274,39 +278,12 @@ const SEASON_NUMBERS: SeasonNumber[] = [1, 2, 3];
    where, when" are the first two questions a franchise fan asks, and the atlas
    held the data to answer both while offering neither. */
 
-/**
- * WHAT AN EMPTY TRACK RECORD SAYS.
- *
- * A reader who has watched nothing gets this table with its two result columns
- * dashed out and its season cells blank, and a table full of dashes with no
- * sentence attached reads as a data set that failed to load — which is the one
- * impression a reference work cannot afford, and the exact charge the reader who
- * wrote in already levelled at this app. So the empty state is told rather than
- * shown, and it is told once above the table instead of per cell.
- *
- * It says two things and refuses a third. It says the finishes are missing
- * because of the reader's own answer, so the blanks are not a gap in the
- * research. It says what is still on the page — who was in which season, and in
- * what role — because that is participation and is never redacted, and a reader
- * who thinks the whole table is gone will not scan it. It does NOT count them:
- * 'eleven finishes are hidden' is itself a fact about how many ranked runs the
- * corpus holds, and an empty state that leaks the shape of what it is hiding has
- * missed the point of being an empty state.
- *
- * ⚠ THIS STRING BELONGS IN `data/i18n/ui.ts` AND IS NOT THERE. Every other line
- * of copy in this app is a `UiKey`, and `UiKey` is a closed union, so adding one
- * means editing `ui.ts` — a file this owner was not given and which a second,
- * half-landed component (`Credit.tsx`, which calls two `credit.*` keys that do
- * not exist) is already queued to edit. Two owners in `ui.ts` in one session is
- * the collision the contract's ownership rule exists to prevent, so the copy is
- * parked here, in a file that is mine, rather than raced there. It is a
- * mechanical lift into `ui.ts` as `about.recordSealedNote` the moment one owner
- * holds that file. Named in the handoff.
- */
-const RECORD_SEALED_NOTE: Record<Lang, string> = {
-  ko: '아직 보지 않았다고 표시한 시즌의 성적은 이 표에서 빠집니다. 누가 어느 시즌에 있었는지와 어떤 자리였는지는 그대로 남아 있습니다.',
-  en: 'Finishes from the seasons you have not marked as watched are left out of this table. Who was in which season, and in what role, is still here.',
-};
+/* WHAT AN EMPTY TRACK RECORD SAYS — now `about.recordSealedNote` in
+   data/i18n/ui.ts, where the reasoning lives with the string.
+   It used to be a `Record<Lang, string>` parked here because ui.ts had two
+   owners queued on it that session and the previous owner would not race them.
+   This round holds both files, so the lift is done: same words, both sides, a
+   `UiKey` like every other line of copy in the app. */
 
 type SortKey = 'name' | 'seasons' | 'best' | 'share' | 'ties';
 
@@ -613,7 +590,7 @@ function ShortcutTable({
 
 /* ── the sheet ──────────────────────────────────────────────────────────── */
 
-type TabId = 'what' | 'read' | 'seasons' | 'record' | 'glossary' | 'franchise' | 'keys' | 'sources';
+type TabId = 'what' | 'read' | 'seasons' | 'record' | 'glossary' | 'franchise' | 'keys' | 'sources' | 'made';
 
 interface TabDef {
   id: TabId;
@@ -848,6 +825,12 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
     if (hasFranchise) list.push({ id: 'franchise', k: 'about.tabFranchise' });
     list.push({ id: 'keys', k: 'about.tabKeys' });
     if (hasSources) list.push({ id: 'sources', k: 'about.tabSources' });
+    /* UNCONDITIONAL, and last. Every other optional tab is gated on the dataset
+       having something to put in it; this one is about the app rather than
+       about the data, so there is no empty state to guard against and nothing
+       that could make it disappear. Last because it is the colophon — see
+       `about.tabMade`. */
+    list.push({ id: 'made', k: 'about.tabMade' });
     return list;
   }, [seasons.length, hasRecords, glossary.length, hasFranchise, hasSources]);
 
@@ -1530,7 +1513,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             the frame a reader needs before they scan a column of dashes, not a
             footnote explaining one afterwards. `sealedFinishes` is 0 at the
             default set, so this element does not exist on the default page. */}
-        {sealedFinishes > 0 && <p className="abt-note">{RECORD_SEALED_NOTE[lang]}</p>}
+        {sealedFinishes > 0 && <p className="abt-note">{t(lang, 'about.recordSealedNote')}</p>}
 
         {/* the chronological spine — 2021 to now, in one line */}
         <SecSub lang={lang} k="about.recordSpine" />
@@ -1961,6 +1944,88 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
     );
   };
 
+  /* ── the colophon ────────────────────────────────────────────────────────
+     The one thing this app never cited was itself.
+
+     It cites 309 claims, fails its own build when the sourcing paragraph drifts
+     from the citation histogram, and prints a whole paragraph one tab to the
+     left apologising for twenty photographs whose origin it cannot state. The
+     status bar carries a byline; a byline is a name, not a reason. This is the
+     reason, in the tab a reader reaches after they have been told where the
+     facts came from — which is the right order, because "who assembled this"
+     is the last question, not the first.
+
+     THREE CLAIMS AND NO FOURTH. What the maker thinks is coming, how long she
+     has watched, and where to reach her. It states the prediction as hers
+     rather than as a fact about the market, because it is one, and this sheet's
+     whole register is the difference between those two. Nothing about
+     affiliation, licensing or scale is asserted here: none of it is on record
+     anywhere in the repository, and inventing a line about it is the exact
+     failure the portraits block one tab left exists to name.
+
+     NOT GATED, and it wants no watched-set. There is no outcome in it — no
+     placement, no winner, no season X — so `pick`/`prose` have nothing to gate
+     and threading `watched` in would have been ceremony. Measured both ways:
+     this panel is byte-identical at the default set and at '[]'. */
+  const madePanel = () => (
+    <>
+      <SecH lang={lang} k="about.madeHeading" />
+      <p className="abt-prose">{t(lang, 'about.madeBody')}</p>
+      <p className="abt-prose">{t(lang, 'about.madeFan')}</p>
+
+      <hr className="rule abt-sec__rule" />
+
+      <SecSub lang={lang} k="about.madeReachHeading" />
+      {/* `LINKS.length`, never the word three, so the sentence and the row
+          below it are one object and cannot disagree about how many there are.
+          Only the Korean string actually has a `{n}` — Korean's 곳 wants a
+          counter in front of it and English reads better with no number at all
+          — so on the English side `fill` is a no-op and the sentence is
+          drift-proof by not making the claim. See `about.madeReach`. */}
+      <p className="abt-prose">{fill(t(lang, 'about.madeReach'), { n: LINKS.length })}</p>
+      <ul className="abt-made">
+        {LINKS.map((l) => (
+          <li key={l.href}>
+            {/* THE SAME ANCHOR THE STATUS BAR DRAWS, from the same array.
+                `rel="me"` is what the personal site's own rel-me verification
+                wants on this end, so the three corroborate each other rather
+                than being three loose URLs; `noopener` because an opened tab
+                holding `window.opener` can navigate this one, and this one
+                holds a reader's watched set and their place in a graph. Both
+                are restated here rather than inherited, because rel is a
+                property of the anchor and not of the destination. */}
+            <a
+              className="abt-made__link"
+              href={l.href}
+              target="_blank"
+              rel="me noopener noreferrer"
+              /* A superset of the status bar's name, not a different one. The
+                 prefix and the label are the same two strings in the same
+                 order — so a screen reader hears one destination named one way
+                 in both places — with this sheet's own new-tab notice on the
+                 end, which every other outbound link on the Sources tab
+                 already carries. The visible host text is inside the
+                 accessible name, so voice control can still say it. */
+              aria-label={`${t(lang, 'credit.linkPrefix')} ${l.label} (${t(lang, 'about.newTab')})`}
+            >
+              <svg className="abt-made__mark" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                {l.path}
+              </svg>
+              {/* Not a bare icon row. The status bar has 13px and no room for
+                  words; a modal has both, and a globe glyph on its own does not
+                  say WHICH site. The mark stays because it is the row's rhythm
+                  and it is already drawn. */}
+              <span className="abt-made__host">{l.label}</span>
+              <span className="abt-made__out" aria-hidden="true">
+                ↗
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+
   /* Thunks: only the visible section is ever built. */
   const bodies: Record<TabId, () => ReactNode> = {
     what: whatPanel,
@@ -1971,6 +2036,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
     franchise: franchisePanel,
     keys: keysPanel,
     sources: sourcesPanel,
+    made: madePanel,
   };
 
   return createPortal(

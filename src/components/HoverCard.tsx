@@ -9,18 +9,28 @@ import {
   edgeText,
   personName,
   personOccupation,
+  runFacts,
   t,
   type Lang,
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
-import { edges, isMeeting, tieCounts } from '../data/edges';
+import { useWatched, type WatchedSet } from '../state/useWatched';
+import { edges, isMeeting, tieCounts, tieTypeVisible } from '../data/edges';
 import { people } from '../data/people';
 import { monogram, monogramEn } from '../graph/build';
 import type { SeasonNumber } from '../data/types';
 import { ALL_EDGE_TYPES } from '../state/useAtlas';
 import { PlateKey, Portrait, type PlateMarkKind, type PortraitConnection } from './Portrait';
 import './HoverCard.css';
-import { watched } from '../data/types';
+/* ALIASED, NOT TIDIED — the collision the header note in graph/build.ts
+   predicted for this file, arriving.
+   `watched(run)` from data/types answers "was this person present that season
+   without competing", a fact about a RUN. The `watched` this file now holds is
+   the reader's set of works, and both are live in `warmSubject`. The older,
+   narrower one takes the suffix, exactly as it does in build.ts. Do not rename
+   it back: `p.priorSeasons.some(watched)` beside a `WatchedSet` named `watched`
+   is a type error today and a silently wrong answer the day the types line up. */
+import { watched as watchedRun } from '../data/types';
 
 export interface HoverCardProps {
   node: GNode | null;
@@ -116,29 +126,37 @@ export function hoverProbe(p: HoverProbe): void {
    a different UI: category ring, one season arc per prior season sized by how
    far they got, a rim tick per verified connection, brass for a title. */
 
-/** Best rank per entry of `seasons`, in the order the plate draws them. */
-function ranksFor(node: GNode): (number | undefined)[] {
-  return node.seasons.map((s) => {
-    let best: number | undefined;
-    for (const run of node.person.priorSeasons) {
-      if (run.season !== s || run.rank === undefined) continue;
-      best = best === undefined ? run.rank : Math.min(best, run.rank);
-    }
-    return best;
-  });
-}
-
-/** The field each of those ranks was taken from. The plate scales arc length
-    against it and had never been handed one, so a 4th of 10 drew shorter than
-    a 4th of 13 against the 13-seat default. */
-function fieldsFor(node: GNode): (number | undefined)[] {
-  return node.seasons.map((s) => {
-    for (const run of node.person.priorSeasons) {
-      if (run.season === s && run.fieldSize) return run.fieldSize;
-    }
-    return undefined;
-  });
-}
+/* THE TWO FUNCTIONS THAT USED TO LIVE HERE ARE GONE, AND THAT IS THE FIX.
+ *
+ * `ranksFor(node)` and `fieldsFor(node)` walked `node.person.priorSeasons` and
+ * read `run.rank` and `run.fieldSize` off the record — a private, ungated copy
+ * of `bestRank` / `fieldOf` in graph/build.ts. Two consequences, and the second
+ * is why deleting beats gating:
+ *
+ *   · UNGATED. The plate draws each season arc's sweep as `rank / fieldSize` to
+ *     scale, which is exactly invertible, so at the empty watched-set this card
+ *     printed 이진형's 1st-of-13 as geometry: measured, the arc path was
+ *     character-for-character identical with the set narrowed to nothing.
+ *     Gating build.ts alone could never have reached it, because this file was
+ *     not asking build.ts.
+ *   · A SECOND ANSWER TO A QUESTION THAT MUST HAVE ONE. `buildGraph` already
+ *     resolves this person's finishes into `node.plate`, for the disc the
+ *     cursor is sitting on. The card is a magnified view of THAT disc — that is
+ *     the whole conceit stated in the block above — so it now reads the same
+ *     spec the canvas paints from, and the two cannot disagree about a rank, a
+ *     field size or which reader they are talking to. `plate.seasons` IS
+ *     `node.seasons`, so the arrays stay aligned by construction rather than by
+ *     two functions happening to iterate the same list.
+ *
+ * Byte-identical at the default set, measured: `bestRank` skips a non-number
+ * rank where `ranksFor` skipped `undefined`, and `fieldOf` tests
+ * `typeof fieldSize === 'number'` where `fieldsFor` tested truthiness. The
+ * corpus holds no null rank and no zero field size, so the two pairs agree
+ * everywhere today; the build.ts forms are the stricter ones.
+ *
+ * `warmSubject` below still computes its own, because it warms a PERSON and has
+ * no node to read — and it goes through `runFacts`, the accessor build.ts uses.
+ */
 
 /** Frozen so the prop identity never changes between renders of a surface that
     re-renders on every pointer move. */
@@ -170,7 +188,26 @@ const HOVER_OMIT: PlateMarkKind[] = ['ticks'];
    ticks and the key rows are the ones this plate really draws. A synthetic
    payload would warm a plate the app never renders, which is how the shell
    version came to be measured as fixed while the first hover was still slow. */
-function warmSubject(lang: Lang): {
+/* WHY THE WARM PASS IS REDACTED TOO, when it is `aria-hidden`, held at 0.008
+   opacity and released after two frames.
+
+   Because it is PAINTED, and being painted is the entire reason it exists — a
+   warm-up that the compositor skips warms nothing, which is the bug round 4
+   fixed by making the opacity non-zero. What it paints is a real person's real
+   plate: their laurel, their season arcs at their real sweep. Two frames of a
+   champion's gold ring is still the app stating a verdict it was told not to
+   state, and 0.008 is a threshold argument rather than a redaction. It also
+   costs nothing to be right here: same accessor, same set, and at the default
+   watched-set the chosen subject and every mark on them is unchanged (measured).
+
+   `score`'s winner term is gated for a different and smaller reason — nobody
+   sees a score. It picks WHOM to warm, and the point of the pass is to paint
+   what the card will really draw; scoring on a laurel this reader will never be
+   shown would warm furniture that never arrives. */
+function warmSubject(
+  lang: Lang,
+  watched: WatchedSet,
+): {
   person: (typeof people)[number];
   seasons: SeasonNumber[];
   ranks: (number | undefined)[];
@@ -179,10 +216,17 @@ function warmSubject(lang: Lang): {
   isHost: boolean;
   connections: PortraitConnection[];
 } {
+  /* The one predicate, spelled as build.ts and CommandPalette.tsx spell it:
+     `role` raw, because it is structure and the painters must keep knowing
+     whether a run was a run at the prize; `rank` through `runFacts`, because it
+     is the verdict. */
+  const won = (p: (typeof people)[number]): boolean =>
+    p.priorSeasons.some((r) => r.role === 'contestant' && runFacts(r, 'ko', watched).rank === 1);
+
   const score = (p: (typeof people)[number]): number => {
     const seasons = new Set(p.priorSeasons.map((s) => s.season)).size;
-    const winner = p.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant') ? 2 : 0;
-    const host = p.priorSeasons.some(watched) ? 1 : 0;
+    const winner = won(p) ? 2 : 0;
+    const host = p.priorSeasons.some(watchedRun) ? 1 : 0;
     return seasons * 3 + winner + host;
   };
   let best = people[0];
@@ -198,23 +242,34 @@ function warmSubject(lang: Lang): {
   const rankOf = (season: number): number | undefined => {
     let out: number | undefined;
     for (const r of best.priorSeasons) {
-      if (r.season !== season || r.rank === undefined) continue;
-      out = out === undefined ? r.rank : Math.min(out, r.rank);
+      if (r.season !== season) continue;
+      const { rank } = runFacts(r, 'ko', watched);
+      if (typeof rank !== 'number') continue;
+      out = out === undefined ? rank : Math.min(out, rank);
     }
     return out;
   };
   const fieldOf = (season: number): number | undefined => {
-    for (const r of best.priorSeasons) if (r.season === season && r.fieldSize) return r.fieldSize;
+    for (const r of best.priorSeasons) {
+      if (r.season !== season) continue;
+      const { fieldSize } = runFacts(r, 'ko', watched);
+      if (typeof fieldSize === 'number') return fieldSize;
+    }
     return undefined;
   };
-  const mine = edges.filter((e) => e.source === best.id || e.target === best.id);
+  /* The tie list is filtered by the same gate the visible card uses, so the
+     plate warmed is the plate drawn — including, for a narrowed reader, an
+     empty rim and the no-ties hairline. */
+  const mine = edges.filter(
+    (e) => (e.source === best.id || e.target === best.id) && tieTypeVisible(e, watched),
+  );
   return {
     person: best,
     seasons,
     ranks: seasons.map(rankOf),
     fields: seasons.map(fieldOf),
-    isWinner: best.priorSeasons.some((s) => s.rank === 1 && s.role === 'contestant'),
-    isHost: best.priorSeasons.some(watched),
+    isWinner: won(best),
+    isHost: best.priorSeasons.some(watchedRun),
     connections: mine.map((e) => ({ type: e.type, strength: e.strength })),
   };
 }
@@ -232,6 +287,21 @@ function crowding(node: GNode, relations: Relation[]): { left: number; right: nu
 
 export function HoverCard({ node, relations, pointer, suppressed }: HoverCardProps): JSX.Element {
   const { lang } = useLang();
+  /* THE SUBSCRIPTION THIS FILE DID NOT HAVE.
+   *
+   * It has to be the hook and not `currentWatched()`: the module mirror answers
+   * once, at first render, and then tells React nothing, so a reader who
+   * NARROWS their set — the correction somebody makes the instant they realise
+   * they are about to be spoiled — would keep this card's finishes, laurel and
+   * tie census on screen until an unrelated commit happened to knock it. Stale
+   * here is a leak, not a lag.
+   *
+   * It is also what keeps the card and the disc under it telling one story. The
+   * `node` prop is built by `useAtlas`'s `useMemo`, which already depends on
+   * `useWatched().watched`, so both surfaces re-render off the same context on
+   * the same commit; a card reading a different set from the graph would
+   * magnify a plate that is no longer on the canvas. */
+  const { watched } = useWatched();
   const ref = useRef<HTMLDivElement>(null);
   /* Size, pointer and side preference are refs and not state because nothing
      renders from them — the placement runs on a pointermove, outside React. */
@@ -326,6 +396,42 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
      person changes, and also when the language does: English runs longer. */
   const measureKey = content ? `${content.node.id}:${lang}` : '';
 
+  /**
+   * The relationships this card may DESCRIBE, which is not the same list as the
+   * relationships the canvas DRAWS.
+   *
+   * `relations` arrives unfiltered from the graph's `edgesOf`, and everything
+   * below counted it: the headline total, the pip census, the strongest-tie
+   * line, and the rim ticks on the plate. `Edge.type` is on
+   * `OUTCOME_FIELDS.Edge` because `betrayal` is a verdict about a named person,
+   * so an ungated census prints sealed verdicts as a tally — measured at the
+   * empty set, this card said `배신 2 · Betrayal 2` for 이진형 while the plate
+   * beside it drew the fine grey no-ties rim, because `node.noTies` comes from
+   * `degree` and `degree` has been gated since Phase 2. One object, two answers,
+   * eleven pixels apart.
+   *
+   * So the same predicate `buildGraph` ticks the rim with, imported rather than
+   * restated: `tieTypeVisible` from data/edges.ts, which is where
+   * `scopes.type ?? scope` is resolved for the whole app.
+   *
+   * WITHOUT `isMeeting`, deliberately. `countsAsTie` is the graph's question and
+   * it drops non-meetings, because a `parallel` record is not connectedness and
+   * must not reach `degree`. This card's question is different: it keeps the
+   * parallel record and prints it under its own name (see `topIsParallel`
+   * below), which for the three cold plates is the one fact they have. Gating
+   * visibility and gating meeting-ness are two filters and this is only the
+   * first; the second is still where it was.
+   *
+   * The original array is returned when nothing was dropped — at the default set
+   * that is always, and it keeps the memos below off a fresh identity per frame
+   * on a surface that re-renders on pointer moves.
+   */
+  const shown = useMemo(() => {
+    const all = content?.relations ?? [];
+    const kept = all.filter((r) => tieTypeVisible(r.link.edge, watched));
+    return kept.length === all.length ? all : kept;
+  }, [content, watched]);
+
   /* The headline number counts MEETINGS; the pip row keeps every type.
      Those are two different jobs and they used to be one. `총 1건` beside the
      관계 eyebrow, for a person whose only line says in its own headline that
@@ -338,7 +444,7 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
      reading as a subtraction — the row and the headline now agree because the
      headline says what it is counting. */
   const summary = useMemo(() => {
-    const rels = content?.relations ?? [];
+    const rels = shown;
     const counts = new Map<EdgeType, number>();
     for (const r of rels) counts.set(r.link.type, (counts.get(r.link.type) ?? 0) + 1);
     /* `relations` arrives strongest-first, so the payload line is rels[0] —
@@ -350,15 +456,25 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
     const met = rels.filter((r) => isMeeting(r.link.type));
     return {
       pips: ALL_EDGE_TYPES.filter((ty) => counts.has(ty)).map((ty) => ({ type: ty, n: counts.get(ty) ?? 0 })),
-      ties: tieCounts(rels.map((r) => r.link)),
+      /* PASSED, not defaulted, even though `rels` is already gated and the
+         second filter inside `tieCounts` is therefore a no-op. `tieCounts`
+         falls back to `currentWatched()`, the module mirror, which carries no
+         subscription — and a component that leans on it renders the right
+         total once and then keeps printing it after the reader narrows. The
+         redundancy is the cheap half of a belt and braces; the leak the belt
+         prevents is a headline number surviving its own redaction. */
+      ties: tieCounts(
+        rels.map((r) => r.link),
+        watched,
+      ),
       top: met[0] ?? rels[0] ?? null,
       topIsParallel: met.length === 0 && rels.length > 0,
     };
-  }, [content]);
+  }, [shown, watched]);
 
   const connections = useMemo<PortraitConnection[]>(
-    () => (content?.relations ?? []).map((r) => ({ type: r.link.type, strength: r.link.edge.strength })),
-    [content],
+    () => shown.map((r) => ({ type: r.link.type, strength: r.link.edge.strength })),
+    [shown],
   );
 
   /* Smart placement. Position is written straight to the element's transform
@@ -433,6 +549,12 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
       sizeRef.current = { w: r.width, h: r.height };
     }
     if (content) {
+      /* THE FULL LIST ON PURPOSE, not `shown`. This asks a question about
+         PIXELS — which side of the disc has more of its lines drawn on it, so
+         the card lands on the emptier side — and the canvas draws every edge at
+         every watched-set. Placing against the redacted list would throw the
+         card over lines that are on screen. Geometry is reported by what is
+         painted; only the claims are gated. */
       const crowd = crowding(content.node, content.relations);
       /* Ties go right: the label plate is centred under the disc, so a card on
          the right hides marginally less of it than one on the left. */
@@ -480,8 +602,10 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
   }, [place, reveal]);
 
   /* Built only while the warm pass is up, and re-built when the language
-     changes because the longest name changes with it. */
-  const warm = useMemo(() => (warming ? warmSubject(lang) : null), [warming, lang]);
+     changes because the longest name changes with it — or when the reader's set
+     does, because that changes which marks the subject carries and therefore
+     what the pass is warming. */
+  const warm = useMemo(() => (warming ? warmSubject(lang, watched) : null), [warming, lang, watched]);
 
   const name = content
     ? content.node.person
@@ -570,8 +694,8 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
                   initials={lang === 'en' ? content.node.initialsEn : content.node.initials}
                   category={content.node.category}
                   seasons={content.node.seasons}
-                  ranks={ranksFor(content.node)}
-                  fieldSizes={fieldsFor(content.node)}
+                  ranks={content.node.plate.ranks}
+                  fieldSizes={content.node.plate.fieldSizes}
                   isWinner={content.node.isWinner}
                   isHost={content.node.isHost}
                   noTies={content.node.noTies}
@@ -672,8 +796,19 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
                   <span className="hovercard__strongdash" aria-hidden="true">
                     —
                   </span>
+                  {/* PASSED, not defaulted. `edgeText` falls back to
+                      `currentWatched()`, which is the module mirror and carries
+                      no subscription — right once, then silently stale in the
+                      direction that leaves an authored headline on screen after
+                      the reader has narrowed away from it. The set this
+                      component re-renders on is the set its strings are gated
+                      against. The `||` fallback to the type's generic label is
+                      safe now that `shown` has already dropped any edge whose
+                      TYPE is sealed: what remains is a line the reader may be
+                      told the kind of, printed generically because its authored
+                      sentence leans on something further. */}
                   <span className="hovercard__strongval">
-                    {edgeText(top.link.edge, lang).label || EDGE_LABEL_I18N[lang][top.link.type]}
+                    {edgeText(top.link.edge, lang, watched).label || EDGE_LABEL_I18N[lang][top.link.type]}
                   </span>
                 </span>
               </div>

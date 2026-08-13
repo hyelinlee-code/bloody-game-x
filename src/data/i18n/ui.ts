@@ -407,6 +407,11 @@ export const ui = {
     'about.tabFranchise': '프랜차이즈',
     'about.tabKeys': '단축키',
     'about.tabSources': '출처',
+    /* Last, after 출처. A colophon is the back of the book: the sheet teaches
+       the marks, then the seasons, then where the facts came from, and only
+       then who assembled them. Putting it earlier would have made the first
+       thing a confused reader meets a paragraph about the author. */
+    'about.tabMade': '만든 사람',
 
     /* ── about sheet: what this is ────────────────────────────────────── */
     'about.whatHeading': '이 앱은',
@@ -484,6 +489,23 @@ export const ui = {
     'about.colTies': '확인된 인연',
     'about.sortAria': '이 열로 정렬',
     'about.recordCaption': '시즌 1–3 출연자 통산 기록',
+    /* WHAT AN EMPTY TRACK RECORD SAYS. Printed once above the table, and only
+       when at least one finish is actually withheld — at the default set the
+       element does not exist.
+       It says two things and refuses a third. The finishes are missing because
+       of the reader's own answer, so the blanks are not a gap in the research.
+       What is still on the page — who was in which season, and in what role —
+       is participation and is never redacted, so a reader who thinks the table
+       is empty will not scan it. It does NOT count them: 'eleven finishes are
+       hidden' is itself a fact about how many ranked runs the corpus holds, and
+       an empty state that leaks the shape of what it hides has missed the point.
+       Lifted out of a `Record<Lang, string>` parked in AboutSheet.tsx, where a
+       previous owner left it because two owners were queued on this file that
+       session and racing them was the collision the ownership rule exists to
+       prevent. Same words, both sides, now a `UiKey` like every other line of
+       copy in the app. */
+    'about.recordSealedNote':
+      '아직 보지 않았다고 표시한 시즌의 성적은 이 표에서 빠집니다. 누가 어느 시즌에 있었는지와 어떤 자리였는지는 그대로 남아 있습니다.',
     /* The other half of the same finding, and the app knew it and never said
        it: 스무 명 중 세 명은 이 라인업의 누구와도 같은 방에 있었던 적이 없다.
        That is a casting decision, not a hole in the research, so it is stated
@@ -540,6 +562,32 @@ export const ui = {
       '{total}명 중 {n}명의 플레이트가 실제 사진이다. 파일은 저장소의 public/portraits 폴더에서 빌드 시점에 읽어 들이고, 파일이 없는 사람은 자기 기록으로 그린 플레이트가 대신 나온다. 이 {n}장은 {credit}에서 가져왔다. 다만 어느 파일이 둘 중 어디에서 왔는지까지는 기록돼 있지 않아 장별로 표기하지 못하고, 파일 안에도 촬영자 정보는 남아 있지 않다.',
     'about.portraitsRights':
       '그러므로 이 사진들은 재사용이 허가된 자료가 아니다. 출처를 아는 것과 쓸 권리를 갖는 것은 다른 문제이고, 방송 스틸과 위키 이미지의 권리는 각 촬영자에게 있다. 폴더에 넣는 파일은 넣는 쪽이 쓸 권리를 가진 것이어야 하고, 권리가 없으면 비워 두면 된다 — 생성 플레이트는 자리 표시가 아니라 그 자체로 완성된 표현이다.',
+
+    /* ── about sheet: who made this ───────────────────────────────────────
+       The colophon. This app cites 309 claims, fails its own build when the
+       sourcing paragraph drifts from the citation histogram, and prints a
+       paragraph apologising for twenty photographs it cannot source — and the
+       one thing it never cited was itself. The status bar carries a byline;
+       this is the paragraph behind it.
+
+       FIRST PERSON, AND ONLY HERE. Nothing else in this table has a speaker:
+       the sheet describes marks and states facts. A colophon is the one page
+       where the maker is the subject, so 저는 is correct here and would be
+       wrong anywhere else in this file.
+
+       THE NAME IS LATIN ON BOTH SIDES, matching `credit.by` in the status bar.
+       This file has no Hangul spelling of it on record and inventing one would
+       be the same class of error as inventing a photo credit. */
+    'about.madeHeading': '만든 사람',
+    'about.madeBody':
+      '요즘은 어디서나 K-드라마 이야기를 합니다. 저는 다음 차례가 한국 두뇌 서바이벌이라고 봅니다. 그런데 시즌이 셋 지나는 동안, 출연자들이 그 전에 서로 어떤 사이였는지를 한자리에 놓고 볼 수 있는 곳은 끝내 생기지 않았습니다. 그래서 만들었습니다.',
+    'about.madeFan':
+      '저는 Hyelin Lee이고, 더 지니어스를 보기 시작한 뒤로 십 년쯤 이 장르를 봐 왔습니다. 무엇을 인연으로 셀지, 무엇을 결과로 볼지 — 이 아틀라스가 세운 기준은 그 십 년에서 나왔습니다.',
+    'about.madeReachHeading': '연락할 곳',
+    /* `{n}` off `LINKS.length`, not the word 셋: the row and the sentence are
+       then one object, and adding a fourth destination cannot leave the
+       sentence claiming three. */
+    'about.madeReach': '피드백이나 문의는 아래 {n}곳 어디로 보내도 닿습니다.',
 
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': '검색 열기',
@@ -982,6 +1030,10 @@ export const ui = {
     'about.tabFranchise': 'The franchise',
     'about.tabKeys': 'Shortcuts',
     'about.tabSources': 'Sources',
+    /* See the Korean entry for why it is last. This label also sets the width
+       of the Korean tab's Latin gloss, which is what the row's measure is
+       actually spent on — WHO MADE THIS in micro caps at --tr-wide. */
+    'about.tabMade': 'Who made this',
 
     /* ── about sheet: what this is ────────────────────────────────────── */
     'about.whatHeading': 'What this is',
@@ -1044,6 +1096,11 @@ export const ui = {
     'about.colTies': 'Verified ties',
     'about.sortAria': 'Sort by this column',
     'about.recordCaption': 'Track record across seasons 1–3',
+    /* See the Korean entry. Authored, not translated: the Korean names the
+       reader's own answer as the cause and English says the same thing in the
+       shape English says it in. Neither side counts the withheld finishes. */
+    'about.recordSealedNote':
+      'Finishes from the seasons you have not marked as watched are left out of this table. Who was in which season, and in what role, is still here.',
     'about.coldHeading': 'Walking in cold',
     'about.coldBody':
       'These three have never been in a field with any of the other nineteen. That is not a gap in the research — there is no point of contact to find, and the single line each of them carries is a parallel record between people who have never met.',
@@ -1074,6 +1131,28 @@ export const ui = {
       "{n} of the {total} plates in this atlas are photographs. The files are read out of the repository's public/portraits folder at build time, and anyone without a file gets a plate drawn from their own record instead. These {n} images are credited to {credit}. Which file came from which of the two is not recorded, so the credit is stated for the set rather than per picture, and no photographer is named inside the files themselves.",
     'about.portraitsRights':
       'Treat them as uncleared. Knowing where a picture came from is not the same as holding the right to use it: broadcast stills and wiki images remain their photographers’ property. A file belongs in that folder only if whoever puts it there holds the right to use it, and leaving it out is a complete answer — the generated plate is a finished presentation, not a placeholder.',
+
+    /* ── about sheet: who made this ───────────────────────────────────────
+       See the Korean block. Authored here rather than translated from it: the
+       Korean opens on 요즘은 어디서나, which is a statement about what people
+       are talking about, and the English sentence that carries that idea is a
+       different sentence rather than the same one in English words. Same
+       claims, same order, same register — three of them, and no fourth. */
+    'about.madeHeading': 'Who made this',
+    'about.madeBody':
+      'Everyone is talking about K-drama right now. I think the Korean brain-survival show is next in line. Three seasons have gone by and there is still nowhere to set this cast side by side and see what they already were to each other. So I built one.',
+    'about.madeFan':
+      'I am Hyelin Lee, and I have followed this genre since the first season of The Genius in 2013. What counts as a tie here, and what counts as a result — the calls this atlas makes came out of those years.',
+    'about.madeReachHeading': 'Where to find me',
+    /* NO `{n}` ON THIS SIDE, deliberately, and it is not an oversight in the
+       parity check. Korean wants a counter — 곳 needs a number in front of it
+       and 아래 {n}곳 is how that sentence is said — so the Korean states the
+       count and takes the drift-guard that goes with it. English does not need
+       one, and 'any of these 3' printed as a numeral in running prose reads
+       like a form field. A sentence that never claims a count cannot be wrong
+       about it, which is the same protection by a shorter route. `fill` is
+       still applied to both; on this string it is a no-op. */
+    'about.madeReach': 'Feedback and questions reach me at any of these.',
 
     /* ── shortcut descriptions ────────────────────────────────────────── */
     'shortcut.search': 'Open search',

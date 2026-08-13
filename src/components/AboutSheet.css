@@ -218,8 +218,22 @@
 
 /* Held to the same measure as the prose column below it. The seven-tab row used
    to run ~65px past the body's right edge, giving the modal two different right
-   margins on the one screen whose job is to teach the visual language. */
+   margins on the one screen whose job is to teach the visual language.
+
+   THE ROW IS NINE TABS NOW, and the comments below still say seven because the
+   budget they describe is unchanged: the measure is the panel's, not the tab
+   count's. Measured on the running sheet with the colophon added, at 1280 the
+   row content is 938px in a 938px box in both languages — the last tab's right
+   edge lands at 1024 against a box edge of 1109, so 85px clear in Korean and
+   124px in English. The measure still holds at the width it was tuned for. */
 .about__tabs {
+  /* Published once, read twice: the depth of the right-edge ramp below, and
+     the tail of scrollable emptiness the padding reserves so that ramp always
+     has blank ground to land on. Two private copies of one depth is how a fade
+     ends up biting the thing it was supposed to clear — the same discipline
+     `--abt-fade-b` keeps for the vertical ramp on `.about__scroller`. */
+  --abt-tab-fade: 28px;
+
   /* `overflow-x: auto` makes overflow-y `auto` too, and as a shrinkable flex
      item the row was being squeezed by a tall panel until the second line —
      the Latin gloss under every tab — was scrolled out of its own box. It
@@ -233,12 +247,66 @@
      the pill tint is allowed to bleed past the text, the way a selected row's
      does. The max-width is the guard that keeps the row from ever running
      past the measure again. */
-  padding: 0 calc(var(--sp-5) - 9px) var(--sp-3);
+  /* ── the trailing tail, and why the right gutter is not just the gutter ──
+     `--abt-tab-fade` of scrollable emptiness after the last tab, so that when
+     the row IS scrolled to its end the ramp below lands on blank ground
+     instead of dimming the tab you just scrolled to. Same device as
+     `.scroll--tail` in base.css, inlined because that utility appends an
+     ::after and this row is a flex line whose children are the tab stops. */
+  padding: 0 calc(var(--sp-5) - 9px + var(--abt-tab-fade)) var(--sp-3) calc(var(--sp-5) - 9px);
   overflow-x: auto;
   scrollbar-width: none;
   /* Keyboard focus scrolls a tab clear of the right edge rather than parking it
-     under the panel border. */
+     under the panel border. Measured with nine tabs at 768: End lands on the
+     colophon with its right edge 43px inside the box, i.e. clear of the 28px
+     ramp below, so the tab you just reached is never the one being dissolved. */
   scroll-padding-inline: var(--sp-5);
+
+  /* ── the row admits when it is hiding a tab ────────────────────────────────
+     THE ROW HAS NEVER FITTED AT EVERY WIDTH AND HAS NEVER SAID SO. Measured at
+     HEAD with eight tabs: 390px puts 740px of tabs in a 390px box (350px off
+     the right edge) and 768px Korean puts 756px in a 734px box. The scrollbar
+     is suppressed one line up, there is no fade and there is no arrow, so the
+     tabs past the edge are sheared mid-glyph and the page makes no claim that
+     they exist. With the colophon and this ramp's own tail, 390px hides 462px
+     (Korean) / 423px (English) and 768px hides 162px / 123px — and the tab it
+     hides is the last one, which is now the new one. Worsening that silently
+     was not an option.
+
+     WHY NOT JUST SHOW THE SCROLLBAR. Tried first, and measured: it does not
+     paint. Chrome drops `::-webkit-scrollbar` styling entirely once the
+     standard `scrollbar-width` is set to anything but `auto`, and `thin` on an
+     overlay-scrollbar platform draws nothing at rest — the 768/ko screenshot
+     came back indistinguishable from the suppressed version. An affordance
+     that exists only in the stylesheet is worse than none, because it reads as
+     fixed.
+
+     A MASK IS UNCONDITIONAL, WHICH LOOKS LIKE THE PROBLEM AND IS NOT. It
+     cannot ask whether the row overflows, so it paints at 1280 too — but at
+     1280 the last tab's right edge is measured at 1024 against a box edge of
+     1109 in Korean and 985 against 1109 in English, so the ramp's 28px land on
+     85px and 124px of empty ground respectively and there is nothing under it
+     to dim. Where the row does overflow, the cut tab dissolves instead of
+     being sliced through the middle of a Hangul syllable block — the argument
+     base.css makes for the vertical ramp, in the axis this row actually
+     scrolls.
+
+     RIGHT EDGE ONLY. The left stays crisp for the same reason the body's top
+     fade does: at rest the first tab is the selected one, and a panel that
+     opens with its own current tab half-dissolved is describing a scroll
+     position that has not happened. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 calc(100% - var(--abt-tab-fade)),
+    rgba(0, 0, 0, 0.35) calc(100% - var(--abt-tab-fade) * 0.45),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    #000 calc(100% - var(--abt-tab-fade)),
+    rgba(0, 0, 0, 0.35) calc(100% - var(--abt-tab-fade) * 0.45),
+    transparent 100%
+  );
 }
 
 .about__tabs::-webkit-scrollbar {
@@ -1267,6 +1335,78 @@
 .abt-updated__date {
   font-size: var(--t-sm);
   color: var(--ink-hi);
+}
+
+/* ---- colophon ---- */
+
+/* A ROW, NOT A LIST, and the difference is the point. The Sources tab stacks
+   its links as full-width rows separated by hairlines because that list is
+   evidence and is meant to be scanned one line at a time. These three are one
+   person's three addresses — the same object the status bar draws as a byline —
+   so they sit side by side as a single line of the page. Wrapping is what
+   happens at 390px, where three pills do not fit a 358px column. */
+.abt-made {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  list-style: none;
+  padding: 0;
+  margin-top: var(--sp-4);
+}
+
+/* 34px tall, which is the number and not a round one: WCAG 2.2's 24px minimum
+   target is a floor for controls that have no alternative, and these have one
+   (the status bar's own row) — but that row is 13px on a bar that disappears
+   below 900px, so this is the accessible copy of the three and is sized as the
+   primary. The sheet's own close button is 36px; a link pill one step under it
+   reads as secondary chrome without dropping into the "hard to hit" band. */
+.abt-made__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 34px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-full);
+  color: var(--ink-mid);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background-color var(--d-fast) var(--ease-out);
+}
+
+/* 18px against the status bar's 13px. Same 16-unit artwork from Credit.tsx —
+   the marks were drawn on that grid for the bar's baseline and scale cleanly
+   because they are strokes, not a bitmap. */
+.abt-made__mark {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.abt-made__host {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+  white-space: nowrap;
+}
+
+.abt-made__out {
+  font-size: var(--t-micro);
+  color: var(--ink-low);
+}
+
+/* Hover is --accent here as it is on every other interactive affordance in this
+   sheet. tokens.css reserves --blood for the wordmark and for betrayal, and
+   this panel sits two tabs from the legend that spends that meaning. */
+.abt-made__link:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+}
+
+.abt-made__link:hover .abt-made__host,
+.abt-made__link:hover .abt-made__out {
+  color: var(--accent-hot);
 }
 
 /* ---- motion ---- */

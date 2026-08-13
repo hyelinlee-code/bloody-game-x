@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { lineageOf } from '../data/lineage';
-import { isMeeting, tieCounts } from '../data/edges';
+import { isMeeting, tieCounts, tieTypeScope, tieTypeVisible } from '../data/edges';
 import { careerSeenBy, ledgerFor, neverFacedSeenBy, type Meeting } from '../data/headToHead';
 import { fill } from '../data/i18n/ui';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'motion/react';
@@ -334,17 +334,21 @@ function fieldsFor(node: GNode, lang: Lang, watched: WatchedSet): (number | unde
  * One rim tick per connection — and a tick is `{ type, strength }`, so the rim
  * is a census BY TYPE and prints a sealed verdict as a tally.
  *
- * `graph/build.ts`'s `countsAsTie` asks two questions of an edge; this asks the
+ * `countsAsTie` in data/edges.ts asks two questions of an edge; this asks the
  * second one only, and deliberately. The first — `isMeeting` — is NOT applied
  * here today: this rim ticks every relation the panel was given, parallels
  * included, and adding that filter would move pixels at the default set, which
  * Rule 0 forbids this phase. The visibility half moves nothing at the default
  * (52 of 52 edges resolve to a scope satisfied by `WATCHED_ALL`) and is the
  * half that leaks the moment a set is narrowed.
+ *
+ * `tieTypeVisible` rather than the resolution spelled out inline: it is the
+ * same question the headline count asks two hundred lines below, and one of
+ * the two would eventually be edited alone.
  */
 function connectionsFor(relations: { link: GLink }[], watched: WatchedSet): PortraitConnection[] {
   return relations
-    .filter((r) => isVisible(r.link.edge.scopes?.type ?? r.link.edge.scope, watched))
+    .filter((r) => tieTypeVisible(r.link.edge, watched))
     .map((r) => ({ type: r.link.type, strength: r.link.edge.strength }));
 }
 
@@ -1042,11 +1046,12 @@ function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Elem
      because '배신' is a judgement about a named person and an arrow is that
      judgement with a direction — and neither of the two reaches this file
      through `edgeText`, which returns only the label and the description.
-     graph/build.ts asks this same question of this same scope to decide
-     whether an edge may be COUNTED as a tie; the card that names it was still
-     naming it. A sealed one degrades to a neutral tie, per the manifest: the
-     row keeps its place, its season and its people, and loses the word. */
-  const typeScope = e.scopes?.type ?? e.scope;
+     `countsAsTie` in data/edges.ts asks this same question of this same scope
+     to decide whether an edge may be COUNTED as a tie; the card that names it
+     was still naming it. A sealed one degrades to a neutral tie, per the
+     manifest: the row keeps its place, its season and its people, and loses
+     the word. */
+  const typeScope = tieTypeScope(e);
   const typeLabel = pick(EDGE_LABEL_I18N[lang][link.type], typeScope, watched);
   const directedByRecord = e.directed === true && isVisible(e.scopes?.directed ?? e.scope, watched);
   const directedByType = link.type === 'betrayal' && isVisible(typeScope, watched);
@@ -1422,21 +1427,52 @@ function DossierPanel({
   /* Three groups, not two. A `parallel` line is not a meeting — types.ts
      invented the type to say so — and filing it under 하우스 밖 put it in a
      list headed by ties that really happened. It now has its own subhead and
-     its own count, and it is out of the headline number below. */
+     its own count, and it is out of the headline number below.
+
+     AND EVERY ONE OF THE THREE IS A CLAIM ABOUT `type`, so all three are asked
+     `tieTypeVisible` first. 하우스 안 and 하우스 밖 both assert a meeting;
+     평행 이력 asserts the opposite, which is a claim in its own right and the
+     one edge type that carries 만난 적 없는 in its own headline. A sealed edge
+     may be filed under none of them, so it falls out of the list — the same
+     "hidden means absent" this phase applies everywhere else, and the third
+     bucket that could hold it and name its own scope is Phase 3's, not this
+     round's. The line itself is untouched: graph/build.ts keeps it in `links`
+     and the canvas still draws it, because a line between two people is
+     structure. What goes is the assertion about what kind of line it is.
+
+     At the default nothing is sealed, so the partition is the partition this
+     panel has always drawn. */
   const groups = useMemo(() => {
     const byStrength = (a: { link: GLink }, b: { link: GLink }) => b.link.edge.strength - a.link.edge.strength;
-    const met = relations.filter((r) => isMeeting(r.link.type));
+    const named = relations.filter((r) => tieTypeVisible(r.link.edge, watched));
+    const met = named.filter((r) => isMeeting(r.link.type));
     return {
       inHouse: met.filter((r) => r.link.edge.season > 0).sort(byStrength),
       outside: met.filter((r) => r.link.edge.season === 0).sort(byStrength),
-      parallel: relations.filter((r) => !isMeeting(r.link.type)).sort(byStrength),
+      parallel: named.filter((r) => !isMeeting(r.link.type)).sort(byStrength),
     };
-  }, [relations]);
+  }, [relations, watched]);
 
   /* The headline count. 강지후 read '관계 1' with one line under it saying the
      two have never been in the same room; the tick and the number now count
-     meetings, and the parallel record is stated beside it under its own name. */
-  const ties = useMemo(() => tieCounts(relations.map((r) => r.link)), [relations]);
+     meetings, and the parallel record is stated beside it under its own name.
+
+     `watched` IS PASSED EXPLICITLY, never left to `tieCounts`'s default. The
+     default is the module mirror, which carries no subscription: this panel
+     would print the number it first rendered with and go on printing it after
+     the reader narrows their set. The `useMemo` takes `watched` for the same
+     reason — it is an input to the answer, not ambient. */
+  const ties = useMemo(() => tieCounts(relations.map((r) => r.link), watched), [relations, watched]);
+
+  /* What the three lists below will actually put on screen. The empty state is
+     decided from this rather than from `relations.length`, because a panel
+     whose every relation is sealed has rows in `relations` and nothing to
+     render, and the branch that used to catch that case rendered a heading, a
+     rule and then nothing at all — the blank this file's ledger comment calls
+     'a blank the reader has to interpret'. Identical to `relations.length` at
+     the default: every relation is either a meeting or a parallel record, and
+     at `WATCHED_ALL` every one of them is named. */
+  const shownRelations = groups.inHouse.length + groups.outside.length + groups.parallel.length;
 
   const p = node.person;
   /* Slot 0 is the identity header, 1 the jump nav, 2 the lineup, 3 everything
@@ -2015,13 +2051,28 @@ function DossierPanel({
               The heading counts `ties.met`, not `relations.length`. The rim
               tick, the gallery card and this chip are all the same claim —
               '확인된 인연' — and a parallel record is the one edge type the
-              schema created so that it could not be counted as one. */}
+              schema created so that it could not be counted as one.
+
+              AND IT IS NOW THE SAME NUMBER THE CANVAS PRINTS. `ties.met` and
+              `GNode.degree` are one predicate applied to one adjacency, so the
+              '관계 5개' in the graph's accessible list and the 5 in this
+              heading cannot disagree the way they did at every narrowed set —
+              홍진호 13 against 5, 박지민 11 against 4, 하승진 8 against 2,
+              서출구 8 against 1, fourteen of twenty in all. */}
           <Section k="dossier.connections" lang={lang} count={ties.met} anchorId={A.rel} variants={sv(9)}>
             {/* The cold finding is stated for the three people it is true of
                 whether or not a filter has emptied the list — it is a fact
                 about them, not about the current view. `node.noTies` is the
                 stronger form (no edge at all) and is kept because it is the
-                condition the plate's own no-ties mark is drawn from. */}
+                condition the plate's own no-ties mark is drawn from.
+
+                It no longer sits above a contradiction. `node.noTies` is read
+                off `degree`, so it goes true the moment a reader's every
+                meeting is sealed, and this notice was printing 아무와도 얽힌 적
+                없음 over a 관계 6 heading and seven rows on 이진형's panel (윤비
+                six rows, 김남희 two). The heading and the rows below now answer
+                to the same predicate `degree` does, so when this fires there is
+                nothing under it to argue with. */}
             {coldCast || node.noTies ? (
               <div className="dsr-empty dsr-empty--cold">
                 <span className="dsr-empty__ko">{t(lang, 'dossier.coldTitle')}</span>
@@ -2030,7 +2081,7 @@ function DossierPanel({
               </div>
             ) : null}
 
-            {relations.length === 0 && !coldCast && !node.noTies ? (
+            {shownRelations === 0 && !coldCast && !node.noTies ? (
               <div className="dsr-empty">
                 <span className="dsr-empty__ko">{t(lang, 'dossier.emptyTies')}</span>
                 <Gloss k="dossier.emptyTies" lang={lang} className="dsr-empty__en" />

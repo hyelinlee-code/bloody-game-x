@@ -3,6 +3,7 @@ import type { GLink } from '../graph/types';
 import { EDGE_COLOR } from '../graph/palette';
 import { EDGE_LABEL_I18N, edgeText, personName, t } from '../data/i18n';
 import { fill } from '../data/i18n/ui';
+import { tieTypeScope } from '../data/edges';
 import { haveFaced, meetingsFor } from '../data/headToHead';
 import { isVisible, pick } from '../data/redact';
 import { useLang } from '../state/useLang';
@@ -163,13 +164,15 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
      `edgeText` gates the headline and the account and deliberately returns
      neither of these — the docblock there says they reach the canvas through
      graph/build.ts instead. So this was the state the round was called for:
-     graph/build.ts had already stopped COUNTING a betrayal whose scope is
-     sealed (`countsAsTie`, same `scopes?.type ?? scope` resolution as here),
+     the graph had already stopped COUNTING a betrayal whose scope is sealed
      while this card went on printing the word for it. The graph stopped
      counting the betrayal and the card still named it.
 
-     `pick`, not a second predicate — one gate, in data/redact.ts. */
-  const typeScope = e.scopes?.type ?? e.scope;
+     `pick`, not a second predicate — one gate, in data/redact.ts. And
+     `tieTypeScope` from data/edges.ts, not `e.scopes?.type ?? e.scope` spelled
+     out again: this card and the tie count are asking one question of one
+     field, and the resolution they ask it with is authored beside the data. */
+  const typeScope = tieTypeScope(e);
   const typeLabel = pick(EDGE_LABEL_I18N[lang][link.type], typeScope, watched);
   /* `link.directed` is `Boolean(e.directed) || e.type === 'betrayal'`, resolved
      in build.ts off the raw record, so the two halves are unpicked here and

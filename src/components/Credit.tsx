@@ -34,14 +34,28 @@ export interface CreditProps {
   lang: Lang;
 }
 
-interface Link {
+export interface Link {
   href: string;
   label: string;
   /** 16×16, drawn on a 16-unit grid to sit on the status bar's baseline. */
   path: JSX.Element;
 }
 
-const LINKS: Link[] = [
+/**
+ * EXPORTED because the About sheet's colophon draws the same row.
+ *
+ * Three URLs written down twice is three URLs that drift, and the pair that
+ * drifts silently is the worst one: a stale `rel` or a missing `noopener` on
+ * one copy looks exactly like the other copy at a glance. The sheet imports
+ * this array and reads `href`, `label` and `path` off it; it sets its own
+ * icon size and its own `aria-label` suffix, because a 13px mark on a status
+ * bar and an 18px mark in a modal are not the same object.
+ *
+ * `rel="me noopener noreferrer"` is applied at each call site rather than
+ * stored here, because it is a property of the anchor and not of the
+ * destination — see the note above about what an opened tab can do to this one.
+ */
+export const LINKS: Link[] = [
   {
     href: 'https://www.hyelin-lee.com/',
     label: 'hyelin-lee.com',

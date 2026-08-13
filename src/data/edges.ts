@@ -1,4 +1,6 @@
 import type { Edge, EdgeType } from './types';
+import { isVisible, type WatchedSet, type WorkId } from './redact';
+import { currentWatched } from '../state/useWatched';
 
 /**
  * WHAT COUNTS AS A VERIFIED CONNECTION — the rule, in one place.
@@ -25,11 +27,112 @@ export const NON_MEETING_TYPES: ReadonlySet<EdgeType> = new Set<EdgeType>(['para
 /** True when this edge type asserts the two people were actually in a room. */
 export const isMeeting = (type: EdgeType): boolean => !NON_MEETING_TYPES.has(type);
 
-/** Split a list of ties into the headline number and the parallel remainder. */
-export function tieCounts(list: readonly { type: EdgeType }[]): { met: number; parallel: number } {
+/**
+ * THE SECOND HALF OF THE SAME RULE: may this reader be told what the tie IS?
+ *
+ * `isMeeting` answers a question about the vocabulary. This answers one about
+ * the reader, and a tie count needs both — the count is a claim assembled out
+ * of `type`, and `type` is outcome-bearing. works.ts lists it in
+ * `OUTCOME_FIELDS.Edge` because `betrayal` is a verdict about a named person;
+ * counting a tie whose type is sealed prints the sealed claim as a number, and
+ * a rim of ticks coloured by type prints it as a census.
+ *
+ * THE SCOPE IT ASKS ABOUT IS THE TYPE'S, not the record's, and where the two
+ * differ the type's is the narrower and the right one. `scopes.type ?? scope`
+ * is the resolution types.ts documents for every per-field override and the one
+ * validate-data.mjs §10c and §10e use. An edge may seal its headline and its
+ * account and still leave the bare fact of a meeting visible; that edge still
+ * counts. No edge in the corpus carries a `scopes.type` today (measured: 0 of
+ * 52), so this resolves to `e.scope` for all of them.
+ *
+ * FAIL CLOSED, AND WHAT THAT COSTS. `isVisible(undefined, …)` is false at every
+ * watched-set INCLUDING the default, so an edge with no scope at all would drop
+ * out of every count for everybody — a Rule 0 violation rather than an
+ * over-redaction. It is not softened here; it is prevented upstream, where
+ * validate-data.mjs §10c fails the build for any edge whose `type` carries
+ * neither `scopes.type` nor `scope`. Measured against today's corpus: 52 of 52
+ * resolve to a defined scope and 0 are hidden at `WATCHED_ALL`.
+ */
+export function tieTypeScope(e: Pick<Edge, 'scope' | 'scopes'>): readonly WorkId[] | undefined {
+  return e.scopes?.type ?? e.scope;
+}
+
+/** May this reader be told what kind of tie this is? */
+export function tieTypeVisible(e: Pick<Edge, 'scope' | 'scopes'>, watched: WatchedSet): boolean {
+  return isVisible(tieTypeScope(e), watched);
+}
+
+/**
+ * Does this edge count as one verified connection FOR THIS READER? Both halves.
+ *
+ * ONE DEFINITION, BECAUSE THE CONTRADICTION WAS BETWEEN TWO. `graph/build.ts`
+ * gated `degree` on exactly this predicate while `tieCounts` below took no
+ * watched-set at all, so at `bgx.watched='[]'` fourteen of twenty dossiers
+ * printed a headline number the canvas beside them disagreed with — 홍진호 관계
+ * 13 against 관계 5개, 박지민 11 against 4, 하승진 8 against 2, 서출구 8 against
+ * 1 — in one viewport, off one dataset. Worse, `noTies` is read off `degree`
+ * and flips true under narrowing, so 이진형's panel printed 아무와도 얽힌 적
+ * 없음 above a 관계 6 heading and seven relation rows.
+ *
+ * So the rule that decides a tie is authored here, next to the data and beside
+ * `isMeeting`, and every counting surface reads it. `graph/build.ts` held a
+ * private copy with this exact body and now imports this one — that file's
+ * owner and this one agreed on a definition in the same round rather than
+ * shipping two answers, which is the whole of why the numbers can no longer
+ * disagree. Do not add a third copy: if a surface ever needs a different
+ * question, give it a different name and say why.
+ */
+export function countsAsTie(e: Pick<Edge, 'type' | 'scope' | 'scopes'>, watched: WatchedSet): boolean {
+  return isMeeting(e.type) && tieTypeVisible(e, watched);
+}
+
+/**
+ * What a counting surface hands this module.
+ *
+ * Every one of the five call sites maps off `graph.edgesOf`, which holds
+ * `GLink`s — a link wraps the record it was built from. Taking both shapes
+ * keeps the graph's types out of the data layer while letting a caller pass
+ * either without unwrapping at the call site and forgetting on the sixth.
+ * `Edge` has no `edge` property, so the discriminant is sound.
+ */
+export type TieLike = Edge | { type: EdgeType; edge: Edge };
+const record = (x: TieLike): Edge => ('edge' in x ? x.edge : x);
+
+/**
+ * Split a list of ties into the headline number and the parallel remainder,
+ * AS SEEN BY THIS READER.
+ *
+ * `met + parallel` is no longer `list.length` and that is the point: an edge
+ * whose type this reader may not be told about is neither a verified
+ * connection nor a record of two people never meeting. It is a line, which is
+ * structure, and it is counted by nothing. At the default watched-set every
+ * scope is satisfied, both buckets are exactly what they have always been, and
+ * the sum is `list.length` again.
+ *
+ * `watched` DEFAULTS to the module mirror so no call site breaks. Read the note
+ * on `currentWatched` in state/useWatched.ts before copying that line anywhere
+ * else: this is a default-parameter slot in a module with no JSX, which is its
+ * one sanctioned position. A COMPONENT MUST PASS `useWatched().watched`
+ * EXPLICITLY — the mirror carries no subscription, so a component that leans on
+ * the default renders the right number once and then keeps printing it after
+ * the reader narrows their set, and stale in that direction is a leak.
+ * Dossier, Gallery, CommandPalette, HoverCard and graph/build.ts all pass it.
+ * `FilterRail.tsx`'s 가장 얽힌 인물 ranking is the last caller still taking the
+ * default — it is a different owner's file and is named in the handoff.
+ */
+export function tieCounts(
+  list: readonly TieLike[],
+  watched: WatchedSet = currentWatched(),
+): { met: number; parallel: number } {
   let met = 0;
-  for (const x of list) if (isMeeting(x.type)) met++;
-  return { met, parallel: list.length - met };
+  let parallel = 0;
+  for (const x of list) {
+    const e = record(x);
+    if (!tieTypeVisible(e, watched)) continue;
+    if (isMeeting(e.type)) met++;
+    else parallel++;
+  }
+  return { met, parallel };
 }
 
 /**

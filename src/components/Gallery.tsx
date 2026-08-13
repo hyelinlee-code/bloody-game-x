@@ -25,7 +25,7 @@ import {
 } from '../data/i18n';
 import { useLang } from '../state/useLang';
 import { useWatched, type WatchedSet } from '../state/useWatched';
-import { tieCounts } from '../data/edges';
+import { tieCounts, tieTypeVisible } from '../data/edges';
 import { SEASON_COLOR, SEASON_INK } from '../graph/palette';
 import { HAS_PORTRAITS } from '../graph/portraits';
 import type { BuiltGraph } from '../graph/build';
@@ -332,8 +332,27 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                      demonstrably never shared a room, and 강지후, 신승용 and
                      최연청 each carry exactly one and nothing else. The
                      remainder is not dropped — it is printed beside the count
-                     under its own name. */
-                  const ties = tieCounts(rel);
+                     under its own name.
+
+                     AND THE READER'S SET IS PART OF THE RULE, passed explicitly
+                     rather than left to the module mirror `tieCounts` defaults
+                     to: this whole wall is twenty cards rendered from one hook,
+                     and the mirror carries no subscription, so leaning on the
+                     default would freeze all twenty numbers at whatever the set
+                     was when the wall first mounted. `watched` comes from
+                     `useWatched()` at the top of this component. */
+                  const ties = tieCounts(rel, watched);
+                  /* One tick per verified connection, and a tick is coloured by
+                     TYPE — so an ungated rim does not merely over-count, it
+                     prints the sealed verdict as a census: 홍진호's plate set
+                     five alliance ticks, four prior-show, three betrayal and
+                     one rivalry to a reader who had watched nothing, measured
+                     off the stroke colours. Portrait applies `isMeeting`
+                     itself, deliberately, and cannot apply this half — it is
+                     handed `{ type, strength }` and never sees a scope. Same
+                     filter, same predicate, as `connectionsFor` in
+                     Dossier.tsx. */
+                  const seen = rel.filter((l) => tieTypeVisible(l.edge, watched));
                   const dim = !visible.has(n.id);
                   const name = personName(p, lang);
                   /* Chronological, not "best": Park Ji-min is S1 4위 · S2 13위 ·
@@ -389,7 +408,7 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                             isWinner={n.isWinner}
                             isHost={n.isHost}
                             noTies={n.noTies}
-                            connections={rel.map((l) => ({ type: l.type, strength: l.edge.strength }))}
+                            connections={seen.map((l) => ({ type: l.type, strength: l.edge.strength }))}
                             variant="card"
                             imageUrl={p.portraitUrl}
                           />
