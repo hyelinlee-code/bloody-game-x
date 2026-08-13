@@ -349,6 +349,13 @@
   min-width: 0;
 }
 
+/* `cursor: pointer`, not `help`.
+   The badge opens a sheet. `help` is the idiom for "there is an explanation
+   attached to this text", and pointing it at a control that changes what the
+   whole app is willing to say is a third version of the same defect this
+   object has already been reported for twice — first as a span that looked
+   clickable and was not, then as a button that advertised more to read. It is
+   a control; it takes the control cursor. */
 .sb__badge {
   pointer-events: auto;
   display: inline-flex;
@@ -359,12 +366,37 @@
   border: 1px solid var(--accent-line);
   background: var(--accent-tint-faint);
   white-space: nowrap;
-  cursor: help;
+  cursor: pointer;
+  transition:
+    border-color var(--d-fast) var(--ease-out),
+    background-color var(--d-fast) var(--ease-out);
+}
+
+.sb__badge:hover {
+  border-color: var(--accent-line-strong);
+  background: var(--accent-tint);
+}
+
+/* THE READER'S OWN REDACTION IS ON. It reads a step louder than the resting
+   badge and no louder than that: this is a setting the reader chose, not an
+   error and not a warning, so it takes the state channel (--accent-*) exactly
+   like an active filter chip and never --blood. */
+.sb__badge.is-sealed {
+  border-color: var(--accent-line-strong);
+  background: var(--accent-tint);
+}
+
+.sb__badge.is-sealed .sb__badge-line {
+  color: var(--ink-hi);
 }
 
 .sb__shield {
   flex: 0 0 auto;
   color: var(--accent);
+}
+
+.sb__shield-fill {
+  opacity: 0.55;
 }
 
 .statusbar .sb__badge-flag {

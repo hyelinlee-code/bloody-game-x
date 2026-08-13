@@ -1,6 +1,6 @@
 import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { ALL_WORK_IDS } from '../data/works';
+import { ALL_WORK_IDS, WATCHED_NONE } from '../data/works';
 import type { WatchedSet, WorkId } from '../data/works';
 
 /**
@@ -10,80 +10,152 @@ import type { WatchedSet, WorkId } from '../data/works';
  * This is the reader's answer to it, held in one place so that every accessor
  * asks the same question of the same set.
  *
- * PHASE 2 IS PLUMBING, NOT BEHAVIOUR. The default here is `WATCHED_ALL`, which
- * is the whole registry, so `isVisible` returns true for every tagged claim and
- * nothing on screen moves. `setWatched` works and nothing in the UI calls it:
- * the auditor drives it directly to prove the wiring is real rather than
- * decorative. Phase 4 owns the control and owns flipping this default; see
- * PLAN-spoilers.md §4 and §7.
+ * PHASE 4 GAVE THE READER THE CONTROL AND FLIPPED THE DEFAULT. Phases 2 and 3
+ * built this whole layer with `WATCHED_ALL` as the default, deliberately, so
+ * that every one of their commits was invisible and could be audited against a
+ * screenshot. That was scaffolding. The one line it was scaffolding for is
+ * `WATCHED_DEFAULT` below, and it now reads `WATCHED_NONE`.
  *
- * THE PROVIDER IS NOT MOUNTED THIS PHASE either — App.tsx belongs to nobody in
- * Phase 2 — so in the shipped bundle the only live path is `currentWatched()`,
- * which returns `WATCHED_ALL`. Read the note on that function before using it.
+ * The reader's own answer, once given, is what governs; the default only
+ * governs somebody who has not given one. See the argument on
+ * `WATCHED_DEFAULT`, and PLAN-spoilers.md §4.
  */
 
 /** Where the reader's own answer lives between visits. */
 const KEY = 'bgx.watched';
 
 /**
- * Everything. The Phase 2 default, and the state in which this whole feature is
- * invisible: every scope is satisfied, so every claim renders exactly as it did
- * before any of this existed.
+ * Everything. The state in which this whole feature is invisible: every scope
+ * is satisfied, so every claim renders exactly as it did before any of this
+ * existed. It was the default through phases 2 and 3; it is now what a reader
+ * gets by answering "다 봤어요", and it is the profile every pre-existing
+ * assertion about this app is still measured in.
  *
  * Derived from `ALL_WORK_IDS` rather than written out, so a work added to the
- * registry is watched by default and cannot silently start hiding a claim from
- * readers who never chose to hide anything. It is the counterpart of
- * `WATCHED_NONE` in works.ts and deliberately lives here instead: `WATCHED_NONE`
- * is a fact about the vocabulary, this is a decision about a phase.
+ * registry lands in this set automatically and a reader who has said they have
+ * watched everything does not silently start losing claims to a work that did
+ * not exist when they answered.
  */
 export const WATCHED_ALL: WatchedSet = new Set(ALL_WORK_IDS);
 
 /**
- * The reader's saved answer, or `WATCHED_ALL` if they have not given one.
+ * WHAT A READER WHO HAS NOT ANSWERED GETS — and this is the decision of Phase
+ * 4, not a detail of it. It is `WATCHED_NONE`: nothing seen, so no ending
+ * stated.
+ *
+ * THE ARGUMENT IS ASYMMETRY, and everything else is support. An over-redacted
+ * reader clicks one button and has the whole atlas back. An under-redacted
+ * reader has seen 우승 beside a name and cannot un-see it. One error costs a
+ * click and the other is permanent, so the default goes to the recoverable
+ * side. That is PLAN-spoilers.md §4, and the reader who asked for this feature
+ * — "I have only watched the genius … there are lots of spoilers" — is
+ * precisely somebody the old default had already spoiled before they could
+ * find a control.
+ *
+ * THE OBJECTION, AND THE ANSWER. Handing a stranger a sealed atlas with no idea
+ * why is a real cost, and it is why this constant could not ship on its own.
+ * Three things pay it, all of them in this phase:
+ *
+ *   1. The cold open ASKS. `Intro.tsx` puts the question — "what have you
+ *      watched?" — in front of a first-time reader with three one-click
+ *      answers, and its auto-advance is switched off until one is given, so
+ *      the screen can never choose an exposure on the reader's behalf. Most
+ *      readers therefore never meet this constant at all.
+ *   2. The badge SAYS. `StatusBar.tsx` names how many works are sealed and
+ *      opens the picker, so the sealed state is legible and one click from
+ *      being over.
+ *   3. Somebody arriving on a shared link, who is never shown the question,
+ *      gets a banner that says the same thing. `App.tsx`.
+ *
+ * SO THE DEFAULT ONLY GOVERNS A READER WHO DECLINED TO ANSWER, and declining is
+ * itself an answer we are allowed to read conservatively.
+ *
+ * IT IS NOT `WATCHED_NONE` BY ALIAS — it is a named constant, because the two
+ * mean different things. `WATCHED_NONE` is a fact about the vocabulary (the
+ * empty set of works). This is a decision about a product, and the next person
+ * to revisit the decision should have one line to change and this note to argue
+ * with.
+ */
+export const WATCHED_DEFAULT: WatchedSet = WATCHED_NONE;
+
+/**
+ * Has this reader ever answered the question?
+ *
+ * Distinguishing "has not answered" from "answered, and the answer is nothing"
+ * is the whole reason the default is allowed to be conservative: a stored `[]`
+ * is a reader who told us they have watched nothing, and they must not be
+ * asked again or shown an arrival banner, while an absent key is somebody we
+ * have never met. Two states that resolve to the same SET and to different
+ * SCREENS.
+ *
+ * Exported so `Intro.tsx` and `App.tsx` can branch on it without either of them
+ * growing a second copy of `KEY`. A storage exception reads as "answered", not
+ * as "never asked": in private mode nothing we write can survive, so asking
+ * again on every navigation would be a question the reader can never finish
+ * answering.
+ */
+export function hasStoredAnswer(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return localStorage.getItem(KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * The reader's saved answer, or `WATCHED_DEFAULT` if they have not given one.
  *
  * Unknown ids are dropped rather than kept, and the drop is structural: we walk
  * `ALL_WORK_IDS` and ask the stored array, never the other way round, so a
  * `WorkId` cast is never needed and an id from a future build lands nowhere.
  *
- * ABSENT AND CORRUPT BOTH RESOLVE TO THE PHASE DEFAULT, not to `WATCHED_NONE`.
- * Fail-closed governs a CLAIM whose tag nobody wrote; it does not govern the
- * reader's own setting, where resolving a damaged value to "hide everything"
- * would be a silent, unrequested behaviour change — the one thing this phase
- * may not do. PHASE 4 MUST REVISIT THIS LINE when the default flips: corrupt
- * must then resolve to the new default, and the constant below is the only
- * place that has to change.
+ * ABSENT AND CORRUPT BOTH RESOLVE TO THE DEFAULT. Through phases 2 and 3 that
+ * default was `WATCHED_ALL` and the note here said, in as many words, that
+ * Phase 4 must revisit this line when the default flips. This is that revision:
+ * both branches now resolve to `WATCHED_DEFAULT`, and a damaged stored value
+ * therefore fails toward hiding rather than toward showing — which is the same
+ * direction `isVisible` fails an untagged scope, for the same reason.
  *
  * A stored `[]` is not corrupt. It is a reader who has watched nothing, and it
  * survives the round trip as an empty set.
+ *
+ * THE FIRST PAINTED FRAME IS ALREADY REDACTED, which PLAN §4 makes a corollary
+ * of the default rather than a nicety: this runs at module scope (see
+ * `fallbackWatched`), before React has rendered anything, so there is no frame
+ * on which an unanswered reader is exposed. No storage, private browsing and a
+ * throwing `getItem` all land on the same branch.
  */
 function readStored(): WatchedSet {
-  if (typeof window === 'undefined') return WATCHED_ALL;
+  if (typeof window === 'undefined') return WATCHED_DEFAULT;
   let raw: string | null;
   try {
     raw = localStorage.getItem(KEY);
   } catch {
     /* private mode, or storage disabled by policy */
-    return WATCHED_ALL;
+    return WATCHED_DEFAULT;
   }
-  if (raw === null) return WATCHED_ALL;
+  if (raw === null) return WATCHED_DEFAULT;
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return WATCHED_ALL;
+    if (!Array.isArray(parsed)) return WATCHED_DEFAULT;
     const set = new Set<WorkId>();
     for (const id of ALL_WORK_IDS) if (parsed.includes(id)) set.add(id);
     return set;
   } catch {
-    return WATCHED_ALL;
+    return WATCHED_DEFAULT;
   }
 }
 
 /**
  * Persist, in registry order so two identical sets store identical bytes.
  *
- * Only `setWatched` calls this. Mounting writes nothing: a reader who never
- * touched the control should not acquire a stored preference just by loading
- * the page, because the stored value is what Phase 4's flipped default will
- * have to distinguish itself from.
+ * Only `setWatched` calls this. Mounting writes nothing, and that is now
+ * load-bearing rather than tidy: `hasStoredAnswer()` is what tells the cold
+ * open whether to ask and the link banner whether to appear, and a write on
+ * mount would answer the question on the reader's behalf on the very first
+ * frame — silently choosing the most conservative exposure and then never
+ * offering the choice again.
  */
 function writeStored(next: WatchedSet): void {
   if (typeof window === 'undefined') return;
@@ -162,10 +234,9 @@ const WatchedContext = createContext<WatchedState | null>(null);
 /**
  * Holds the reader's answer for the React tree.
  *
- * NOT MOUNTED IN PHASE 2. Wiring it into App.tsx is Phase 4's job, in the same
- * commit as the control that gives a reader something to change — a provider
- * with no control and no consumer would only make the diff look bigger than the
- * behaviour.
+ * Mounted at the root of App.tsx, above `Atlas`, because a component cannot
+ * consume a context it renders itself — see the note on `App`. Phase 4's
+ * `WatchedPicker` is the first thing in the product to call `setWatched`.
  *
  * Written with `createElement` because the contract names this file `.ts`; that
  * is the only reason, and a later owner may rename it `.tsx` and use JSX

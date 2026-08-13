@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, JSX, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from 'motion/react';
@@ -21,15 +13,8 @@ import {
   INK_MID,
   SEASON_COLOR,
 } from '../graph/palette';
-import {
-  PHOTO_LEVEL,
-  PHOTO_SAT,
-  PHOTO_SEAT_A0,
-  PHOTO_SEAT_A1,
-  PHOTO_SEAT_IN,
-  PHOTO_SEAT_INK,
-} from '../graph/plateGeometry';
-import { HAS_PORTRAITS, onPortraitLoad, photoGain, portraitUrl } from '../graph/portraits';
+import { PHOTO_SEAT_A0, PHOTO_SEAT_A1, PHOTO_SEAT_IN, PHOTO_SEAT_INK } from '../graph/plateGeometry';
+import { HAS_PORTRAITS, portraitUrl } from '../graph/portraits';
 import { tieCounts } from '../data/edges';
 import { careerSeenBy, careerTableSeenBy, neverFacedSeenBy } from '../data/headToHead';
 /* The status bar's byline row, reused whole. See the colophon panel below and
@@ -173,56 +158,66 @@ function stubs(cx: number, cy: number, r: number, n: number, length: number, col
   });
 }
 
-/* ── the legend's discs carry faces ─────────────────────────────────────────
-   Every plate in the app holds a photograph, and this legend taught the whole
-   plate grammar against an empty near-black disc: 'fine grey rim = no verified
-   tie' demonstrated as the only mark on a bare circle, and then met in the wild
-   as a 1.2-unit hairline against a photographed shoulder at 22px. The two
-   marks the plate is least sure of — the laurel and the host hairline — were
-   the two shown at maximum contrast here and minimum contrast there. So the
-   tiles draw the object the reader will actually meet.
+/* ── the legend's discs carry a SPECIMEN, and it is nobody ──────────────────
+   THE LEGEND USED TO SPOIL THE THING IT EXPLAINS, and it did so identically
+   for every reader. These tiles drew REAL, NAMED, PHOTOGRAPHED people, chosen
+   because the mark was true of them: 이태균's face inside the brass halo under
+   '황동 후광 = 이전 시즌 우승', which names a champion; 이진형 in a complete
+   laurel with his season-2 arc; 김경훈 —crimson arrow→ 이상민 under '화살표 =
+   누가 누구를 배신했는지', which is a real betrayal drawn with both faces; 하승진
+   –동맹– 이진형 –배신→ 윤비 as a three-face chain; 윤비 wearing alliance and
+   betrayal ticks against a visible tie count of 0. Measured at
+   `bgx.watched='[]'` on the running app: 25 <image> elements, 15 distinct
+   people, and the panel's markup BYTE-IDENTICAL to the default set. A reader
+   who had just asked to be protected opened the page that explains the
+   protection and was told who won and who knifed whom.
 
-   THE GRADE IS THE SVG PLATE'S GRADE, not a look chosen here: saturate(
-   PHOTO_SAT), the three linear slopes at PHOTO_LEVEL × gain, and the flat
-   three-stop seat off PHOTO_SEAT_A0 / _IN / _A1 — the same constants in the
-   same order as components/Portrait.tsx:341–364, read from plateGeometry
-   rather than restated. `gain` is subscribed the same way too, because the
-   per-image exposure correction is measured against the median of everyone
-   decoded so far and a sheet opened during the cold open would otherwise print
-   one exposure while the gallery behind it prints another. This is the THIRD
-   call site of that grade; see the handoff about giving Portrait.tsx a
-   `<PlatePhoto>` primitive so there is one drawing of it.
+   GATING THE TILES IS NOT THE FIX. A legend that empties at a narrow set stops
+   teaching the encoding to the only reader who has no other way to learn it,
+   and a legend that changes shape between readers is a channel of its own —
+   PLAN-spoilers.md §5, the same argument that says a redacted dossier may not
+   be shorter than a full one.
 
-   WHICH FACE GOES IN WHICH TILE is not decorative. Each specimen is somebody
-   the mark is actually true of — 이태균 under the brass laurel, 박지민 under
-   the host ring, 신승용 under the fine grey rim and again in the cold band,
-   최연청 under the newcomer dash — so a reader who later opens that person's
-   dossier finds the same mark on the same face. That is why a face recurs
-   across tiles: the facts recur.
+   SO THE SUBJECT IS SYNTHETIC. No id, no photograph, no archetype claim: a
+   head and a shoulder line, drawn on the plate's own seated ground, asserting
+   nothing about anybody. The tiles then say what a legend is for — what the
+   mark MEANS — and they read the same at every watched-set, which is the
+   property the old tiles had and were wrong to have.
 
-   And it is gated on HAS_PORTRAITS, which is the same switch that picks
-   between `about.tilePlate` and `about.tilePlatePhotos`. Empty the folder and
-   the legend goes back to bare discs on the same frame that the caption stops
-   claiming photographs — one condition, both halves. */
-function PlateFace({
-  id,
-  cx,
-  cy,
-  r,
-}: {
-  id: string;
-  cx: number;
-  cy: number;
-  r: number;
-}): JSX.Element | null {
+   THE CONTRAST LESSON IS THE REASON IT IS NOT A BARE DISC. Round 8 filed that
+   this legend taught 'fine grey rim = no verified tie' as the only mark on an
+   empty circle and the reader then met it as a 1.2-unit hairline against a
+   photographed shoulder at 22px — maximum contrast here, minimum there. So the
+   specimen keeps the plate's tonal mass: PHOTO_SEAT_INK for the ground and the
+   flat three-stop seat off PHOTO_SEAT_A0 / _IN / _A1, the same constants in
+   the same order as components/Portrait.tsx, read from plateGeometry rather
+   than restated. What it drops is the part that was a person — the <image>,
+   and with it the saturate/level grade and the `photoGain` subscription that
+   only ever existed to expose one.
+
+   STILL GATED ON HAS_PORTRAITS, which is the same switch that picks between
+   `about.tilePlate` and `about.tilePlatePhotos`. Empty the folder and the
+   plates in the wild are bare tinted discs, so the legend's are too, on the
+   same frame that the caption stops claiming portraits — one condition, both
+   halves. The callers' `HAS_PORTRAITS ? 'none' : alpha(hue, …)` fill is the
+   other side of it and is unchanged. What it no longer depends on is whether
+   any ONE person's file is on disk: `PlateFace` returned null when its id had
+   no picture, so deleting a single .webp used to knock a hole in the manual.
+   The legend is now a function of the folder being non-empty and nothing
+   else. */
+
+/** The occupant, in disc radii, so one shape serves r=8 through r=21. */
+const SPEC_HEAD_Y = -0.2;
+const SPEC_HEAD_R = 0.32;
+const SPEC_BODY_Y = 0.95;
+const SPEC_BODY_RX = 1.02;
+const SPEC_BODY_RY = 0.66;
+/** Its ink over PHOTO_SEAT_INK — a portrait's midtone, not a silhouette. */
+const SPEC_FIGURE_A = 0.2;
+
+function Specimen({ cx, cy, r }: { cx: number; cy: number; r: number }): JSX.Element | null {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const gain = useSyncExternalStore(
-    onPortraitLoad,
-    () => photoGain(id),
-    () => 1,
-  );
-  const photo = portraitUrl(id);
-  if (!photo) return null;
+  if (!HAS_PORTRAITS) return null;
   return (
     <>
       <defs>
@@ -234,38 +229,20 @@ function PlateFace({
           <stop offset={`${PHOTO_SEAT_IN * 100}%`} stopColor={PHOTO_SEAT_INK} stopOpacity={PHOTO_SEAT_A0} />
           <stop offset="100%" stopColor={PHOTO_SEAT_INK} stopOpacity={PHOTO_SEAT_A1} />
         </radialGradient>
-        <filter id={`kg${uid}`} colorInterpolationFilters="sRGB">
-          <feColorMatrix type="saturate" values={String(PHOTO_SAT)} />
-          <feComponentTransfer>
-            <feFuncR type="linear" slope={PHOTO_LEVEL * gain} />
-            <feFuncG type="linear" slope={PHOTO_LEVEL * 0.97 * gain} />
-            <feFuncB type="linear" slope={PHOTO_LEVEL * 0.93 * gain} />
-          </feComponentTransfer>
-        </filter>
       </defs>
-      {/* The plate's own ground under the picture, so a transparent or
-          still-loading image is a seated disc rather than a hole. */}
+      {/* The plate's own ground, the same one that sits under a photograph. */}
       <circle cx={cx} cy={cy} r={r} fill={PHOTO_SEAT_INK} />
-      <image
-        href={photo}
-        x={cx - r}
-        y={cy - r}
-        width={r * 2}
-        height={r * 2}
-        /* xMidYMin, matching the SVG plate: a circular crop centred on a tall
-           portrait centres on the chin. */
-        preserveAspectRatio="xMidYMin slice"
-        clipPath={`url(#kc${uid})`}
-        filter={`url(#kg${uid})`}
-      />
+      {/* Head and shoulders, clipped by the disc so the shoulders run out of
+          frame the way a `xMidYMin slice` crop of a real portrait does. Two
+          primitives and no features: a specimen that acquired a jawline would
+          be a likeness, and a likeness is somebody. */}
+      <g clipPath={`url(#kc${uid})`} fill={BONE} fillOpacity={SPEC_FIGURE_A}>
+        <circle cx={cx} cy={cy + r * SPEC_HEAD_Y} r={r * SPEC_HEAD_R} />
+        <ellipse cx={cx} cy={cy + r * SPEC_BODY_Y} rx={r * SPEC_BODY_RX} ry={r * SPEC_BODY_RY} />
+      </g>
       <circle cx={cx} cy={cy} r={r} fill={`url(#ks${uid})`} clipPath={`url(#kc${uid})`} />
     </>
   );
-}
-
-/** `PlateFace` when the folder has pictures, nothing when it does not. */
-function Face(props: { id: string; cx: number; cy: number; r: number }): JSX.Element | null {
-  return HAS_PORTRAITS ? <PlateFace {...props} /> : null;
 }
 
 const SEASON_NUMBERS: SeasonNumber[] = [1, 2, 3];
@@ -1060,47 +1037,60 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       <p className="abt-prose">{t(lang, 'about.readBody')}</p>
 
       <ul className="abt-tiles">
-        {/* The two ends of the actual range: 홍진호 carries the most verified
-            ties in the twenty and 강지후 none, so the size difference the tile
-            teaches is the one the reader will find on the canvas. Each disc
-            takes its own archetype hue because that is what a ring means —
-            drawing both in one hue to "isolate the variable" would have been
-            the legend telling a lie to make a point. */}
+        {/* Two ends of the range the canvas actually spans, r=11 against r=21,
+            on nobody. It used to be 강지후 against 홍진호 — the least and most
+            connected of the twenty — which made the tile a published ranking of
+            two named people, and a ranking that did not move when the reader's
+            own count of 홍진호's ties did.
+            The two hues stay different: one hue on both discs would let size
+            and colour read as one variable, on the tile whose whole job is to
+            separate them. They are hues now, not archetypes of anybody. */}
         <KeyTile lang={lang} k="about.tileSize">
           {stubs(34, 42, 11, 2, 9, CATEGORY_COLOR.other, 'a')}
           {stubs(94, 42, 21, 7, 10, CATEGORY_COLOR.esports, 'b')}
-          <Face id="kang-ji-hoo" cx={34} cy={42} r={11} />
+          <Specimen cx={34} cy={42} r={11} />
           <circle cx="34" cy="42" r="11" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.other, 0.16)} stroke={CATEGORY_COLOR.other} strokeWidth="2" />
-          <Face id="hong-jin-ho" cx={94} cy={42} r={21} />
+          <Specimen cx={94} cy={42} r={21} />
           <circle cx="94" cy="42" r="21" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.esports, 0.16)} stroke={CATEGORY_COLOR.esports} strokeWidth="2.4" />
         </KeyTile>
 
-        {/* One person per hue, and each is that archetype: 곽범 코미디언,
-            하승진 운동선수, 김유현 포커. */}
+        {/* Three of the hues, on three specimens. The full key to the archetype
+            colours is the swatch list further down this same panel, where each
+            hue is named — so nothing is lost by the discs here being nobody,
+            and what goes is the tile quietly filing three named people under
+            three occupations. */}
         <KeyTile lang={lang} k="about.tileRing">
-          <Face id="kwak-beom" cx={30} cy={40} r={14} />
+          <Specimen cx={30} cy={40} r={14} />
           <circle cx="30" cy="40" r="14" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.comedian, 0.14)} stroke={CATEGORY_COLOR.comedian} strokeWidth="2.4" />
-          <Face id="ha-seung-jin" cx={66} cy={40} r={14} />
+          <Specimen cx={66} cy={40} r={14} />
           <circle cx="66" cy="40" r="14" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.athlete, 0.14)} stroke={CATEGORY_COLOR.athlete} strokeWidth="2.4" />
-          <Face id="kim-yoo-hyun" cx={102} cy={40} r={14} />
+          <Specimen cx={102} cy={40} r={14} />
           <circle cx="102" cy="40" r="14" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.poker, 0.14)} stroke={CATEGORY_COLOR.poker} strokeWidth="2.4" />
         </KeyTile>
 
-        {/* 서출구, who played seasons 2 and 3 — so the two arcs are his two
-            arcs, in his two seasons' colours, around his own ring. */}
+        {/* Two arcs in two season colours, on nobody. It used to be 서출구's own
+            two, which named the seasons he played — and worse, arc length is
+            `rankFrac(rank, field) × SPAN_MAX` and exactly invertible
+            (PLAN-spoilers.md §3), so a legend that hangs measurable arcs on a
+            named face is a legend that can be read backwards into a placing. */}
         <KeyTile lang={lang} k="about.tileArcs">
-          <Face id="seo-chul-gu" cx={66} cy={40} r={15} />
+          <Specimen cx={66} cy={40} r={15} />
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.musician, 0.14)} stroke={CATEGORY_COLOR.musician} strokeWidth="2" />
           <path d={arcPath(66, 40, 24, -128, -38)} fill="none" stroke={SEASON_COLOR[2]} strokeWidth="3.4" strokeLinecap="round" />
           <path d={arcPath(66, 40, 24, -22, 74)} fill="none" stroke={SEASON_COLOR[3]} strokeWidth="3.4" strokeLinecap="round" />
         </KeyTile>
 
-        {/* 이태균 — the franchise's first champion, which is the only claim
-            this mark makes. */}
+        {/* THE SHARPEST CASE ON THE PANEL. This tile is captioned '황동 후광 =
+            이전 시즌 우승 / Brass halo = won a past season' and it used to draw
+            이태균's photograph inside the halo, which is not an illustration of
+            the mark — it is the mark, applied, to a named living person, on the
+            one screen a reader opens BEFORE they know what any of this means.
+            The caption is the lesson; the face was the spoiler. Brass on a
+            specimen teaches the same encoding and crowns nobody. */}
         <KeyTile lang={lang} k="about.tileHalo">
           <circle cx="66" cy="40" r="26" fill="none" stroke={alpha(BRASS, 0.22)} strokeWidth="7" />
           <circle cx="66" cy="40" r="21" fill="none" stroke={BRASS} strokeWidth="2" />
-          <Face id="lee-tae-gyun" cx={66} cy={40} r={15} />
+          <Specimen cx={66} cy={40} r={15} />
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.14)} stroke={CATEGORY_COLOR.professional} strokeWidth="2" />
         </KeyTile>
 
@@ -1110,8 +1100,8 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             — the precise opposite of the truth for the two most
             franchise-embedded people in the cast. One tile per ring, drawn at
             the radius and dash the plate actually uses. */}
-        {/* 최연청 — a 루키, i.e. a franchise newcomer, which is exactly what
-            the dashed rim says. */}
+        {/* The newcomer's dashed rim, on a specimen. It was drawn on 최연청,
+            whose franchise history the tile then stated in a picture. */}
         <KeyTile lang={lang} k="about.tileDashedRim">
           <circle
             cx="66"
@@ -1124,7 +1114,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             strokeDasharray="3 5"
             strokeLinecap="round"
           />
-          <Face id="choi-yeon-cheong" cx={66} cy={40} r={15} />
+          <Specimen cx={66} cy={40} r={15} />
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.actor, 0.14)} stroke={CATEGORY_COLOR.actor} strokeWidth="2" />
         </KeyTile>
 
@@ -1133,7 +1123,9 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             a beaded arc across the whole slot now, and the outer ring that says
             "this person has run a season" is SOLID, because the dashed language
             belongs to the franchise newcomer one tile up.
-            박지민, the only person in the twenty who has run a season. */}
+            Drawn on a specimen. It was 박지민 — the only person in the twenty
+            who has run a season — so the tile identified him by elimination
+            from a cast of twenty the reader can see. */}
         <KeyTile lang={lang} k="about.tileHostRing">
           <circle cx="66" cy="40" r="26" fill="none" stroke={BONE} strokeOpacity="0.6" strokeWidth="1.3" />
           <path
@@ -1144,14 +1136,19 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             strokeDasharray="0.01 7"
             strokeLinecap="round"
           />
-          <Face id="park-ji-min" cx={66} cy={40} r={15} />
+          <Specimen cx={66} cy={40} r={15} />
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.broadcaster, 0.14)} stroke={CATEGORY_COLOR.broadcaster} strokeWidth="2" />
         </KeyTile>
 
-        {/* 신승용, one of the three who walked in with no verified tie — and
-            the tile the round-8 review named: a 1.2-unit hairline is a
-            different object against a face than against an empty disc, and
-            this is where the reader has to learn to find it. */}
+        {/* The tile the round-8 review named: a 1.2-unit hairline is a
+            different object against a portrait's tone than against an empty
+            disc, and this is where the reader has to learn to find it. That
+            argument is about TONE, not about identity — which is exactly what
+            the specimen keeps and 신승용's photograph was doing on top of it.
+            The rim is also a fact about the reader's view rather than about the
+            world: `noTies` is `degree === 0` after redaction, six people at
+            `bgx.watched='[]'` and three at the default, so a named face under
+            this caption asserted something that changes with the setting. */}
         <KeyTile lang={lang} k="about.tileNoTies">
           <circle
             cx="66"
@@ -1163,20 +1160,23 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             strokeDasharray="2 4"
             strokeLinecap="round"
           />
-          <Face id="shin-seung-yong" cx={66} cy={40} r={15} />
+          <Specimen cx={66} cy={40} r={15} />
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.14)} stroke={CATEGORY_COLOR.professional} strokeWidth="2" />
         </KeyTile>
 
         {/* ONCE A DISC CARRIES A FACE, A LINE BETWEEN TWO OF THEM IS A CLAIM.
-            A mint rule between two anonymous circles is a specimen; the same
-            rule between two named living people says they were allies, and a
-            crimson arrow says one of them knifed the other. So every line tile
-            below draws a pair the dataset actually draws, at the type it
-            actually carries — 이태균×김유현 프로젝트 지니어스 (prior-show, and
-            outside the house, hence the dash) and 김경훈→이상민 (betrayal, and
-            the arrow points the way the edge does). The legend is now checkable
-            against the graph it explains, which is the stronger version of
-            being merely inoffensive. */}
+            The comment that used to sit here got the premise exactly right and
+            then drew the wrong conclusion from it: it said a mint rule between
+            two anonymous circles is a specimen while the same rule between two
+            named living people says they were allies — and concluded that the
+            tiles should therefore draw pairs the dataset really holds, so the
+            legend would be "checkable against the graph it explains". That made
+            the legend TRUE and it made it a spoiler. 이태균×김유현 and, worse,
+            김경훈—crimson arrow→이상민 under '누가 누구를 배신했는지' is a real
+            betrayal, drawn, with both faces, three scrolls into the manual.
+            A legend is not evidence and owes no citation; it owes a grammar.
+            Both line tiles now run between specimens, so the arrowhead means
+            direction and points at nobody. */}
         <KeyTile lang={lang} k="about.tileDashedLine">
           <line
             x1="34"
@@ -1188,18 +1188,18 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             strokeDasharray="5 5"
             strokeLinecap="round"
           />
-          <Face id="lee-tae-gyun" cx={26} cy={40} r={9} />
+          <Specimen cx={26} cy={40} r={9} />
           <circle cx="26" cy="40" r="9" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.16)} stroke={CATEGORY_COLOR.professional} strokeWidth="2" />
-          <Face id="kim-yoo-hyun" cx={106} cy={40} r={9} />
+          <Specimen cx={106} cy={40} r={9} />
           <circle cx="106" cy="40" r="9" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.poker, 0.16)} stroke={CATEGORY_COLOR.poker} strokeWidth="2" />
         </KeyTile>
 
         <KeyTile lang={lang} k="about.tileArrow">
           <line x1="34" y1="40" x2="88" y2="40" stroke={EDGE_COLOR.betrayal} strokeWidth="2.6" strokeLinecap="round" />
           <path d="M88 33.5 L99 40 L88 46.5 Z" fill={EDGE_COLOR.betrayal} />
-          <Face id="kim-kyung-hoon" cx={26} cy={40} r={9} />
+          <Specimen cx={26} cy={40} r={9} />
           <circle cx="26" cy="40" r="9" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.16)} stroke={CATEGORY_COLOR.professional} strokeWidth="2" />
-          <Face id="lee-sang-min" cx={112} cy={40} r={9} />
+          <Specimen cx={112} cy={40} r={9} />
           <circle cx="112" cy="40" r="9" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.broadcaster, 0.16)} stroke={CATEGORY_COLOR.broadcaster} strokeWidth="2" />
         </KeyTile>
 
@@ -1220,13 +1220,13 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
           </defs>
           <line x1="18" y1="59" x2="56" y2="27" stroke={alpha(EDGE_COLOR.alliance, 0.15)} strokeWidth="9" strokeLinecap="round" />
           <line x1="18" y1="59" x2="56" y2="27" stroke={EDGE_COLOR.alliance} strokeWidth="2.6" strokeLinecap="round" />
-          {/* 홍진호 × 서출구, the alliance edges.ts calls the sturdiest pair on
-              the wall — a real line, for the reason given above the dashed-line
-              tile. Neither ring is mint, so a half-chroma ring on a
+          {/* Two specimens on an alliance line. It was 홍진호 × 서출구, "the
+              sturdiest pair on the wall" — which is a relationship, named, in
+              the manual. Neither ring is mint, so a half-chroma ring on a
               full-chroma alliance line cannot read as one object. */}
-          <Face id="hong-jin-ho" cx={12} cy={64} r={8} />
+          <Specimen cx={12} cy={64} r={8} />
           <circle cx="12" cy="64" r="8" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.esports, 0.18)} stroke={CATEGORY_COLOR.esports} strokeWidth="2" />
-          <Face id="seo-chul-gu" cx={62} cy={22} r={8} />
+          <Specimen cx={62} cy={22} r={8} />
           <circle cx="62" cy="22" r="8" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.musician, 0.18)} stroke={CATEGORY_COLOR.musician} strokeWidth="2" />
           <circle cx="37" cy="43" r="6.6" fill="none" stroke={alpha(EDGE_COLOR.alliance, 0.4)} strokeWidth="1" />
           <circle cx="37" cy="43" r="3.4" fill={EDGE_COLOR.alliance} />
@@ -1286,14 +1286,18 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
             strokeDasharray="5 7"
             strokeLinecap="round"
           />
-          {/* The three who are actually in it — 신승용, 강지후, 최연청 — in
-              their own archetype hues. The third was drawn in `creator`, which
-              is nobody in that band. */}
-          <Face id="shin-seung-yong" cx={38} cy={48} r={8} />
+          {/* Three specimens in the band, not the three people who are in it.
+              Who sits on the cold band is `noTies`, a fact about the reader's
+              view rather than about the world — six at `bgx.watched='[]'`
+              against three at the default — so drawing the default three with
+              their faces published one answer to a question whose answer moves.
+              The 아직 아무와도 얽히지 않은 사람들 block on the RECORD tab is
+              where that list belongs, and it is computed per reader. */}
+          <Specimen cx={38} cy={48} r={8} />
           <circle cx="38" cy="48" r="8" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.12)} stroke={alpha(CATEGORY_COLOR.professional, 0.7)} strokeWidth="1.6" />
-          <Face id="kang-ji-hoo" cx={66} cy={48} r={8} />
+          <Specimen cx={66} cy={48} r={8} />
           <circle cx="66" cy="48" r="8" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.other, 0.12)} stroke={alpha(CATEGORY_COLOR.other, 0.7)} strokeWidth="1.6" />
-          <Face id="choi-yeon-cheong" cx={94} cy={48} r={8} />
+          <Specimen cx={94} cy={48} r={8} />
           <circle cx="94" cy="48" r="8" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.actor, 0.12)} stroke={alpha(CATEGORY_COLOR.actor, 0.7)} strokeWidth="1.6" />
         </KeyTile>
 
@@ -1306,14 +1310,22 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
         {/* The claim changes with the folder: a wall of photographs under a
             tile saying the plates are "not photographed" contradicts the page
             it is printed on. See gallery.note. */}
-        {/* 이진형's plate, and every mark on it is his: the 전문직 ring, one
-            season-2 arc carrying the winner's cap dot, and the laurel outboard
-            of the tick rim. It used to be an assembly — an e스포츠 ring under a
-            season-1 arc under a franchise laurel, which is nobody — and the
-            moment a face went in behind it the assembly would have been a
-            claim about whoever that face belonged to. */}
+        {/* THE FULL PLATE, ASSEMBLED, ON NOBODY — and the history of this one
+            tile is the whole argument in miniature. It began as an assembly: an
+            e스포츠 ring under a season-1 arc under a laurel, which is nobody. A
+            later round called that a fault, on the grounds that once a face
+            goes in behind it the assembly becomes a claim about that person,
+            and fixed it the wrong way round — it kept the face and made the
+            marks true, so the tile became 이진형's plate: his ring, his season-2
+            arc, the winner's cap dot on the end of it, and a complete brass
+            laurel. Every mark on it was his, which is precisely what made it a
+            dossier. The premise was right and the remedy was inverted: take the
+            face out, and the assembly is a specimen again rather than a claim.
+            The marks stay in their real geometry — the laurel outboard of the
+            tick rim, the cap dot terminating the arc — because THAT is what the
+            reader has to be able to recognise. */}
         <KeyTile lang={lang} k={HAS_PORTRAITS ? 'about.tilePlatePhotos' : 'about.tilePlate'}>
-          <Face id="lee-jin-hyung" cx={66} cy={40} r={16} />
+          <Specimen cx={66} cy={40} r={16} />
           <circle cx="66" cy="40" r="16" fill={HAS_PORTRAITS ? 'none' : 'rgba(255,255,255,0.03)'} stroke={CATEGORY_COLOR.professional} strokeOpacity="0.8" strokeWidth="1.6" />
           <path d={arcPath(66, 40, 21, -110, -10)} fill="none" stroke={SEASON_COLOR[2]} strokeWidth="3.2" strokeLinecap="round" />
           <circle cx={polar(66, 40, 21, -10).x} cy={polar(66, 40, 21, -10).y} r="2.4" fill={SEASON_COLOR[2]} />
@@ -1338,8 +1350,16 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
           })}
         </KeyTile>
 
+        {/* Few ticks against many, on two specimens. It was 윤비 against 정근우
+            — and 윤비's three ticks included a betrayal, in a session where her
+            own visible tie count is 0 at `bgx.watched='[]'`, so the legend was
+            simultaneously naming a verdict about her and contradicting the
+            number the rest of the app shows the same reader. The tick colours
+            are still real edge hues, because the caption is about the colours
+            being types, and the relationship legend directly below this list
+            names every one of them. */}
         <KeyTile lang={lang} k="about.tileRimTicks">
-          <Face id="yoon-bi" cx={34} cy={40} r={13} />
+          <Specimen cx={34} cy={40} r={13} />
           <circle cx="34" cy="40" r="13" fill={HAS_PORTRAITS ? 'none' : 'rgba(255,255,255,0.03)'} stroke={CATEGORY_COLOR.musician} strokeOpacity="0.8" strokeWidth="1.4" />
           {[EDGE_COLOR.alliance, EDGE_COLOR.betrayal, EDGE_COLOR['prior-show']].map((c, i) => {
             const deg = 40 + i * 120;
@@ -1349,7 +1369,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
               <line key={`t1${i}`} x1={a.x.toFixed(2)} y1={a.y.toFixed(2)} x2={b.x.toFixed(2)} y2={b.y.toFixed(2)} stroke={c} strokeWidth="1.6" strokeLinecap="round" />
             );
           })}
-          <Face id="jung-keun-woo" cx={94} cy={40} r={13} />
+          <Specimen cx={94} cy={40} r={13} />
           <circle cx="94" cy="40" r="13" fill={HAS_PORTRAITS ? 'none' : 'rgba(255,255,255,0.03)'} stroke={CATEGORY_COLOR.athlete} strokeOpacity="0.8" strokeWidth="1.4" />
           {[
             EDGE_COLOR.alliance,
@@ -1372,11 +1392,14 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
         </KeyTile>
 
         {/* The one gesture that answers the question a relationship graph
-            exists to answer — and a real two-hop chain, for the reason above:
-            하승진 –동맹– 이진형 –배신→ 윤비, all three lines in the file. The two
-            hollow circles stay hollow on purpose: they are the routes the
-            trace did NOT take, and a face in them would make them people the
-            reader is being told something about. */}
+            exists to answer. It drew a REAL two-hop chain — 하승진 –동맹– 이진형
+            –배신→ 윤비, all three lines in the file, three faces — and the
+            comment that put them there argued that the two pass-through circles
+            must stay hollow "because a face in them would make them people the
+            reader is being told something about". That test was applied to the
+            two circles the trace misses and never to the three it hits, which
+            are the ones the tile is telling you about. It is applied to all
+            five now: three specimens, two hollow, one path. */}
         <KeyTile lang={lang} k="about.tileShiftClick">
           <line x1="24" y1="56" x2="52" y2="24" stroke={INK_LOW} strokeOpacity="0.35" strokeWidth="1.4" />
           <line x1="80" y1="24" x2="108" y2="56" stroke={INK_LOW} strokeOpacity="0.35" strokeWidth="1.4" />
@@ -1384,11 +1407,11 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
           <line x1="66" y1="58" x2="106" y2="30" stroke={EDGE_COLOR.betrayal} strokeWidth="2.6" strokeLinecap="round" />
           <circle cx="52" cy="24" r="6" fill="none" stroke={INK_LOW} strokeOpacity="0.4" strokeWidth="1.4" />
           <circle cx="80" cy="24" r="6" fill="none" stroke={INK_LOW} strokeOpacity="0.4" strokeWidth="1.4" />
-          <Face id="ha-seung-jin" cx={26} cy={30} r={10} />
+          <Specimen cx={26} cy={30} r={10} />
           <circle cx="26" cy="30" r="10" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.athlete, 0.2)} stroke={CATEGORY_COLOR.athlete} strokeWidth="2.2" />
-          <Face id="lee-jin-hyung" cx={66} cy={58} r={9} />
+          <Specimen cx={66} cy={58} r={9} />
           <circle cx="66" cy="58" r="9" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.professional, 0.2)} stroke={CATEGORY_COLOR.professional} strokeWidth="2" />
-          <Face id="yoon-bi" cx={106} cy={30} r={10} />
+          <Specimen cx={106} cy={30} r={10} />
           <circle cx="106" cy="30" r="10" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.musician, 0.2)} stroke={CATEGORY_COLOR.musician} strokeWidth="2.2" />
         </KeyTile>
       </ul>

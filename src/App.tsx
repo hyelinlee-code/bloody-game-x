@@ -16,8 +16,9 @@ import { StatusBar } from './components/StatusBar';
 import { PathCard } from './components/PathCard';
 import { Gallery } from './components/Gallery';
 import { findPath } from './state/findPath';
-import { LangContext, useLangState } from './state/useLang';
-import { WatchedProvider } from './state/useWatched';
+import { WatchedPicker } from './components/WatchedPicker';
+import { LangContext, useLang, useLangState } from './state/useLang';
+import { hasStoredAnswer, useWatched, WatchedProvider } from './state/useWatched';
 import { personName, t } from './data/i18n';
 import './styles/app.css';
 
@@ -76,17 +77,74 @@ const REVEAL_WAIT_MS = 400;
  * nothing above it reads the language. No DOM is added; a provider renders its
  * children and nothing of its own, so Rule 0 is satisfied by construction.
  *
- * NO CONTROL AND NO DEFAULT CHANGE HERE. The provider seeds from
- * `currentWatched()`, which is `WATCHED_ALL` for a reader with no stored
- * preference — Phase 2's default, unchanged. `setWatched` exists on the context
- * and nothing in this tree calls it; the picker, the cold-open question and the
- * flipped default are all Phase 4 (PLAN-spoilers.md §7).
+ * PHASE 4 GAVE IT SOMETHING TO HOLD. The provider seeds from
+ * `currentWatched()`, which for a reader with no stored preference is now
+ * `WATCHED_DEFAULT` — the empty set — and three surfaces under here write to
+ * it: the cold open's question, the picker, and the badge that opens the
+ * picker. See `WATCHED_DEFAULT` in state/useWatched.ts for why the default
+ * points that way, and PLAN-spoilers.md §4.
  */
 export default function App() {
   return (
     <WatchedProvider>
       <Atlas />
     </WatchedProvider>
+  );
+}
+
+/**
+ * SOMEBODY WHO FOLLOWED A SHARED LINK, AND HAS NEVER BEEN ASKED THE QUESTION.
+ *
+ * A deep link skips the cold open outright — `introDone` is initialised to
+ * `hasDeepLink()`, because making a person watch a five-second curtain to reach
+ * a view they were sent is a toll on the link. So this is the one arrival where
+ * the question cannot be put in front of the reader, and the decision it forces
+ * has been made twice over already:
+ *
+ *   A LINK MAY NEVER RAISE THE RECIPIENT'S EXPOSURE (PLAN-spoilers.md §4).
+ *   `useDeepLink` writes the LANGUAGE into the hash and argues that language is
+ *   a property of the document rather than of the sender's machine. Spoiler
+ *   tolerance is the opposite: it is a fact about a person, and the person it
+ *   is a fact about is not the one who wrote the URL. So the same argument runs
+ *   the other way and the conclusion flips — the setting is not in the link,
+ *   and the recipient arrives on their own default, which is sealed.
+ *
+ * WHICH LEAVES THE HONESTY PROBLEM, AND THIS BANNER IS IT. A stranger who lands
+ * on a sealed atlas with no explanation concludes the atlas is thin, not that
+ * it is holding something back for them — and that is worse than the spoiler,
+ * because they leave. The banner says three things in two lines: that a link
+ * does not carry a viewing history, that this is why the endings are sealed,
+ * and where the control is.
+ *
+ * IT IS NOT SHOWN TO A READER WHO HAS ANSWERED, whatever they answered. The
+ * condition is the ABSENCE of a stored answer, not the emptiness of the set: a
+ * reader who deliberately chose "I have watched nothing" has already had this
+ * conversation, and repeating it on every shared link they open would be the
+ * app arguing with a decision it asked them to make.
+ */
+function ArrivalBanner({
+  onOpenPicker,
+  onDismiss,
+}: {
+  onOpenPicker: () => void;
+  onDismiss: () => void;
+}) {
+  const { lang } = useLang();
+  return (
+    <div className="wparr" role="region" aria-label={t(lang, 'arrive.title')}>
+      <div className="wparr__text">
+        <p className="wparr__title">{t(lang, 'arrive.title')}</p>
+        <p className="wparr__body">{t(lang, 'arrive.body')}</p>
+      </div>
+      <div className="wparr__acts">
+        <button type="button" className="wparr__cta" onClick={onOpenPicker}>
+          {t(lang, 'watched.open')}
+        </button>
+        <button type="button" className="wparr__dismiss" onClick={onDismiss}>
+          {t(lang, 'arrive.dismiss')}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -103,6 +161,16 @@ function Atlas() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  /* Read once, at mount, and for the same reason Intro reads it once: the flag
+     flips the moment anything commits an answer, and a banner that vanished
+     mid-sentence because the reader opened the sheet it points at would be
+     removing its own explanation. Dismissal below is explicit. */
+  const [arrival, setArrival] = useState(() => hasDeepLink() && !hasStoredAnswer());
+  /* This component does not read the set; it only needs the writer, so that
+     dismissing the arrival banner counts as an answer and the banner does not
+     come back on every shared link the same person opens. */
+  const { setWatched, watched } = useWatched();
   // On a phone the rail is a bottom sheet covering most of the screen; opening
   // it by default would hide the thing the app is about.
   const [railOpen, setRailOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 900);
@@ -446,6 +514,15 @@ function Atlas() {
         return;
       }
 
+      /* The same hard gate for the picker, and it is the same argument. The
+         sheet traps focus, but focus inside it lands on BUTTONS as often as on
+         inputs — and `typing` above only exempts inputs — so without this,
+         Tab-ing to "전체 해제" and then pressing `g` would open the cast wall
+         underneath the modal that is covering it. The picker owns Escape
+         itself (capture phase, stopPropagation, and it commits on the way out),
+         so this branch only has to refuse everything else. */
+      if (pickerOpen) return;
+
       switch (e.key) {
         case 'Escape':
           // The palette is handled by the gate above, before this switch.
@@ -496,7 +573,7 @@ function Atlas() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [atlas, setMode, paletteOpen, aboutOpen, galleryOpen, tracePair]);
+  }, [atlas, setMode, paletteOpen, aboutOpen, galleryOpen, pickerOpen, tracePair]);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => setPointer({ x: e.clientX, y: e.clientY });
@@ -718,7 +795,7 @@ function Atlas() {
         dataset={dataset}
         onReset={atlas.resetFilters}
         introDone={chromeReady}
-        onOpenAbout={() => setAboutOpen(true)}
+        onOpenWatched={() => setPickerOpen(true)}
       />
 
       <CommandPalette
@@ -757,8 +834,48 @@ function Atlas() {
 
       <AboutSheet open={aboutOpen} dataset={dataset} onClose={() => setAboutOpen(false)} />
 
+      <WatchedPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        /* The badge that used to open the field guide now opens this sheet, so
+           the route to the long-form scope note continues from inside it rather
+           than being dropped. Closing the picker first keeps one modal on
+           screen at a time. */
+        onOpenAbout={() => {
+          setPickerOpen(false);
+          setAboutOpen(true);
+        }}
+      />
+
+      {/* Held until the chrome has arrived, so it does not compete with the
+          entrance — the same gate the top bar, the rail and the ledger take.
+          It sits above the status bar, beside the badge it is pointing at. */}
+      {arrival && chromeReady && !pickerOpen && (
+        <ArrivalBanner
+          onOpenPicker={() => {
+            setArrival(false);
+            setPickerOpen(true);
+          }}
+          onDismiss={() => {
+            /* Dismissing IS answering — the same rule the picker's close path
+               follows. The reader has been told why the atlas is sealed and has
+               chosen to leave it that way; committing the current set means
+               they are not asked again on the next link somebody sends them.
+               `setWatched` preserves identity, so this is a storage write and
+               not a re-render. */
+            setWatched(watched);
+            setArrival(false);
+          }}
+        />
+      )}
+
       {!introDone && (
-        <Intro dataset={dataset} onDismissBegin={startReveal} onDone={() => setIntroDone(true)} />
+        <Intro
+          dataset={dataset}
+          onDismissBegin={startReveal}
+          onDone={() => setIntroDone(true)}
+          onOpenPicker={() => setPickerOpen(true)}
+        />
       )}
     </div>
     </LangContext.Provider>

@@ -1,8 +1,11 @@
 import type { CSSProperties, JSX } from 'react';
-import { EDGE_COLOR, SEASON_INK } from '../graph/palette';
+import { SEASON_INK } from '../graph/palette';
 import type { PathResult } from '../state/findPath';
 import { EDGE_LABEL_I18N, edgeText, personName, t, ui, type Lang } from '../data/i18n';
+import { tieTypeScope } from '../data/edges';
+import { pick } from '../data/redact';
 import { useLang } from '../state/useLang';
+import { useWatched } from '../state/useWatched';
 import './PathCard.css';
 
 export interface PathCardProps {
@@ -28,7 +31,7 @@ function degreeLine(d: number, lang: Lang): string {
 /* The two hues on a step line are 10px. palette.ts says in as many words that
    SEASON_COLOR is "MARKS ONLY — deliberately dark" and that a hue carrying
    letterforms comes from SEASON_INK at full alpha; measured against this
-   card's own background, SEASON_COLOR[1] set 3.84:1 and the raw EDGE_COLOR
+   card's own background, SEASON_COLOR[1] set 3.84:1 and the raw edge hue
    for co-season 2.97:1, on the one string that names what kind of tie the
    chain is made of. The season label now takes SEASON_INK (6.48–8.11), and
    the type label takes the dossier chip's treatment — the edge hue mixed 56%
@@ -61,6 +64,12 @@ function josaWa(name: string): string {
 
 export function PathCard({ path, unreachable, onClose, onSelect }: PathCardProps): JSX.Element | null {
   const { lang } = useLang();
+  /* Through the hook, never `currentWatched()` — this is a component, and the
+     mirror carries no subscription. It was also the reason `edgeText` below was
+     reading the mirror through its own default parameter: the one call in this
+     file that was already gated was gated against whatever the module global
+     happened to hold. See state/useWatched.ts. */
+  const { watched } = useWatched();
   const other: Lang = lang === 'ko' ? 'en' : 'ko';
 
   if (!path && !unreachable) return null;
@@ -119,15 +128,40 @@ export function PathCard({ path, unreachable, onClose, onSelect }: PathCardProps
 
               {path.steps.map((step) => {
                 const e = step.link.edge;
-                const color = EDGE_COLOR[e.type] ?? EDGE_COLOR.collab;
-                const text = edgeText(e, lang);
+                /* ── ONE INK, AND IT IS THE STROKE'S OWN ──────────────────────
+                   `step.link.color` and not `EDGE_COLOR[e.type]`. graph/build.ts
+                   already answered this question for the line on the canvas —
+                   the type hue when the reader may be told what the tie is,
+                   INK_LOW when they may not — and this step is a caption for
+                   that same stroke. Reading the resolved value means the rail
+                   in this card and the line behind it cannot disagree, and it
+                   means the neutral is chosen once, in the file that argued for
+                   it, rather than a second time here. At the default set the
+                   expression is byte-identical to the one it replaces:
+                   EDGE_COLOR is a total Record<EdgeType, string>, so the old
+                   `?? EDGE_COLOR.collab` never fired.
+
+                   THE WORD GOES BEHIND THE SAME GATE AS THE HUE, because the
+                   hue alone was never the leak — a step captioned 배신 in blood
+                   red is two channels saying the same verdict, and this card
+                   was printing both for a reader who has been told nothing about
+                   that season. `pick` and `tieTypeScope`, the same pair
+                   EdgeCard and Dossier's relation row use, so the three surfaces
+                   that name a tie name it under one rule. Sealed, the word is
+                   dropped exactly as those two drop their chip: the step keeps
+                   its rail, its season and its person, and loses the verdict. */
+                const color = step.link.color;
+                const text = edgeText(e, lang, watched);
+                const typeLabel = pick(EDGE_LABEL_I18N[lang][e.type], tieTypeScope(e), watched);
                 return (
                   <li key={step.link.id} className="pathcard__step">
                     <span className="pathcard__rail" style={{ background: color }} aria-hidden="true" />
                     <div className="pathcard__edge">
-                      <span className="pathcard__type" style={cssVars({ '--c': color })}>
-                        {EDGE_LABEL_I18N[lang][e.type]}
-                      </span>
+                      {typeLabel ? (
+                        <span className="pathcard__type" style={cssVars({ '--c': color })}>
+                          {typeLabel}
+                        </span>
+                      ) : null}
                       <span
                         className="pathcard__season"
                         style={e.season ? { color: SEASON_INK[e.season] } : undefined}

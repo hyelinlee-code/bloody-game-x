@@ -1,0 +1,852 @@
+/* The watched picker — the sheet where a reader says what they have seen.
+   Plus, at the foot of this file, the cold open's three-answer row: the same
+   control in its other placement. See the note above `.wpq-row`. */
+
+/* Korean is this product's language of record and the browser default breaks
+   Hangul between any two syllable blocks. Every run of prose here opts out, as
+   the cast wall and the field guide do. */
+.wpick :where(p, h2, h3, span, label, li) {
+  word-break: keep-all;
+}
+
+.wpick {
+  --wp-pad: var(--sp-5);
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+}
+
+.wpick__scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(6, 5, 9, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0;
+  cursor: default;
+  animation: wpick-scrim var(--d-base) var(--ease-out) both;
+}
+
+@keyframes wpick-scrim {
+  from {
+    opacity: 0;
+  }
+}
+
+/* `.pane` is matched explicitly so this does not depend on which stylesheet
+   the bundler emits last — both selectors are a single class. */
+.wpick__sheet.pane {
+  /* Focused programmatically for the trap; it is not a control. */
+  outline: none;
+  position: relative;
+  width: min(640px, 100%);
+  height: min(780px, 100%);
+  border-radius: var(--rad-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: wpick-sheet var(--d-base) var(--ease-out) both;
+}
+
+@keyframes wpick-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wpick__scrim,
+  .wpick__sheet.pane {
+    animation: none;
+  }
+}
+
+/* ---- head ---- */
+
+.wpick__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--wp-pad) var(--wp-pad) var(--sp-4);
+}
+
+.wpick__head-l {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wpick__eyebrow {
+  color: var(--accent);
+}
+
+.wpick__title {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-med);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.wpick__lede {
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--ink-sub);
+}
+
+.wpick__close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--rad-sm);
+  background: transparent;
+  color: var(--icon-ink);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background-color var(--d-fast) var(--ease-out);
+}
+
+.wpick__close:hover {
+  color: var(--icon-ink-on);
+  border-color: var(--glass-edge-strong);
+  background: var(--bg-hover);
+}
+
+/* ---- the ledger strip: bulk controls and the live readout ---- */
+
+.wpick__ledger {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  padding: 0 var(--wp-pad) var(--sp-3);
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.wpick__global {
+  display: inline-flex;
+  gap: var(--sp-2);
+}
+
+/* ≥24px in both axes — WCAG 2.5.8. Every control on this sheet is one a reader
+   may have to hit nineteen times in a row, and three of them were under the
+   floor when measured (the mini pair at 23×20, this at 24×22). */
+.wpick__bulk-btn {
+  min-height: 26px;
+  padding: 4px 12px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  background: transparent;
+  color: var(--ink-sub);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  transition:
+    color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    background-color var(--d-fast) var(--ease-out);
+}
+
+.wpick__bulk-btn:hover:not(:disabled) {
+  color: var(--accent-hot);
+  border-color: var(--accent-line-strong);
+  background: var(--accent-tint-faint);
+}
+
+.wpick__bulk-btn:disabled {
+  color: var(--ink-low);
+  border-color: var(--glass-edge);
+  cursor: default;
+}
+
+.wpick__count {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: var(--ink-mid);
+  text-align: right;
+}
+
+.wpick__count-n {
+  color: var(--ink);
+}
+
+.wpick__count-sep {
+  color: var(--ink-faint);
+}
+
+/* The sealed figure is the one the reader is deciding about, so it carries the
+   state channel rather than the brand: this is a setting, not an error. When
+   nothing is sealed the emphasis has nothing to point at and drops away. */
+.wpick__count-hid {
+  color: var(--accent);
+}
+
+.wpick__count-hid.is-clear {
+  color: var(--ink-mid);
+}
+
+/* ---- the list ---- */
+
+.wpick__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--sp-4) var(--wp-pad) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.wpick__sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.wpick__sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.wpick__sec-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+}
+
+.wpick__sec-n {
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+}
+
+.wpick__sec-slash {
+  color: var(--ink-faint);
+  padding: 0 1px;
+}
+
+.wpick__bulk {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.wpick__mini {
+  background: none;
+  border: 0;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 2px 6px;
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.wpick__mini:hover:not(:disabled) {
+  color: var(--accent-hot);
+}
+
+.wpick__mini:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.wpick__mini-sep {
+  color: var(--ink-faint);
+  font-size: var(--t-xs);
+}
+
+.wpick__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wpick__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 7px var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--rad-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.wpick__row:hover {
+  background: var(--bg-hover);
+}
+
+.wpick__row.is-on {
+  background: var(--row-on-bg);
+  border-color: var(--row-on-line);
+}
+
+/* The box is drawn on the input itself. Hiding the real control behind a
+   styled span is how a checkbox loses its focus ring, its Windows
+   high-contrast rendering and its forced-colors tick all at once. */
+.wpick__box {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  position: relative;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-xs);
+  background: var(--bg-raised);
+  cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+/* `:not(:checked)` because this selector is three classes deep and
+   `.wpick__box:checked` is two, so without it the hover state OUTRANKS the
+   checked state and a ticked row loses its border the moment the pointer is on
+   it — i.e. exactly while the reader is looking at it. Source order cannot fix
+   a specificity difference; the narrower selector can. */
+.wpick__row:hover .wpick__box:not(:checked) {
+  border-color: var(--accent-line);
+}
+
+.wpick__box:checked {
+  background: var(--chip-on-bg);
+  border-color: var(--chip-on-line);
+}
+
+/* A tick, drawn rather than fetched: two borders on a rotated box, so it
+   inherits the ink token and needs no data URI and no icon font. */
+.wpick__box::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1.5px;
+  width: 4.5px;
+  height: 9px;
+  border: solid var(--chip-on-ink);
+  border-width: 0 1.7px 1.7px 0;
+  transform: rotate(42deg) scale(0.6);
+  opacity: 0;
+  transition:
+    opacity var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-spring);
+}
+
+.wpick__box:checked::after {
+  opacity: 1;
+  transform: rotate(42deg) scale(1);
+}
+
+@media (forced-colors: active) {
+  .wpick__box {
+    /* Let the platform draw it: a forced-colors reader gets the OS checkbox
+       rather than a tick in a colour the OS has just overridden. */
+    appearance: auto;
+    -webkit-appearance: auto;
+  }
+  .wpick__box::after {
+    content: none;
+  }
+}
+
+.wpick__row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wpick__row-lead {
+  font-size: var(--t-sm);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.wpick__row.is-on .wpick__row-lead {
+  color: var(--ink-hi);
+}
+
+.wpick__row-sub {
+  font-size: var(--t-xs);
+  line-height: 1.3;
+  color: var(--ink-low);
+}
+
+.wpick__row-yr {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+  font-feature-settings: 'tnum' 1;
+}
+
+.wpick__sec-foot {
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: var(--ink-low);
+  padding-inline: var(--sp-3);
+}
+
+/* ---- what is kept, what is sealed ---- */
+
+.wpick__legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-3) 0;
+  border-top: 1px solid var(--glass-edge);
+  margin-bottom: var(--sp-5);
+}
+
+.wpick__note {
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--ink-faint);
+  color: var(--ink-mid);
+}
+
+.wpick__note--keep {
+  border-left-color: var(--ink-low);
+}
+
+/* The sealed half takes the state channel — the same warm bone the badge and
+   the sealed strips use. NOT --blood: a crimson rule beside "here is what this
+   setting holds back" reads as an error alert about a choice the reader just
+   made deliberately. */
+.wpick__note--hide {
+  border-left-color: var(--accent-line-strong);
+  color: var(--ink-sub);
+}
+
+/* ---- foot ---- */
+
+.wpick__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--wp-pad) var(--wp-pad);
+  border-top: 1px solid var(--glass-edge);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.18));
+}
+
+/* NOT --t-micro AND NOT --ink-faint. These two sentences are the ones that
+   stop this control over-promising — "it hides, it does not delete", and the
+   line separating that from the season X exclusion — so setting them as legal
+   small print would be the design contradicting the copy. 11px on --ink-mid
+   (6.6:1) is the same treatment the rail gives its own scope note. */
+.wpick__fine {
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink-mid);
+}
+
+.wpick__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-1);
+}
+
+.wpick__about {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 5px 0;
+  background: none;
+  border: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 3px;
+  transition:
+    color var(--d-fast) var(--ease-out),
+    text-decoration-color var(--d-fast) var(--ease-out);
+}
+
+.wpick__about:hover {
+  color: var(--accent-hot);
+  text-decoration-color: var(--accent-line-strong);
+}
+
+.wpick__about-sub {
+  font-size: var(--t-nano);
+  letter-spacing: var(--tr-caps);
+  text-transform: uppercase;
+  color: var(--ink-low);
+}
+
+.wpick__done {
+  margin-left: auto;
+  padding: 7px var(--sp-5);
+  border: 1px solid var(--accent-line-strong);
+  border-radius: var(--rad-full);
+  background: var(--accent-tint);
+  color: var(--accent-hot);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.wpick__done:hover {
+  background: var(--accent-tint-strong);
+  border-color: var(--accent);
+}
+
+/* ---- small screens: the sheet becomes the screen ---- */
+
+@media (max-width: 560px), (max-height: 620px) {
+  .wpick {
+    padding: 0;
+  }
+  .wpick__sheet.pane {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .wpick {
+    --wp-pad: var(--sp-4);
+  }
+  .wpick__count {
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
+  }
+}
+
+/* ==========================================================================
+   THE LINK-ARRIVAL BANNER
+
+   The third placement of the same control, and the only one a person who
+   followed a shared link ever sees — they skip the cold open by construction.
+   Markup is in App.tsx; see the long note above `ArrivalBanner` for why a link
+   carries no setting and why this has to exist because of that.
+
+   A TOAST, ON THE TOAST LAYER, and deliberately not a panel. It can overlap the
+   dossier on a narrow window and that is the right trade: a deep link usually
+   carries a person, so the dossier is usually open, and a banner that yielded
+   to it would be a banner that never appeared on the one arrival it is for.
+   One click removes it, and removing it is an answer.
+   ========================================================================== */
+
+.wparr {
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--sp-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  width: min(460px, calc(100vw - 2 * var(--sp-4)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--rad-md);
+  background: var(--glass-2);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--accent-line);
+  box-shadow: var(--sh-lg);
+  animation: wparr-in var(--d-base) var(--ease-out) both;
+}
+
+.wparr :where(p) {
+  word-break: keep-all;
+}
+
+@keyframes wparr-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wparr {
+    animation: none;
+  }
+}
+
+.wparr__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.wparr__title {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  color: var(--ink-hi);
+}
+
+.wparr__body {
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--ink-sub);
+}
+
+.wparr__acts {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.wparr__cta {
+  padding: 6px var(--sp-4);
+  border: 1px solid var(--accent-line-strong);
+  border-radius: var(--rad-full);
+  background: var(--accent-tint);
+  color: var(--accent-hot);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.wparr__cta:hover {
+  background: var(--accent-tint-strong);
+  border-color: var(--accent);
+}
+
+.wparr__dismiss {
+  margin-left: auto;
+  padding: 6px 2px;
+  background: none;
+  border: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.wparr__dismiss:hover {
+  color: var(--ink-hi);
+}
+
+/* ==========================================================================
+   THE COLD OPEN'S THREE ANSWERS
+
+   Markup lives in Intro.tsx, styles live here, and that split is deliberate
+   rather than accidental: this is the same control as the sheet above, in its
+   other placement, and the two have to move together. Intro.css owns the
+   curtain — the bloom, the wordmark mask, the stat columns, the handover
+   timing — and none of that is what these three buttons are. Putting them
+   there would have split one control across two stylesheets owned by two
+   people; putting them here keeps the question in one file.
+
+   The class prefix is `wpq-` and not `intro__`, so nothing in Intro.css can
+   reach these by accident and nothing here can reach the curtain.
+   ========================================================================== */
+
+.wpq-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+  width: min(420px, 78vw);
+}
+
+.wpq-lead {
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-mid);
+  text-align: center;
+}
+
+.wpq-q {
+  font-size: var(--t-h3);
+  font-weight: var(--fw-med);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  color: var(--ink-hi);
+  text-align: center;
+  margin-top: calc(-1 * var(--sp-1));
+  margin-bottom: var(--sp-1);
+}
+
+.wpq-btns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wpq-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--rad-full);
+  background: var(--glass-2);
+  color: var(--ink);
+  text-align: center;
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out),
+    color var(--d-fast) var(--ease-out),
+    transform var(--d-fast) var(--ease-spring);
+}
+
+.wpq-btn:hover {
+  border-color: var(--accent-line-strong);
+  background: var(--bg-hover);
+  color: var(--ink-hi);
+  transform: translateY(-1px);
+}
+
+.wpq-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.wpq-btn-lead {
+  font-size: var(--t-body);
+  font-weight: var(--fw-med);
+  letter-spacing: var(--tr-tight);
+}
+
+.wpq-btn-sub {
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+}
+
+.wpq-btn:hover .wpq-btn-sub {
+  color: var(--ink-mid);
+}
+
+/* THE ONLY ONE THAT LOOKS LIKE THE OLD CTA IS "I HAVE NOT WATCHED IT".
+   The three answers are not equals: this is the one that lands a first-time
+   reader where the product's own default already is, and a screen that made
+   "다 봤어요" the bright button would be nudging a stranger toward the one
+   error that cannot be undone. The crimson pill stays the primary action's
+   shape — --sh-blood and the brand hue are legal on the intro card, see
+   tokens.css — it is just now attached to the safe answer instead of to
+   "skip this question". */
+.wpq-btn--none {
+  border-color: color-mix(in oklab, var(--blood) 46%, transparent);
+  background:
+    radial-gradient(120% 180% at 50% 120%, color-mix(in oklab, var(--blood) 22%, transparent), transparent 70%),
+    var(--bg-raised);
+  box-shadow: var(--sh-blood);
+  color: var(--ink-hi);
+}
+
+.wpq-btn--none:hover {
+  border-color: var(--blood-hot);
+  background:
+    radial-gradient(120% 180% at 50% 120%, color-mix(in oklab, var(--blood) 28%, transparent), transparent 70%),
+    var(--bg-raised);
+}
+
+/* Full --blood-hot, no opacity step. At 0.85 over the pill's own dark ground
+   the 11px line composited to roughly 4.1:1, i.e. under AA on the one label
+   that tells the reader what the button they are about to press will do.
+   `.intro__enter-sub` sets the same hue at full strength for the same reason. */
+.wpq-btn--none .wpq-btn-sub {
+  color: var(--blood-hot);
+}
+
+.wpq-skip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-xs);
+  line-height: 1.45;
+  color: var(--ink-mid);
+  text-align: center;
+}
+
+.wpq-skip-keys {
+  color: var(--ink-low);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wpq-btn {
+    transition: none;
+  }
+  .wpq-btn:hover,
+  .wpq-btn:active {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .wpq-row {
+    width: 84vw;
+  }
+  .wpq-btn {
+    padding: var(--sp-3) var(--sp-4);
+  }
+}
+
+/* SHORT VIEWPORTS: COMPRESS, NEVER CLIP. `.intro` is `place-items: center` with
+   `overflow: hidden`, so anything the stage cannot fit is not scrolled to — it
+   is gone, and on this screen the thing that would go is the answer the reader
+   came here to press. The question block adds ~170px over the single CTA it
+   replaces, so it gives that back in two steps: the framing line first (the
+   question itself still carries the sentence), then the button rhythm. Intro.css
+   compresses the rest of the stage at 640px on its own. */
+@media (max-height: 820px) {
+  .wpq-lead {
+    display: none;
+  }
+}
+
+/* 760, not 700, and the number is measured rather than chosen: at 1280×720 the
+   uncompressed block put `.intro__stage` at 9…711 in a 720px viewport, i.e. 9px
+   of headroom on a screen that clips rather than scrolls. Compressed it lands
+   around 664. The laptop class this app is most read on is exactly the one
+   that was closest to the edge. */
+@media (max-height: 760px) {
+  .wpq-row {
+    gap: var(--sp-2);
+  }
+  .wpq-q {
+    font-size: var(--t-body);
+  }
+  .wpq-btns {
+    gap: 6px;
+  }
+  .wpq-btn {
+    padding: var(--sp-2) var(--sp-4);
+  }
+  .wpq-btn-lead {
+    font-size: var(--t-sm);
+  }
+}

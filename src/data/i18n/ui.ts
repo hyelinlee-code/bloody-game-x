@@ -659,6 +659,74 @@ export const ui = {
     'status.srPeople': '표시 중인 인물',
     'status.srTotal': '전체',
     'status.srRelations': '표시 중인 관계',
+    /* ── the badge, when the reader's own setting is hiding something ────
+       TWO GUARANTEES, AND THEY ARE NOT THE SAME KIND OF THING. 시즌 X 없음 is
+       a hard exclusion — the material is not in the dataset and the validator
+       fails the build if it appears. This is a display-time redaction, which is
+       weaker, and `status.watchedLimit` says so out loud rather than letting
+       the shield borrow the stronger promise.
+
+       IT COUNTS WORKS, NOT CLAIMS, and it counts them because that is the unit
+       the reader just set. '전부 가려짐' would be the Phase 0 sin all over
+       again in the opposite direction: at the empty set 24 of the 52 lines are
+       still drawn, twenty people are still on the wall, and a badge that says
+       everything is hidden is as false as one that said spoiler-free. */
+    'status.watchedBadge': '결과 가려짐 · {n}개 작품',
+    'status.watchedTitle':
+      '{n}개 작품의 결과를 가려 두었습니다. 누가 나왔는지, 누가 누구를 아는지, 어느 시즌에 있었는지는 그대로 보입니다 — 순위·탈락·우승·배신처럼 결과인 것만 가려집니다.',
+    /* Appended to the title in BOTH states, because in both states this badge
+       is a button and a control that does not say what it does is the defect a
+       reader already reported about this exact object. */
+    'status.watchedOpen': '눌러서 본 작품을 고르세요.',
+
+    /* ── the watched picker ───────────────────────────────────────────────
+       The control the whole redaction layer exists for. One question, asked as
+       'what have you seen' and never as 'how spoiled do you want to be' — the
+       reader knows their viewing history and does not know which of this app's
+       fields are dangerous, so the control takes the input they have and does
+       the danger mapping itself (PLAN-spoilers.md §1). */
+    'watched.question': '어디까지 보셨나요?',
+    'watched.lede':
+      '본 작품의 결과만 펼쳐 놓습니다. 나머지는 누가 나왔고 누가 누구를 아는지까지만 보여주고, 결과는 가려 둡니다.',
+    'watched.dialogLabel': '본 작품 고르기',
+    'watched.eyebrow': '가림 설정',
+    'watched.open': '본 작품 고르기',
+    'watched.close': '닫기',
+    'watched.done': '이대로 보기',
+    'watched.selectAll': '전체 선택',
+    'watched.selectNone': '전체 해제',
+    /* Section headings. They are not the works' own titles — 더 지니어스 is
+       four seasons and 쇼미더머니 is five — so they are copy, not data. */
+    'watched.groupFranchise': '피의 게임',
+    'watched.groupFranchiseFoot': '순서대로 방영된 세 시즌. 본 데까지만 켜 두면 됩니다.',
+    'watched.groupGenius': '더 지니어스',
+    'watched.groupSmtm': '쇼미더머니',
+    'watched.groupRest': '그 밖의 프로그램',
+    'watched.groupRestFoot': '이 아틀라스가 결과를 언급하는 나머지 작품들.',
+    /* The live readout. Both halves are stated because a control that only
+       says what it takes away reads as a punishment. */
+    'watched.countLabel': '{n}개 작품 선택됨',
+    'watched.hiddenSome': '{n}개 작품의 결과가 가려집니다.',
+    'watched.hiddenNone': '가려지는 결과가 없습니다 — 전부 보입니다.',
+    'watched.keeps':
+      '가리지 않는 것 — 누가 출연했는지, 누가 누구를 아는지, 어느 시즌·어느 프로그램에 있었는지, 직업과 소속, 시즌의 형식과 방영 시기.',
+    'watched.hides':
+      '가리는 것 — 순위와 등수, 탈락 회차, 우승자 이름, 상금 정산, 그 인연이 배신이었는지 동맹이었는지, 결과가 걸린 문장.',
+    /* THE HONEST LIMIT. PLAN-spoilers.md §6 asks for this in the same breath as
+       the control, not in a footnote: a display layer is not deletion. */
+    'watched.limit':
+      '이 설정은 화면에서 기록을 가립니다. 브라우저가 이미 내려받은 파일에서 지우지는 않습니다.',
+    'watched.seasonX': '시즌 X 내용은 애초에 이 아틀라스에 없습니다 — 이 설정과 무관한, 더 단단한 약속입니다.',
+    /* ── link arrival ─────────────────────────────────────────────────────
+       Someone who follows a shared #p= link never sees the cold open, so they
+       never get asked. The rule is that a link may never RAISE the recipient's
+       exposure (PLAN §4), so the link carries no setting and they land sealed —
+       and this is the screen that tells them why, instead of leaving them to
+       conclude the atlas is broken or empty. */
+    'arrive.title': '공유 링크로 들어오셨습니다',
+    'arrive.body':
+      '링크는 보낸 사람이 무엇을 봤는지 옮기지 않습니다. 그래서 결과는 가린 채로 열었습니다.',
+    'arrive.dismiss': '알겠습니다',
 
     /* ── path card ────────────────────────────────────────────────────── */
     'path.regionLabel': '두 사람 사이의 경로',
@@ -710,8 +778,24 @@ export const ui = {
     'intro.hintAuto': '기다리면 저절로 열립니다',
     /* Shown instead of hintAuto when the reader has asked for reduced motion:
        the auto-advance is switched off there, so the screen must not promise
-       something it is no longer going to do. */
+       something it is no longer going to do. The unanswered cold open reads the
+       same key for the same reason — see intro.askSkip. */
     'intro.hintNoAuto': '저절로 넘어가지 않습니다 — 편할 때 시작하세요',
+    /* ── the one question ─────────────────────────────────────────────────
+       Asked only of a reader who has never answered it. Three presets, in the
+       order a first-time reader is most likely to want them, and each one says
+       what it will do rather than what it is called. */
+    'intro.askLead': '들어가기 전에 하나만 —',
+    'intro.askNone': '아직 안 봤어요',
+    'intro.askNoneSub': '결과는 가려 둡니다',
+    'intro.askAll': '다 봤어요',
+    'intro.askAllSub': '전부 펼쳐서',
+    'intro.askPick': '골라서 볼게요',
+    'intro.askPickSub': '{n}개 작품에서',
+    /* The escape hatch, stated on the screen rather than left to be discovered.
+       A cold open that cannot be skipped is a wall, and the reader who skips
+       has to know both where they land and how to change it. */
+    'intro.askSkip': '건너뛰면 결과를 가린 채로 열립니다 — 화면 아래 배지에서 언제든 바꿀 수 있습니다',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* Korean counters do not inflect: 1명 and 20명 take the same word, so the
@@ -1218,6 +1302,47 @@ export const ui = {
     'status.srPeople': 'People shown',
     'status.srTotal': 'of',
     'status.srRelations': 'Ties shown',
+    /* See the Korean entries: two guarantees of different strength, and this
+       one counts WORKS because that is the unit the reader set. */
+    'status.watchedBadge': 'Endings hidden · {n} works',
+    'status.watchedTitle':
+      'Endings are hidden for {n} works. Who appeared, who knows whom and which season they were in all still show — only the results are held back: placements, eliminations, winners, and whether a tie was a betrayal.',
+    'status.watchedOpen': 'Click to say what you have watched.',
+
+    /* ── the watched picker ─────────────────────────────────────────────── */
+    'watched.question': 'How much of it have you watched?',
+    'watched.lede':
+      'Only the works you tick have their endings shown. The rest keep who appeared and who knows whom, and hold the results back.',
+    'watched.dialogLabel': 'Choose what you have watched',
+    'watched.eyebrow': 'SPOILER CONTROL',
+    'watched.open': 'Choose what you have watched',
+    'watched.close': 'Close',
+    'watched.done': 'Done',
+    'watched.selectAll': 'Select all',
+    'watched.selectNone': 'Clear all',
+    'watched.groupFranchise': 'Bloody Game',
+    'watched.groupFranchiseFoot': 'Three seasons, aired in order. Tick as far as you got.',
+    'watched.groupGenius': 'The Genius',
+    'watched.groupSmtm': 'Show Me The Money',
+    'watched.groupRest': 'Other programmes',
+    'watched.groupRestFoot': 'Everything else whose result this atlas states.',
+    'watched.countLabel': '{n} works ticked',
+    'watched.hiddenSome': 'Endings hidden for {n} works.',
+    'watched.hiddenNone': 'Nothing is hidden — the whole atlas is open.',
+    'watched.keeps':
+      'Never hidden — who appeared, who knows whom, which seasons and programmes they were on, occupations and blocs, each season’s format and air dates.',
+    'watched.hides':
+      'Hidden — placements and ranks, elimination episodes, winners’ names, prize reconciliation, whether a tie was a betrayal or an alliance, and any sentence that turns on a result.',
+    'watched.limit':
+      'This hides records from the page. It does not remove them from the file your browser has already downloaded.',
+    'watched.seasonX':
+      'Nothing from inside season X is in this atlas at all — that is a harder promise, and it does not depend on this setting.',
+
+    /* ── link arrival ─────────────────────────────────────────────────── */
+    'arrive.title': 'You followed a shared link',
+    'arrive.body':
+      'A link never carries the sender’s viewing history, so this opened with the endings sealed.',
+    'arrive.dismiss': 'Got it',
 
     /* ── path card ────────────────────────────────────────────────────── */
     'path.regionLabel': 'Path between two people',
@@ -1248,6 +1373,16 @@ export const ui = {
     'intro.hintKeys': 'Enter · Space · Esc · or click anywhere',
     'intro.hintAuto': 'or wait — it opens on its own',
     'intro.hintNoAuto': 'nothing advances on its own — begin whenever you like',
+    /* ── the one question. See the Korean entries. ─────────────────────── */
+    'intro.askLead': 'One question before you go in —',
+    'intro.askNone': 'None of it yet',
+    'intro.askNoneSub': 'keep the endings sealed',
+    'intro.askAll': 'All of it',
+    'intro.askAllSub': 'open everything',
+    'intro.askPick': 'Let me choose',
+    'intro.askPickSub': 'from {n} works',
+    'intro.askSkip':
+      'Skip and it opens sealed — the badge at the foot of the screen changes it any time',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* The singular half of each counted noun. See the note on the Korean side:

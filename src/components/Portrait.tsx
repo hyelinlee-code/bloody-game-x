@@ -78,7 +78,10 @@ import './Portrait.css';
  *   beaded arc      a run with no rank — a studio panel seat, a dealer, a host
  *                   — is NOT a bottom-of-table finish, and used to draw as one.
  *                   It gets the whole slot as a beaded hairline instead: present
- *                   all season, no finish to record.
+ *                   all season, no finish to record. IT NOW CARRIES A SECOND
+ *                   MEANING, and every painter of this plate carries it too: a
+ *                   run whose rank this reader may not be told is handed here as
+ *                   `undefined` and draws the same beads. See `ranks` below.
  *   dashed ring     inboard, in the archetype colour: the franchise is new to
  *                   them. Only ever drawn when there are no season arcs.
  *   bone hairline   a solid outer ring: this person has presided over a season.
@@ -111,11 +114,49 @@ export interface PortraitProps {
   initials: string;
   category: Category;
   seasons: SeasonNumber[];
-  /** Best rank achieved in each season, aligned with `seasons`. Undefined for
-      a run that was not played for a placing — a host, a panel seat, a dealer. */
+  /**
+   * Best rank in each season, aligned with `seasons`.
+   *
+   * ** ALREADY THROUGH THE GATE WHEN IT ARRIVES. THIS PLATE CANNOT GATE IT. **
+   *
+   * A rank reaches this component as a bare number with no scope attached, so
+   * there is nothing here to decide against and no `pick` this file could call.
+   * The caller owes it the reader's watched-set, and there are exactly two
+   * sanctioned sources — `node.plate.ranks`, which `buildGraph` solves through
+   * `runFacts`, and `ranksFor(node, lang, watched)` in Dossier.tsx. Do not
+   * rebuild the pair out of `person.priorSeasons`: `runFacts` composes two
+   * `pick`s so a `fieldSize` passes the RANK's gate as well as its own, and a
+   * hand-rolled read gets one gate where there must be three.
+   *
+   * The stakes are geometric rather than textual, which is what makes this the
+   * easiest gate in the app to leave open. `rankFrac` maps rank and field to an
+   * arc length on a scale shared by every plate, and the map is invertible — so
+   * a plate handed a raw rank STATES the placing whatever the text beside it
+   * says, and states it to a reader holding a protractor rather than to one
+   * reading Korean. Gallery.tsx shipped that read for a round: measured at
+   * `bgx.watched='[]'`, twelve of twenty cast cards drew their true sweep —
+   * fourteen arcs in thirteen distinct lengths — under run rows that named no
+   * finish at all.
+   *
+   * `undefined` MEANS TWO THINGS and both draw the beaded ring: a run that was
+   * never at the prize (a host, a panel seat, a dealer) and a run whose finish
+   * is sealed. They are different states, the beads currently say only the
+   * first, and the third mark that tells them apart is PLAN-spoilers.md §3 —
+   * landing in both painters and in the legend in one commit, never here alone.
+   */
   ranks?: (number | undefined)[];
-  /** How many people were in each of those fields, aligned with `seasons`.
-      Falls back to the deepest field in the dataset when it is not known. */
+  /**
+   * How many people were in each of those fields, aligned with `seasons`. Gated
+   * with `ranks` and by the same rule — a denominator may never outlive the
+   * number it qualifies, because the pair is what the arc's length is solved
+   * from.
+   *
+   * Falls back to `FIELD_DEFAULT` when it is not known, which is why it may not
+   * be withheld on its own: season 1 seated 10 and season 3 seated 18, so a
+   * rank drawn against the constant 13 is not a hidden placing, it is a wrong
+   * one — a false value drawn in vector, which PLAN-spoilers.md §3 rules out
+   * explicitly.
+   */
   fieldSizes?: (number | undefined)[];
   isWinner?: boolean;
   isHost?: boolean;

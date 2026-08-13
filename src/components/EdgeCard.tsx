@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type JSX } from 'react';
 import type { GLink } from '../graph/types';
-import { EDGE_COLOR } from '../graph/palette';
 import { EDGE_LABEL_I18N, edgeText, personName, t } from '../data/i18n';
 import { fill } from '../data/i18n/ui';
 import { tieTypeScope } from '../data/edges';
@@ -152,7 +151,23 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
 
   const e = link.edge;
   const text = edgeText(e, lang, watched);
-  const color = EDGE_COLOR[link.type];
+  /* ── THE CARD'S ACCENT IS THE STROKE'S OWN INK ────────────────────────────
+     `link.color`, not `EDGE_COLOR[link.type]`. Everything else on this card had
+     already learned the rule — the chip goes through `pick` below, the arrowhead
+     through `isVisible` — and then `--e` handed the sealed verdict straight back
+     as paint: at `bgx.watched='[]'` all 28 sealed cards carried their type hue,
+     spent by EdgeCard.css as the 2px accent gradient, the pinned border and the
+     '—' between the two names. A card with no word on it, bled in #ff2f43, is a
+     betrayal named in a second channel.
+
+     graph/build.ts already resolved this once, for the line the card is
+     describing: the type hue when `tieTypeVisible`, `SEALED_LINK_INK` when not.
+     Reading it off the link means the readout and the stroke it is tethered to
+     cannot disagree, and the neutral is decided in the file that argued for it
+     rather than a second time here. At the default set nothing moves —
+     EDGE_COLOR is a total `Record<EdgeType, string>` and `link.color` is that
+     same lookup — which is why the chip's own gate stays exactly as it was. */
+  const color = link.color;
   const a = personName(link.source.person, lang);
   const b = personName(link.target.person, lang);
   /* ── the word, and the arrowhead ─────────────────────────────────────────

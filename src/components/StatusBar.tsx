@@ -3,14 +3,28 @@ import type { Dataset } from '../data/types';
 import type { AtlasState } from '../state/useAtlas';
 import { personName, t, ui } from '../data/i18n';
 import { tieTypeVisible } from '../data/edges';
+import { ALL_WORK_IDS } from '../data/works';
 import { useLang } from '../state/useLang';
 import { useWatched } from '../state/useWatched';
 import { Credit } from './Credit';
 import './StatusBar.css';
 
 export interface StatusBarProps {
-  /** Opens the About sheet — the badge is a control now, not a label. */
-  onOpenAbout: () => void;
+  /**
+   * Opens the watched picker.
+   *
+   * THE BADGE IS THE CONTROL NOW. It was already a button — an earlier round
+   * made it one because it carried `cursor: help` and a tooltip and then did
+   * nothing when clicked — and it opened the field guide, which is a
+   * description of a promise rather than the switch behind it. A reader
+   * reported the object as confusing, and the reason it was confusing is that
+   * it is the one place on screen that makes a claim about what the atlas is
+   * withholding while having no relationship to the setting that decides.
+   *
+   * The route to the field guide is not dropped: the picker's own footer
+   * carries it, next to the two sentences about what this control cannot do.
+   */
+  onOpenWatched: () => void;
   atlas: AtlasState;
   dataset: Dataset;
   onReset: () => void;
@@ -45,7 +59,7 @@ interface HintLayer {
 }
 
 
-export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: StatusBarProps): JSX.Element {
+export function StatusBar({ onOpenWatched, atlas, dataset, onReset, introDone }: StatusBarProps): JSX.Element {
   const { graph, visible, edgeTypes, selectedId, filtersActive } = atlas;
   const ready = introDone !== false;
   const { lang } = useLang();
@@ -133,7 +147,47 @@ export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: S
       ? `${t(lang, 'status.srPeople')} ${shown}${t(lang, 'common.people')}, ${t(lang, 'status.srTotal')} ${total}${t(lang, 'common.people')}. ${t(lang, 'status.srRelations')} ${relationCount}${t(lang, 'common.ties')}.`
       : `${t(lang, 'status.srPeople')} ${shown} ${t(lang, 'status.srTotal')} ${total}. ${t(lang, 'status.srRelations')} ${relationCount}.`;
 
-  const spoilerTitle = t(lang, 'status.spoilerTitle');
+  /* ── WHAT THE BADGE IS ALLOWED TO SAY ──────────────────────────────────────
+   *
+   * TWO GUARANTEES OF DIFFERENT STRENGTH, AND THE BADGE CARRIES BOTH WITHOUT
+   * LETTING EITHER BORROW THE OTHER'S CREDIT.
+   *
+   *   시즌 X 내용 없음 is EXCLUSION. The material is not in the dataset and
+   *   `tools/validate-data.mjs` §8 fails the build if it appears. It does not
+   *   depend on this reader, on this setting, or on anything happening at
+   *   display time. It is the same sentence for everybody, and it is why the
+   *   all-watched state below is byte-for-byte the badge this app has always
+   *   printed.
+   *
+   *   결과 가려짐 is REDACTION, which is a display layer and therefore weaker —
+   *   the records are in the bundle either way. The picker says so in as many
+   *   words; the badge's job is only to be accurate about scale.
+   *
+   * IT COUNTS WORKS, NOT CLAIMS, AND IT NEVER SAYS "EVERYTHING". Phase 0 of
+   * this project exists because five panels said "spoiler-free" while showing
+   * three seasons in full, and the opposite overclaim is available here and
+   * just as false: at the empty set twenty people are still on the wall, 24 of
+   * the 52 lines are still drawn, and every bloc, occupation, archetype and air
+   * date is still printed. A badge reading "전부 가려짐" would be the same
+   * failure with the sign flipped. `{n}개 작품` is the honest unit because it is
+   * the unit the reader just set in the picker — nineteen works, ticked or not
+   * — and it reconciles against a figure they can see and change.
+   *
+   * The ledger 300px to the left already states the tie count for this reader
+   * (52 at the default, 24 at the empty set), so the badge does not restate it.
+   */
+  const hiddenWorks = ALL_WORK_IDS.length - watched.size;
+  const sealed = hiddenWorks > 0;
+  const badgeLine = sealed
+    ? t(lang, 'status.watchedBadge').replace('{n}', String(hiddenWorks))
+    : t(lang, 'status.spoilerBadge');
+  /* The action clause is appended in BOTH states. A control that does not say
+     what it does is the exact defect that was reported about this object. */
+  const spoilerTitle = `${
+    sealed
+      ? t(lang, 'status.watchedTitle').replace('{n}', String(hiddenWorks))
+      : t(lang, 'status.spoilerTitle')
+  } ${t(lang, 'status.watchedOpen')}`;
 
   return (
     <footer className={`statusbar${ready ? ' is-ready' : ''}${lang === 'en' ? ' latin-run' : ''}`}>
@@ -213,9 +267,14 @@ export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: S
           {/* A BUTTON, NOT A SPAN. It carried `cursor: help` and a title and
               then did nothing when clicked, which is the worst of both: it
               advertises that there is more to read and then refuses to show it.
-              The badge makes the atlas's central promise, so clicking it opens
-              the sheet where that promise is spelled out. */}
-          <button type="button" className="sb__badge" title={spoilerTitle} onClick={onOpenAbout}>
+              It is now the reader's own control — see `onOpenWatched`. */}
+          <button
+            type="button"
+            className={`sb__badge${sealed ? ' is-sealed' : ''}`}
+            title={spoilerTitle}
+            aria-haspopup="dialog"
+            onClick={onOpenWatched}
+          >
             <svg className="sb__shield" width="11" height="12" viewBox="0 0 11 12" aria-hidden="true" focusable="false">
               <path
                 d="M5.5 0.7 10 2.3v3.6c0 2.6-1.8 4.4-4.5 5.4C2.8 10.3 1 8.5 1 5.9V2.3Z"
@@ -224,10 +283,25 @@ export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: S
                 strokeWidth="1.1"
                 strokeLinejoin="round"
               />
+              {/* The shield fills as the reader's own redaction comes on: a
+                  second mark on the same glyph, so the state is legible without
+                  a second object in a 34px bar and without colour carrying it
+                  alone. */}
+              {sealed ? (
+                <path
+                  className="sb__shield-fill"
+                  d="M5.5 2.05 8.75 3.2v2.7c0 1.95-1.35 3.3-3.25 4.05C3.6 9.2 2.25 7.85 2.25 5.9V3.2Z"
+                  fill="currentColor"
+                  stroke="none"
+                />
+              ) : null}
             </svg>
-            {/* `Spoiler-free` is the Latin flag on a Korean line. English
-                already says it in the line itself. */}
-            {lang === 'ko' ? (
+            {/* `No season X` is the Latin flag on a Korean line, and it belongs
+                only to the unchanging half of the promise. When the reader's own
+                setting is what the badge is reporting, the line carries the
+                whole sentence and a second Latin fragment beside it would read
+                as a third, unrelated claim. */}
+            {lang === 'ko' && !sealed ? (
               <>
                 <span className="eyebrow sb__badge-flag" lang="en">
                   {ui.en['topbar.spoilerBadge']}
@@ -237,7 +311,7 @@ export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: S
                 </span>
               </>
             ) : null}
-            <span className="sb__badge-line">{t(lang, 'status.spoilerBadge')}</span>
+            <span className="sb__badge-line">{badgeLine}</span>
             <span className="sr-only">{spoilerTitle}</span>
           </button>
 

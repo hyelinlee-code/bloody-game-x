@@ -379,32 +379,65 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                             initials={lang === 'en' ? n.initialsEn : n.initials}
                             category={n.category}
                             seasons={n.seasons}
-                            /* ⚠ RAW ON PURPOSE, AND IT IS A LEAK PHASE 3 OWNS.
-                               `ranks` and `fieldSizes` below still come off the
-                               record, so the plate's season arc is drawn to
-                               its true length and a sealed 우승 is still a full
-                               sweep. Routing them through `runFacts` would hand
-                               the painter `undefined`, and `undefined` already
-                               MEANS something on this plate — the beaded arc
-                               that the about sheet's legend glosses as '그 시즌은
-                               경쟁하지 않았다 (순위 없음)'. A redacted contestant
-                               would be drawn with the mark for "present, not
-                               competing", which is a false claim rather than a
-                               withheld one, and trading a leak for a lie is not
-                               a trade this phase may make. The third plate state
-                               is PLAN-spoilers.md §7 Phase 3, in the same commit
-                               as the legend row that explains it; i18n/index.ts
-                               says the same thing above `runText`. Named in the
-                               handoff so it is a scheduled item and not an
-                               oversight. */
-                            ranks={n.seasons.map((s) => runs.find((r) => r.run.season === s)?.run.rank)}
-                            /* Season 1 seated 10, season 3 seated 18, and the
-                               plate normalises arc length against the field —
-                               but nothing had ever passed the field, so every
-                               arc on the wall was drawn against the constant
-                               13 and a 4th of 10 came out shorter than a 4th
-                               of 13. The value is on the run. */
-                            fieldSizes={n.seasons.map((s) => runs.find((r) => r.run.season === s)?.run.fieldSize)}
+                            /* THE NODE ALREADY CARRIES THE GATED PAIR. Read it.
+                               These two used to be rebuilt here — `runs.find(…)
+                               ?.run.rank` and `?.run.fieldSize`, straight off
+                               `p.priorSeasons` — while `n.plate.ranks` sat on
+                               the very node being rendered, solved by
+                               `buildGraph` through `runFacts` with the reader's
+                               set. So the one surface that shows all twenty
+                               plates at once was the one surface still drawing
+                               the raw record.
+
+                               ARC LENGTH IS THE PLACEMENT, which is why a
+                               second read of the same field is not a style
+                               question here: `plateGeometry.rankFrac` maps rank
+                               and field to a sweep and the map is invertible,
+                               so the wall PRINTS the finish it refuses to set
+                               in type. Measured on the running app at
+                               `bgx.watched='[]'`, 이진형's single S2 slot drew
+                               a 59.30 track under a 59.16 value arc at weight
+                               3.2 with the winner's terminal cap on it — a full
+                               rank-1 sweep, byte-identical to the default,
+                               beside a run row reading 'S2' and nothing else.
+                               Twelve of the twenty cards were doing it — all
+                               fourteen played runs in the cast, swept to
+                               thirteen distinct lengths — which is the
+                               placement table drawn in vector. Measured after,
+                               every one of them is the slot's own room and the
+                               wall carries no length a rank can be read off.
+
+                               `n.plate.ranks` is aligned with `n.seasons` by
+                               construction — buildGraph maps both off the same
+                               `seasons` array — and `fieldSizes` is the
+                               denominator without which an arc is drawn against
+                               `FIELD_DEFAULT` (season 1 seated 10 and season 3
+                               seated 18, so a 4th of 10 would come out shorter
+                               than a 4th of 13). `runFacts` composes the two
+                               through one gate so a field size can never
+                               outlive the rank it qualifies; splitting them
+                               across two reads here is exactly the failure that
+                               interlock exists to stop.
+
+                               A WITHHELD RANK ARRIVES AS `undefined` AND DRAWS
+                               THE BEADED RING — 'present all season, no finish
+                               to record'. That is the shipped interim, not the
+                               destination: the canvas node, the hover card, the
+                               dossier crest and the dossier's relation chips all
+                               already draw it, so until this line the two
+                               painters of one object disagreed about the same
+                               person on two surfaces, which is the single thing
+                               plateGeometry.ts's docblock forbids. Sealed and
+                               never-competed are still different states and the
+                               third mark that tells them apart is
+                               PLAN-spoilers.md §3, in the same commit as the
+                               legend row that glosses it; build.ts says the same
+                               thing over `plate.ranks`. Saying less than the
+                               truth on twelve cards is the side to be wrong on,
+                               and it is the side the rest of the app is already
+                               on. */
+                            ranks={n.plate.ranks}
+                            fieldSizes={n.plate.fieldSizes}
                             isWinner={n.isWinner}
                             isHost={n.isHost}
                             noTies={n.noTies}

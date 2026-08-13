@@ -4,9 +4,13 @@ import { useReducedMotion } from 'motion/react';
 import type { Dataset } from '../data/types';
 import { t, ui, type UiKey } from '../data/i18n';
 import { tieTypeVisible } from '../data/edges';
+import { ALL_WORK_IDS, WATCHED_NONE } from '../data/works';
 import { useLang } from '../state/useLang';
-import { useWatched } from '../state/useWatched';
+import { hasStoredAnswer, useWatched, WATCHED_ALL } from '../state/useWatched';
 import './Intro.css';
+/* The three answers are styled beside the picker they are a shorthand for —
+   see the note at the foot of WatchedPicker.css. */
+import './WatchedPicker.css';
 
 export interface IntroProps {
   dataset: Dataset;
@@ -22,6 +26,12 @@ export interface IntroProps {
    * app" signal; this is the "I am leaving" one, and they are different moments.
    */
   onDismissBegin?: () => void;
+  /**
+   * The reader picked "골라서 볼게요". The set is already committed by the time
+   * this fires; all the host has to do is open the sheet once the curtain has
+   * gone.
+   */
+  onOpenPicker?: () => void;
 }
 
 /* The whole choreography lands by ~2.0s. Everything after that is the user's
@@ -106,14 +116,33 @@ function Gloss({ k, lang, className }: { k: UiKey; lang: 'ko' | 'en'; className:
   );
 }
 
-export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Element | null {
+export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroProps): JSX.Element | null {
   const { lang } = useLang();
   /* The cold open prints three numbers and one of them is a claim about
-     outcomes. See `stats` below. */
-  const { watched } = useWatched();
+     outcomes. See `stats` below. And as of Phase 4 it also SETS the thing those
+     numbers are computed from. */
+  const { watched, setWatched } = useWatched();
   const reduced = Boolean(useReducedMotion());
   const [exiting, setExiting] = useState(false);
   const [held, setHeld] = useState(false);
+
+  /**
+   * IS THIS READER BEING ASKED?
+   *
+   * Only somebody who has never answered. A returning reader gets exactly the
+   * cold open they have always had — one CTA, the auto-advance, the countdown
+   * hairline — because re-asking a settled question on every visit is how a
+   * preference turns into a nag, and because their answer is already the thing
+   * governing the screen behind this one.
+   *
+   * Read ONCE, on the first render. `hasStoredAnswer()` flips to true the
+   * moment any of the three buttons commits, and a screen that reconfigured
+   * itself out from under the click that configured it would be worse than a
+   * stale read by every measure. The intro is unmounting anyway.
+   */
+  const askingRef = useRef<boolean | null>(null);
+  if (askingRef.current === null) askingRef.current = !hasStoredAnswer();
+  const asking = askingRef.current;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
@@ -170,11 +199,31 @@ export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Elem
      hand-rolled pause accounting: `animationPlayState` already stops that clock
      while the pointer is on the stage, so the remaining time survives a hover
      because it is the same quantity, not a copy of it. */
+  /* ── AND IT IS SWITCHED OFF ENTIRELY WHILE THE QUESTION IS UNANSWERED ─────
+     PLAN-spoilers.md §4 makes this a condition of the cold open carrying a
+     decision at all, and the reason is one sentence: an involuntary advance
+     would choose an exposure the reader never chose, which IS the harm this
+     whole layer exists to prevent. A 4.5s timer that resolves to "hide
+     everything" is not neutral either — it is the app answering a question it
+     just put to somebody, on their behalf, while they were still reading it.
+
+     THE SCREEN NEVER PROMISES WHAT IT WILL NOT DO. '기다리면 저절로 열립니다'
+     is not printed while the question is up, and neither is the countdown
+     hairline — a readout of a clock that is not running is the same defect as
+     a bar that opens at 31% full, which this file has already been through
+     once. What replaces them is `intro.hintKeys`, unchanged, so the four ways
+     out are still named, plus `intro.askSkip`, which is the part today's cold
+     open never had to say: where a reader who takes one of them lands.
+
+     THIS IS NOT A WALL. Escape, Enter, Space and a click anywhere all still
+     dismiss, and `intro.askSkip` says on the screen both that they do and
+     where the reader lands if they use them: sealed, with the badge that
+     changes it named. */
   const barRef = useRef<HTMLSpanElement | null>(null);
   const remainingRef = useRef(AUTO_ADVANCE_MS);
 
   useEffect(() => {
-    if (held || reduced) return;
+    if (held || reduced || asking) return;
     let auto = 0;
     let live = true;
     const arm = (played: number) => {
@@ -202,16 +251,46 @@ export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Elem
       live = false;
       window.clearTimeout(auto);
     };
-  }, [held, reduced]);
+  }, [held, reduced, asking]);
 
   /* Any pending fade-out timer dies with the component. */
   useEffect(() => () => window.clearTimeout(exitTimerRef.current), []);
+
+  /**
+   * The three answers, and each one is a complete answer — including the third.
+   *
+   * `setWatched` writes storage, and storage is what `hasStoredAnswer()` reads
+   * on the next visit, so committing here is what stops this screen asking the
+   * same person the same question forever. "골라서 볼게요" commits too, and
+   * commits the SEALED set: the reader has said "not yet, let me look at the
+   * list", and the honest reading of that is the conservative one until they
+   * tick something. The sheet is one frame away and every close path in it
+   * commits again.
+   */
+  const answer = useCallback(
+    (choice: 'none' | 'all' | 'pick') => {
+      setWatched(choice === 'all' ? WATCHED_ALL : WATCHED_NONE);
+      if (choice === 'pick') onOpenPicker?.();
+      dismissRef.current();
+    },
+    [setWatched, onOpenPicker],
+  );
 
   /* Enter / Space / Esc anywhere. Capture phase so the app's global shortcut
      handler never sees these while the cold-open owns the screen. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar' && e.key !== 'Escape') return;
+      /* …EXCEPT ON THE ANSWERS THEMSELVES. This listener is on `window`, in the
+         capture phase, and it preventDefaults — which is exactly right when the
+         only control on the screen is a CTA that does the same thing the key
+         does, and exactly wrong now that there are three controls that do three
+         different things. Without this bail, tabbing to "다 봤어요" and
+         pressing Enter would skip the question instead of answering it: the
+         capture handler would swallow the key before the button ever saw it,
+         and the reader would land on the opposite of what they pressed. Escape
+         is not exempted — dismissing is dismissing wherever focus is. */
+      if (e.key !== 'Escape' && e.target instanceof HTMLElement && e.target.closest('.wpq-btn')) return;
       e.preventDefault();
       e.stopPropagation();
       dismissRef.current();
@@ -220,10 +299,17 @@ export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Elem
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 
-  /* Announce the overlay and give the keyboard somewhere to start. */
+  /* Announce the overlay and give the keyboard somewhere to start.
+     While the question is up, that somewhere is the FIRST ANSWER rather than
+     the dialog root — so a keyboard reader's Enter lands on "아직 안 봤어요"
+     (the recoverable answer, and the one the product's own default already
+     is) instead of on a skip. It is the same contract the single ENTER pill
+     used to have: the key under the reader's finger does the primary thing. */
+  const firstAnswerRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
-    rootRef.current?.focus();
-  }, []);
+    if (asking && firstAnswerRef.current) firstAnswerRef.current.focus();
+    else rootRef.current?.focus();
+  }, [asking]);
 
   /* ── the middle column is the only one of the three that is a claim ───────
      CAST 20 and PRIOR SEASONS 3 are participation and the number of programmes
@@ -340,38 +426,87 @@ export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Elem
         </dl>
 
         <div className="intro__actions">
-          <div className="intro__enter-wrap">
-            <button
-              type="button"
-              className="intro__enter"
-              onClick={dismiss}
-              aria-label={t(lang, 'intro.enterAria')}
-            >
-              <span className="intro__enter-lead">{t(lang, 'intro.enter')}</span>
-              <Gloss k="intro.enter" lang={lang} className="intro__enter-sub" />
-            </button>
-            {!reduced && (
-              <span
-                ref={barRef}
-                className="intro__countdown"
-                aria-hidden="true"
-                style={{
-                  /* Delay and duration together mean the bar is empty on its
-                     first visible frame and full at the moment the screen
-                     changes — a truthful readout of the time the reader has,
-                     rather than one that opens at 31%. The delay is part of the
-                     animation, so pausing on hover pauses both halves. */
-                  animationDelay: `${CTA_DELAY_MS}ms`,
-                  animationDuration: `${COUNTDOWN_MS}ms`,
-                  animationPlayState: held || exiting ? 'paused' : 'running',
-                }}
-              />
-            )}
-          </div>
-          <p className="intro__hint">
-            <span>{t(lang, 'intro.hintKeys')}</span>
-            <span className="intro__hint-sub">{t(lang, reduced ? 'intro.hintNoAuto' : 'intro.hintAuto')}</span>
-          </p>
+          {asking ? (
+            /* THE QUESTION. Three answers, one click each, and the wording is
+               "what have you seen" rather than "how much do you want hidden" —
+               the reader knows their own viewing history and does not know
+               which of this app's fields are dangerous. PLAN-spoilers.md §1.
+
+               The buttons are `stopPropagation`-free on purpose: the stage
+               above forwards every click to `dismiss`, and `answer` calls the
+               same idempotent dismissal itself, so the bubble is a no-op rather
+               than a race. */
+            <div className="wpq-row">
+              <p className="wpq-lead">{t(lang, 'intro.askLead')}</p>
+              <p className="wpq-q">{t(lang, 'watched.question')}</p>
+              <div className="wpq-btns">
+                <button
+                  type="button"
+                  ref={firstAnswerRef}
+                  className="wpq-btn wpq-btn--none"
+                  onClick={() => answer('none')}
+                >
+                  <span className="wpq-btn-lead">{t(lang, 'intro.askNone')}</span>
+                  <span className="wpq-btn-sub">{t(lang, 'intro.askNoneSub')}</span>
+                </button>
+                <button type="button" className="wpq-btn" onClick={() => answer('all')}>
+                  <span className="wpq-btn-lead">{t(lang, 'intro.askAll')}</span>
+                  <span className="wpq-btn-sub">{t(lang, 'intro.askAllSub')}</span>
+                </button>
+                <button type="button" className="wpq-btn" onClick={() => answer('pick')}>
+                  <span className="wpq-btn-lead">{t(lang, 'intro.askPick')}</span>
+                  <span className="wpq-btn-sub">
+                    {t(lang, 'intro.askPickSub').replace('{n}', String(ALL_WORK_IDS.length))}
+                  </span>
+                </button>
+              </div>
+              {/* The four ways out, named exactly as they always have been —
+                  and then the sentence that is new, because until this round
+                  taking one of them did not choose anything. */}
+              <p className="wpq-skip">
+                <span className="wpq-skip-keys">{t(lang, 'intro.hintKeys')}</span>
+                <span>{t(lang, 'intro.askSkip')}</span>
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="intro__enter-wrap">
+                <button
+                  type="button"
+                  className="intro__enter"
+                  onClick={dismiss}
+                  aria-label={t(lang, 'intro.enterAria')}
+                >
+                  <span className="intro__enter-lead">{t(lang, 'intro.enter')}</span>
+                  <Gloss k="intro.enter" lang={lang} className="intro__enter-sub" />
+                </button>
+                {!reduced && (
+                  <span
+                    ref={barRef}
+                    className="intro__countdown"
+                    aria-hidden="true"
+                    style={{
+                      /* Delay and duration together mean the bar is empty on
+                         its first visible frame and full at the moment the
+                         screen changes — a truthful readout of the time the
+                         reader has, rather than one that opens at 31%. The
+                         delay is part of the animation, so pausing on hover
+                         pauses both halves. */
+                      animationDelay: `${CTA_DELAY_MS}ms`,
+                      animationDuration: `${COUNTDOWN_MS}ms`,
+                      animationPlayState: held || exiting ? 'paused' : 'running',
+                    }}
+                  />
+                )}
+              </div>
+              <p className="intro__hint">
+                <span>{t(lang, 'intro.hintKeys')}</span>
+                <span className="intro__hint-sub">
+                  {t(lang, reduced ? 'intro.hintNoAuto' : 'intro.hintAuto')}
+                </span>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
