@@ -414,6 +414,181 @@
   color: var(--ink);
 }
 
+/* ── the coach mark, and the ring under it ────────────────────────────────
+   WHY THE BADGE NEEDED POINTING AT. It is the reader's own redaction control
+   and it is 11px of shield plus eight characters, in the last corner the eye
+   reaches, on a 34px strip whose other two objects are counts. Everything about
+   its restraint is right for the ninety-ninth frame and wrong for the first: a
+   reader told the cold open what they had watched and then had no idea the
+   setting was still on the page. `badgeCue.ts` holds the once-per-reader flag.
+
+   TWO MARKS, ONE MESSAGE, and they do different jobs. The card SAYS what the
+   badge is — it is prose, it is dismissible, and it goes away forever. The ring
+   POINTS, because a card floating above a strip of chrome does not by itself
+   tell you which of three objects it means; the tip below is the other half of
+   that and the ring is what survives a glance.
+
+   NOT A SCRIM, NOT A SPOTLIGHT, NOT A MODAL. The atlas stays fully usable
+   underneath — this is a label on a control, not a step in a tour, and the
+   graph is what the reader came for. */
+
+.sb__right {
+  /* the cue's containing block */
+  position: relative;
+}
+
+.sbcue {
+  pointer-events: auto;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 1;
+  width: min(300px, calc(100vw - 2 * var(--sp-4)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--rad-md);
+  background: var(--glass-2);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid var(--accent-line-strong);
+  box-shadow: var(--sh-lg);
+  text-align: left;
+  white-space: normal;
+  /* Held until the entrance has finished arriving. The bar itself is the last
+     piece of chrome to land (see `.statusbar.is-ready` above), so a mark that
+     appeared with it would be competing with the thing it is annotating. */
+  animation: sbcue-in var(--d-base) var(--ease-out) 900ms both;
+}
+
+.sbcue :where(p) {
+  word-break: keep-all;
+}
+
+@keyframes sbcue-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.sbcue__title {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-med);
+  line-height: 1.3;
+  color: var(--ink-hi);
+}
+
+.sbcue__body {
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--ink-sub);
+}
+
+.sbcue__acts {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: 2px;
+}
+
+.sbcue__cta {
+  padding: 5px var(--sp-3);
+  border: 1px solid var(--accent-line-strong);
+  border-radius: var(--rad-full);
+  background: var(--accent-tint);
+  color: var(--accent-hot);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-med);
+  transition:
+    background-color var(--d-fast) var(--ease-out),
+    border-color var(--d-fast) var(--ease-out);
+}
+
+.sbcue__cta:hover {
+  background: var(--accent-tint-strong);
+  border-color: var(--accent);
+}
+
+.sbcue__ok {
+  margin-left: auto;
+  padding: 5px 2px;
+  background: none;
+  border: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-mid);
+  transition: color var(--d-fast) var(--ease-out);
+}
+
+.sbcue__ok:hover {
+  color: var(--ink-hi);
+}
+
+/* The tip. A rotated square rather than a border triangle, so it can carry the
+   card's own glass and its 1px edge on the two sides that show.
+
+   OFFSET FROM THE RIGHT, WHICH IS THE EDGE THAT CANNOT MOVE. The badge is the
+   last child of `.sb__right` and the card is pinned to the same edge, so the
+   two right edges are the same pixel at every width, in both languages, in both
+   badge states — while the badge's LEFT edge travels ~60px between '시즌 X 내용
+   없음 · No season X' and '결과 가려짐 · 14개 작품'. A tip centred on the badge
+   would have needed measuring; a tip 26px in from a shared edge is always on
+   it. */
+.sbcue__tip {
+  position: absolute;
+  right: 26px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: var(--glass-2);
+  border-right: 1px solid var(--accent-line-strong);
+  border-bottom: 1px solid var(--accent-line-strong);
+}
+
+/* The ring. --accent, like every other state mark on this strip: this is a
+   setting the reader has not met yet, not a warning, and never --blood. */
+.sb__badge.is-cued {
+  position: relative;
+  border-color: var(--accent-line-strong);
+}
+
+.sb__badge.is-cued::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--rad-full);
+  border: 1px solid var(--accent);
+  pointer-events: none;
+  animation: sbcue-ring 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes sbcue-ring {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+/* A pulse is an animation nobody asked for on a strip that never moves, so it
+   is the first thing to go — the ring stays, at the brightness the pulse would
+   have averaged, because it is the half of the cue that does the pointing. */
+@media (prefers-reduced-motion: reduce) {
+  .sbcue {
+    animation: none;
+  }
+  .sb__badge.is-cued::after {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
 .sb__updated {
   display: inline-flex;
   align-items: baseline;

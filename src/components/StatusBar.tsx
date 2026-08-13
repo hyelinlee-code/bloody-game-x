@@ -29,6 +29,18 @@ export interface StatusBarProps {
   dataset: Dataset;
   onReset: () => void;
   /**
+   * Point at the badge, once, for a reader who has never opened the picker.
+   *
+   * IT IS A PROP RATHER THAN LOCAL STATE because the condition is not local:
+   * the cue has to stand down while the cold open is up, while the link-arrival
+   * banner is making the same point in more words, and while the sheet it
+   * points at is open — and App is the only component that knows all three.
+   * This file owns where the mark sits and what it says; App owns when.
+   */
+  cue?: boolean;
+  /** Dismissal is not an answer to anything. See `badgeCue.ts`. */
+  onDismissCue?: () => void;
+  /**
    * Whether the cold open is gone, so the ledger can wait for it.
    *
    * This bar was the one piece of chrome with no such gate, and it led the
@@ -59,7 +71,15 @@ interface HintLayer {
 }
 
 
-export function StatusBar({ onOpenWatched, atlas, dataset, onReset, introDone }: StatusBarProps): JSX.Element {
+export function StatusBar({
+  onOpenWatched,
+  atlas,
+  dataset,
+  onReset,
+  introDone,
+  cue = false,
+  onDismissCue,
+}: StatusBarProps): JSX.Element {
   const { graph, visible, edgeTypes, selectedId, filtersActive } = atlas;
   const ready = introDone !== false;
   const { lang } = useLang();
@@ -170,7 +190,7 @@ export function StatusBar({ onOpenWatched, atlas, dataset, onReset, introDone }:
    * the 52 lines are still drawn, and every bloc, occupation, archetype and air
    * date is still printed. A badge reading "전부 가려짐" would be the same
    * failure with the sign flipped. `{n}개 작품` is the honest unit because it is
-   * the unit the reader just set in the picker — nineteen works, ticked or not
+   * the unit the reader just set in the picker — fourteen works, ticked or not
    * — and it reconciles against a figure they can see and change.
    *
    * The ledger 300px to the left already states the tie count for this reader
@@ -268,9 +288,32 @@ export function StatusBar({ onOpenWatched, atlas, dataset, onReset, introDone }:
               then did nothing when clicked, which is the worst of both: it
               advertises that there is more to read and then refuses to show it.
               It is now the reader's own control — see `onOpenWatched`. */}
+          {/* THE COACH MARK, anchored to the thing it is about.
+              It is drawn inside `.sb__right` rather than as a floating toast so
+              it cannot drift off the badge: the badge's position is a function
+              of the ledger's width, the byline, the language and the viewport,
+              and a fixed-position card would have had to re-derive all four.
+              The one consequence worth naming is a good one — below 640px this
+              whole strip stands down while a sheet is up, and the cue goes with
+              it, because a mark pointing at a badge nobody can see is noise. */}
+          {cue ? (
+            <div className="sbcue" role="status" aria-label={t(lang, 'cue.watchedRegion')}>
+              <p className="sbcue__title">{t(lang, 'cue.watchedTitle')}</p>
+              <p className="sbcue__body">{t(lang, 'cue.watchedBody')}</p>
+              <div className="sbcue__acts">
+                <button type="button" className="sbcue__cta" onClick={onOpenWatched}>
+                  {t(lang, 'watched.open')}
+                </button>
+                <button type="button" className="sbcue__ok" onClick={onDismissCue}>
+                  {t(lang, 'cue.watchedDismiss')}
+                </button>
+              </div>
+              <span className="sbcue__tip" aria-hidden="true" />
+            </div>
+          ) : null}
           <button
             type="button"
-            className={`sb__badge${sealed ? ' is-sealed' : ''}`}
+            className={`sb__badge${sealed ? ' is-sealed' : ''}${cue ? ' is-cued' : ''}`}
             title={spoilerTitle}
             aria-haspopup="dialog"
             onClick={onOpenWatched}

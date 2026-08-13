@@ -19,6 +19,7 @@ import { findPath } from './state/findPath';
 import { WatchedPicker } from './components/WatchedPicker';
 import { LangContext, useLang, useLangState } from './state/useLang';
 import { hasStoredAnswer, useWatched, WatchedProvider } from './state/useWatched';
+import { hasSeenBadgeCue, markBadgeCueSeen } from './state/badgeCue';
 import { personName, t } from './data/i18n';
 import './styles/app.css';
 
@@ -167,6 +168,15 @@ function Atlas() {
      mid-sentence because the reader opened the sheet it points at would be
      removing its own explanation. Dismissal below is explicit. */
   const [arrival, setArrival] = useState(() => hasDeepLink() && !hasStoredAnswer());
+  /* WHERE THE SETTING LIVES, said once, to a reader who has never opened the
+     sheet. Read at mount for the same reason `arrival` is: the flag is written
+     the moment the picker opens, and a card that vanished as the sheet it
+     points at came up would be deleting its own explanation mid-sentence. */
+  const [cue, setCue] = useState(() => !hasSeenBadgeCue());
+  const dismissCue = useCallback(() => {
+    markBadgeCueSeen();
+    setCue(false);
+  }, []);
   /* This component does not read the set; it only needs the writer, so that
      dismissing the arrival banner counts as an answer and the banner does not
      come back on every shared link the same person opens. */
@@ -396,6 +406,15 @@ function Atlas() {
   useEffect(() => {
     if (introDone) startReveal();
   }, [introDone, startReveal]);
+
+  /* The picker opening AT ALL retires the coach mark, whichever object opened
+     it — the badge, the arrival banner, the cold open's own link. The cue's
+     whole claim is "the setting lives here"; a reader standing in the sheet has
+     been shown, and repeating it on their next visit would be the app arguing
+     with somebody who already knows. */
+  useEffect(() => {
+    if (pickerOpen) dismissCue();
+  }, [pickerOpen, dismissCue]);
 
   /* The shortest chain of real relationships between the two ends, recomputed
      whenever the question or the graph it is asked of changes. This is the
@@ -796,6 +815,12 @@ function Atlas() {
         onReset={atlas.resetFilters}
         introDone={chromeReady}
         onOpenWatched={() => setPickerOpen(true)}
+        /* Stands down for the cold open, for the sheet it points at, and for
+           the arrival banner — which is the same message in more words, to the
+           one reader who was never asked the question. Two cards making one
+           point at one time is how a hint becomes an interruption. */
+        cue={cue && chromeReady && !pickerOpen && !arrival}
+        onDismissCue={dismissCue}
       />
 
       <CommandPalette
