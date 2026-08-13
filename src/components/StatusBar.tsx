@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import type { Dataset } from '../data/types';
 import type { AtlasState } from '../state/useAtlas';
 import { personName, t, ui } from '../data/i18n';
+import { tieTypeVisible } from '../data/edges';
 import { useLang } from '../state/useLang';
+import { useWatched } from '../state/useWatched';
 import { Credit } from './Credit';
 import './StatusBar.css';
 
@@ -47,21 +49,43 @@ export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: S
   const { graph, visible, edgeTypes, selectedId, filtersActive } = atlas;
   const ready = introDone !== false;
   const { lang } = useLang();
+  /* The hook, not `currentWatched()`: this is a component, the count below is a
+     claim about outcomes, and the mirror carries no subscription. */
+  const { watched } = useWatched();
 
   const total = dataset.people?.length ?? 0;
   const shown = visible.size;
 
-  /* A relation only counts if you can actually see it: both ends visible and
-     its type not filtered out. */
+  /* A relation only counts if you can actually see it: both ends visible, its
+     type not filtered out — and its type not sealed against this reader.
+     ─────────────────────────────────────────────────────────────────────────
+     THE THIRD CLAUSE IS THIS ROUND'S, and the sentence this figure feeds is why
+     it could not wait. The ledger reads 관계 52 and the screen-reader line reads
+     표시 중인 관계 52건 / 'Ties shown 52' — "currently showing" is a claim about
+     THIS reader at THIS moment, and at `bgx.watched='[]'` it was measured
+     printing 52 for a reader the rest of the app would name 24 of. Every other
+     surface that counts a tie had already been gated: `GNode.degree`, the
+     dossier headline, the hover card, the cast wall, the palette, and, one file
+     over, this rail's own legend and 인연 tile.
+
+     `tieTypeVisible`, WITHOUT `isMeeting`, matching the rail's tile exactly.
+     This bar counts lines the reader can be told the meaning of, so a parallel
+     record counts here as it does there — the two figures sit 300px apart on
+     one screen and readers compare them, which is the whole argument
+     `.sb__counts` makes for setting them in `.fig`. Measured with no filters
+     on: 52 at the default, 24 at the empty set, the same pair the rail prints.
+     The two filter clauses above stay first; they are cheaper and they are what
+     makes this a count of the CURRENT view rather than of the corpus. */
   const relationCount = useMemo(() => {
     let n = 0;
     for (const l of graph.links) {
       if (!edgeTypes.has(l.type)) continue;
       if (!visible.has(l.source.id) || !visible.has(l.target.id)) continue;
+      if (!tieTypeVisible(l.edge, watched)) continue;
       n += 1;
     }
     return n;
-  }, [graph.links, edgeTypes, visible]);
+  }, [graph.links, edgeTypes, visible, watched]);
 
   const selected = selectedId ? graph.byId.get(selectedId) ?? null : null;
 

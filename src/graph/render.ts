@@ -3,6 +3,8 @@ import { drawPlate, plateExtent } from './plate';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
 import { PORTRAIT_URL, photoGain, portraitImage } from './portraits';
 import { PROBES } from '../probe';
+import { countsAsTie, tieTypeVisible } from '../data/edges';
+import type { WatchedSet } from '../data/redact';
 import type { Cluster } from './layout';
 import type { GLink, GNode, Viewport } from './types';
 
@@ -108,7 +110,64 @@ export interface RenderState {
     coldSub: string;
   };
   reducedMotion: boolean;
+  /**
+   * WHAT THIS READER HAS WATCHED — the painter's copy, because two of the
+   * decisions below are the reader's and cannot be resolved at build time.
+   *
+   * `build.ts` already resolves everything a GLink has a field for: a sealed
+   * tie arrives here with `color` set to the neutral ink and `directed` false.
+   * Two things have no field to arrive in, and both are questions about the
+   * SET rather than about the link:
+   *
+   *   · the dash rhythm, which `drawLinks` reads out of `EDGE_DASH[l.type]` —
+   *     and `l.type` is deliberately still the true type, because six other
+   *     surfaces gate it themselves;
+   *   · the cold-band clip, which is the same question `noTies` was decided
+   *     by and therefore has to be asked with the same predicate rather than
+   *     off a flag somebody remembered to set.
+   *
+   * So the SET is passed, not a precomputed boolean, and the two predicates are
+   * imported from `data/edges.ts` and called here. A derived `sealedLinkIds`
+   * would be a second thing to keep in step with `countsAsTie`, which is the
+   * exact drift this canvas and the dossier beside it were shipping. It costs
+   * two Set lookups per link per pass: ~200 per frame, against a file that
+   * elsewhere runs a software gaussian.
+   */
+  watched: WatchedSet;
 }
+
+/**
+ * The rhythm a tie wears when the reader may not be told what kind of tie it is.
+ *
+ * Colour cannot carry this on its own — see the note above `SEALED_LINK_INK` in
+ * build.ts for the CIELAB measurement — so it gets a second channel, the same
+ * way `parallel` did. A sparse fine dot says the right thing: a line that has
+ * not resolved into anything yet, and the quietest thing on the canvas without
+ * being absent from it.
+ *
+ * THE PITCH IS CHOSEN AGAINST EVERY OTHER RHYTHM IN THIS FILE, in screen px,
+ * which is the space all four live in once `/k` and the transform cancel:
+ *
+ *     caption leader   2 / 3            pitch  5   (drawLabels, screen-space)
+ *     SEALED_DASH      2.8 / 8.2        pitch 11
+ *     season fallback  7 / 10.5         pitch 17.5
+ *     EDGE_DASH.parallel 14/5/1.6/5     pitch 25.6
+ *
+ * The leader is the one that mattered. It is ALSO `INK_LOW`, deliberately, and
+ * its own docblock reserves a rhythm "no edge owns" so that a tether between a
+ * face and its caption cannot be read as a relationship. Landing a sealed edge
+ * on the same ink at a similar pitch would have taken that back — so the pitch
+ * is set at 11, keeping the leader under half of every dashed thing here, and
+ * the two are further separated by alpha (0.7 against a 0.34 resting link),
+ * width (1px against 1.4–3.5) and by what they join: a leader ends in a text
+ * box, an edge ends on a person.
+ *
+ * World units, divided by `k` at paint time like every other dash here, so the
+ * rhythm is constant on screen. `lineCap: 'round'` extends each dash by half
+ * the line width at both ends, so a strength-5 sealed tie reads chunkier than a
+ * strength-1 one; strength is structure and that is the honest outcome.
+ */
+const SEALED_DASH = [2.8, 8.2];
 
 const FONT = `'Pretendard Variable', Pretendard, 'Inter Variable', Inter, -apple-system, 'Malgun Gothic', system-ui, sans-serif`;
 
@@ -835,15 +894,23 @@ function drawLinks(ctx: CanvasRenderingContext2D, s: RenderState): void {
       const active = l.id === s.activeLinkId;
       const width = (l.width + l.focus * (active ? 3.1 : 1.9)) / Math.max(0.55, Math.min(1.35, k));
 
+      /** May this reader be told what kind of tie this is? The stroke's own
+       *  question — see the RenderState note. `color` and `directed` were
+       *  already resolved against it in build.ts; the dash below is the third
+       *  thing it decides. */
+      const sealed = !tieTypeVisible(l.edge, s.watched);
+
       /* The parameter range this line is actually stroked over. It starts as
          the whole curve and is bitten into from both ends: the entrance's
          draw-on takes the far end, the cold band takes whichever end runs into
-         it. Composing them as one interval is what keeps a `parallel` edge
-         clipped correctly while it is still drawing itself on. */
+         it. Composing them as one interval is what keeps a clipped edge
+         correct while it is still drawing itself on. */
       let t0 = 0;
       let t1 = Math.min(1, l.draw);
-      /** The point the curve is drawn TO. For a `parallel` edge stopping at the
-       *  band that is not the person — see THE TERMINATOR'S ADDRESS. */
+      /** The two points the curve is drawn BETWEEN. Either end may be moved off
+       *  its person and onto the rail — see THE TERMINATOR'S ADDRESS. */
+      let p0x = l.source.x;
+      let p0y = l.source.y;
       let p2x = l.target.x;
       let p2y = l.target.y;
       let capAtEnd = false;
@@ -851,7 +918,28 @@ function drawLinks(ctx: CanvasRenderingContext2D, s: RenderState): void {
       /** Who the terminator is pointing at, for `paintedFrame.stubs`. */
       let coldId: string | null = null;
       let coldX = 0;
-      if (band && l.type === 'parallel') {
+      /* ── WHICH LINES STOP AT THE RAIL, AND WHY IT IS NOW A PREDICATE ────────
+       *
+       * It was `l.type === 'parallel'`: the type invented to say "these two
+       * have demonstrably never shared a room", clipped short of the cold
+       * band's rail because the band's caption is a factual claim — 확인된 인연
+       * 없음 — and a line landing on a face inside it contradicts the container
+       * around that face.
+       *
+       * The claim was right and the test was a proxy for it. Membership of the
+       * band is `noTies`, which is read off `degree`, which is `countsAsTie` —
+       * so the honest test for "this line may not land on somebody the canvas
+       * has just called unconnected" is that same function, asked with the same
+       * set. Written as a type check it agreed with the band by coincidence at
+       * one watched-set and disagreed at every other: at `bgx.watched='[]'` the
+       * band grows to hold everybody whose every tie is sealed, and 28 sealed
+       * lines ran straight through the rail onto their faces.
+       *
+       * `countsAsTie`, not `tieTypeVisible` — the two differ by exactly the
+       * three `parallel` edges, which are the case the device was built for. At
+       * the default watched-set this resolves to those three and to nothing
+       * else, which is the picture this app has always drawn. */
+      if (band && !countsAsTie(l.edge, s.watched)) {
         const cross = coldCrossing(l, cx, cy, band);
         if (cross) {
           capAtEnd = cross.keepSource;
@@ -882,14 +970,37 @@ function drawLinks(ctx: CanvasRenderingContext2D, s: RenderState): void {
            * into the band's own span so a member at the very edge of the row
            * cannot throw the cap outside the container.
            *
-           * Only when the kept end is genuinely above the rail. The clip has to
-           * keep working for the mirror case (a line leaving the band upward),
-           * where there is no "above" to stand the cap on, and that falls back
-           * to the crossing parameter below. */
+           * BOTH DIRECTIONS NOW, and the second one is this round's. The
+           * correction used to fire only when the cold person was the TARGET,
+           * because that is the only shape the three `parallel` records have —
+           * 강지후, 최연청 and 신승용 are all `target`, so a source-side cold end
+           * was unreachable and the mirror case was written off as "no above to
+           * stand the cap on". It is not: the geometry is symmetric, and what
+           * was missing was a re-aimable START, since `subQuad` was always
+           * handed `l.source` as p0.
+           *
+           * Sealing makes the shape common. Measured at `bgx.watched='[]'`,
+           * 1440×900: twelve terminators, of which the three on lines where
+           * 이진형 is the SOURCE landed 34.1, 54.1 and 54.2 screen px to his
+           * left — into the gap between two people in a row of six, which is
+           * the same "points at the wrong half of the row" this docblock's
+           * first half was written about. With the mirror branch they land at
+           * dx 0 like the other nine. At the default watched-set the branch is
+           * unreachable (all three `parallel` edges keep the source), so this
+           * adds a case rather than changing one. */
+          const clampX = (x: number) => Math.min(band.x1, Math.max(band.x0, x));
           if (cross.keepSource && l.source.y < aimY) {
-            p2x = Math.min(band.x1, Math.max(band.x0, cold.x));
+            p2x = clampX(cold.x);
             p2y = aimY;
-            const re = quadThrough(l.source.x, l.source.y, p2x, p2y, l.curve);
+            const re = quadThrough(p0x, p0y, p2x, p2y, l.curve);
+            cx = re.cx;
+            cy = re.cy;
+            mx = re.mx;
+            my = re.my;
+          } else if (!cross.keepSource && l.target.y < aimY) {
+            p0x = clampX(cold.x);
+            p0y = aimY;
+            const re = quadThrough(p0x, p0y, p2x, p2y, l.curve);
             cx = re.cx;
             cy = re.cy;
             mx = re.mx;
@@ -908,7 +1019,7 @@ function drawLinks(ctx: CanvasRenderingContext2D, s: RenderState): void {
       }
       if (t1 <= t0) continue;
 
-      const seg = subQuad(l.source.x, l.source.y, cx, cy, p2x, p2y, t0, t1);
+      const seg = subQuad(p0x, p0y, cx, cy, p2x, p2y, t0, t1);
       // The cap is the end of what was actually stroked, whichever end that is,
       // so a line still drawing itself on carries its terminator with it.
       const capX = capAtEnd ? seg.x1 : seg.x0;
@@ -949,8 +1060,17 @@ function drawLinks(ctx: CanvasRenderingContext2D, s: RenderState): void {
        * would be.
        *
        * Divided by k like every other dash on this canvas, so the rhythm is a
-       * constant on screen rather than something the camera stretches. */
-      const pattern = EDGE_DASH[l.type];
+       * constant on screen rather than something the camera stretches.
+       *
+       * AND THE SEALED RHYTHM COMES FIRST, ahead of both. `EDGE_DASH` is keyed
+       * on `l.type`, and `l.type` is an outcome field that is deliberately left
+       * true on the link — so reading the table for a sealed edge would print
+       * the sealed type as a rhythm, which is the same leak the hue was just
+       * closed for one channel over. Today that is theoretical (`parallel` is
+       * the only keyed type and none of its three edges is sealed at any
+       * watched-set: all three carry `scope: []`), and it is written this way
+       * because the next entry in that table will not be. */
+      const pattern = sealed ? SEALED_DASH : EDGE_DASH[l.type];
       if (pattern) {
         ctx.setLineDash(pattern.map((v) => v / k));
         ctx.lineDashOffset = hot && !s.reducedMotion ? -l.flow : 0;
@@ -1456,11 +1576,18 @@ export const paintedFrame = {
    */
   dropped: [] as { id: string; why: 'no-seat' | 'veiled' | 'too-small' | 'unseen' | 'stray' }[],
   /**
-   * The `parallel` edges' terminators — the open circles that stop short of the
-   * cold band's rail — in screen px, each with the id of the person it is
-   * pointing at and `dx`, the signed screen distance from being directly above
-   * them. See THE TERMINATOR'S ADDRESS. The device's entire claim is that the
-   * vertical says who, so `dx` is the number that claim is worth.
+   * The terminators — the open circles where a line that is NOT a verified tie
+   * for this reader stops short of the cold band's rail — in screen px, each
+   * with the id of the person it is pointing at and `dx`, the signed screen
+   * distance from being directly above them. See THE TERMINATOR'S ADDRESS. The
+   * device's entire claim is that the vertical says who, so `dx` is the number
+   * that claim is worth.
+   *
+   * Which lines qualify is `countsAsTie`, the same predicate that decides who
+   * is IN the band — so the length of this list is a function of the reader:
+   * three at the default watched-set (the `parallel` records), more once ties
+   * start being sealed. It used to be a `type === 'parallel'` check, which
+   * agreed with the band at one watched-set and at no other.
    */
   stubs: [] as { id: string; x: number; y: number; dx: number }[],
   /**
@@ -2967,9 +3094,12 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
            * are one object", i.e. nothing about the person at the other end.
            *
            * So it takes a rhythm no edge owns. [2,3] is under half the pitch of
-           * the tightest edge dash in EDGE_DASH (`parallel`, 14/5/1.6/5) and a
-           * fifth of the season-derived 7/10.5 fallback, at a length where an
-           * edge is never that finely broken — a stitch rather than a line. The
+           * every dashed line on this canvas — the tightest is SEALED_DASH at
+           * 2.8/8.2, then the season-derived 7/10.5 fallback, then EDGE_DASH's
+           * `parallel` at 14/5/1.6/5 — at a length where an edge is never that
+           * finely broken: a stitch rather than a line. (SEALED_DASH shares this
+           * ink, on purpose and for the same reason — both are structure. Its
+           * pitch was set against this one; see the note on it.) The
            * ink and the width are unchanged, so the contrast measurements above
            * still hold for the segments that are drawn, and it is not divided by
            * k because it is screen-space furniture like the type it holds. */

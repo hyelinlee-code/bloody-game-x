@@ -263,6 +263,15 @@
   scroll-padding-inline: var(--sp-5);
 
   /* ── the row admits when it is hiding a tab ────────────────────────────────
+     READ THE WRAP BLOCK DIRECTLY BELOW THIS RULE FIRST. Everything from here to
+     the end of this declaration now applies at 1024 and up ONLY, which is every
+     width at which the row fits on one line in both languages — so in practice
+     the ramp lands on the empty tail and dissolves nothing. Below 1024 the row
+     wraps and the mask is unwound, because a right-edge ramp on a wrapped line
+     dims tabs that are fully on screen. The measurements quoted in the next
+     paragraph are the pre-wrap state and are kept as the record of why the
+     scroller existed, not as a description of what ships below 1024.
+
      THE ROW HAS NEVER FITTED AT EVERY WIDTH AND HAS NEVER SAID SO. Measured at
      HEAD with eight tabs: 390px puts 740px of tabs in a 390px box (350px off
      the right edge) and 768px Korean puts 756px in a 734px box. The scrollbar
@@ -311,6 +320,65 @@
 
 .about__tabs::-webkit-scrollbar {
   display: none;
+}
+
+/* ── below 1024 the row wraps, because below 1024 it does not fit ───────────
+   THE MASK ABOVE WAS THE HONEST VERSION OF A SCROLLER AND IT WAS STILL A
+   SCROLLER. It says out loud that the row hides a tab and that the tab it hides
+   is the last one — the colophon, the newest one — and that was accepted on the
+   strength of a measurement taken in Korean. Re-measured this round in BOTH
+   languages, on the running sheet, nine tabs, and the row overflows far wider
+   than the phone breakpoint it was being reasoned about at:
+
+     width   ko scrollW/clientW  hidden   en scrollW/clientW  hidden
+      390        852 / 390        462px       813 / 390        423px
+      768        896 / 734        162px       857 / 734        123px
+      834        896 / 800         96px       857 / 800         57px
+      900        896 / 866         30px       866 / 866          0
+     1024        938 / 938          0         938 / 938          0
+
+   So it is cut on every tablet and every half-width laptop window, in both
+   languages, and 768/en — 857 against 734 — is the case the audit reproduced
+   four times. Note the non-monotonicity at 720→768: the narrow block at the
+   foot of this file drops the trailing fade from the gutter, so the row gets
+   44px NARROWER at 720 than at 768 and the overflow reads better on a phone
+   than on an iPad. A budget that behaves that way is not a budget.
+
+   WRAPPING, AND NOT COMPRESSION. The alternative was to buy the row back with
+   padding and tracking, and it does not exist: 390px cannot hold 813px of tabs
+   at any type size a tab is still readable at, so compression would fix 768 and
+   leave the phone exactly as sheared as it is now. Wrapping is width-agnostic —
+   it costs one rank of height per row it needs and it costs nothing at all
+   where the row already fits.
+
+   1024, AND WHY THE BOUNDARY IS THERE RATHER THAN AT A DEVICE. It is the first
+   width in the table above where both languages fit on one line, so above it
+   this block changes nothing and the single-line row, its scroll and its ramp
+   stand exactly as measured — the 1280 rendering is byte-identical. Below it
+   the row could not have been one line in either language anyway, so nothing is
+   being traded away. If a tenth tab is ever added, re-run the table and move
+   this number; the tabs are `flex: 0 0 auto` and will not lie about their width.
+
+   THE MASK HAS TO GO WITH IT, not merely be redundant. A right-edge ramp on a
+   wrapped flex line dims the last tab of EVERY row, not the one being scrolled
+   past — it would dissolve a tab that is fully on screen and reachable, which
+   is a worse lie than the one it was drawn to tell. Same for the fade tail in
+   the gutter: with nothing scrolling there is no ramp for it to land on, and
+   leaving it would push the rows off the prose measure the whole row is held
+   to. Both are unwound here rather than left inert. */
+@media (max-width: 1023px) {
+  .about__tabs {
+    flex-wrap: wrap;
+    /* Enough to read as two rows of tabs rather than one tall block; the
+       column gap stays the 2px the single-line row uses. */
+    row-gap: 4px;
+    /* The fade tail comes off the right gutter: symmetric again, and the tab
+       labels still sit on the prose column's left edge. */
+    padding-inline: calc(var(--sp-5) - 9px);
+    overflow-x: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 .about__tab {

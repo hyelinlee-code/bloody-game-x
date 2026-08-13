@@ -10,7 +10,7 @@ import {
 import type { CSSProperties, JSX, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from 'motion/react';
-import type { Dataset, Person, SeasonNumber, SeasonRun } from '../data/types';
+import type { Dataset, Edge, Person, SeasonNumber, SeasonRun } from '../data/types';
 import {
   alpha,
   BONE,
@@ -30,7 +30,7 @@ import {
   PHOTO_SEAT_INK,
 } from '../graph/plateGeometry';
 import { HAS_PORTRAITS, onPortraitLoad, photoGain, portraitUrl } from '../graph/portraits';
-import { isMeeting } from '../data/edges';
+import { tieCounts } from '../data/edges';
 import { careerSeenBy, careerTableSeenBy, neverFacedSeenBy } from '../data/headToHead';
 /* The status bar's byline row, reused whole. See the colophon panel below and
    the export note in Credit.tsx: one array, so the three destinations, their
@@ -657,7 +657,18 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
      in the data — and FilterRail already filters to count > 0, so the legend
      and the rail contradicted each other in the same session. Same source of
      truth on both surfaces now; if an edge of that type is ever authored the
-     row appears on its own. */
+     row appears on its own.
+
+     UNGATED, AND CHECKED THIS ROUND RATHER THAN INHERITED. This is raw presence
+     — does the dataset hold a line of this type — and it has to stay that way,
+     because `graph/build.ts` draws all 52 lines at every watched-set and colours
+     each by `EDGE_COLOR[e.type]`. A hue that is on the canvas needs its key on
+     the one screen whose job is to teach the visual language, whatever the
+     reader has watched. It carries no count, so it states no tally.
+     FilterRail's rows are keyed on the same raw presence for the same reason
+     and print the redacted tally inside the row; the two lists are 7 at the
+     default and 7 at `bgx.watched='[]'`, so the app's two legends cannot name
+     different sets of relationships. */
   const liveEdgeTypes = useMemo(() => {
     const used = new Set((dataset.edges ?? []).map((e) => e.type));
     return ALL_EDGE_TYPES.filter((type) => used.has(type));
@@ -677,18 +688,50 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
      make finishes comparable. */
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'share', dir: 1 });
 
-  const records = useMemo<RecordRow[]>(() => {
-    /* Two degrees, not one, and the header calls the first '확인된 인연'. A
-       `parallel` edge records that two people have demonstrably NEVER shared a
-       room; counting it as a verified tie is the one claim in the product that
-       contradicts its own schema. See NON_MEETING_TYPES in edges.ts. */
-    const degree = new Map<string, number>();
-    const parallel = new Map<string, number>();
+  /* ── the two tie counts, and why they are `tieCounts` and not a loop ──────
+     Two degrees, not one, and the header calls the first '확인된 인연'. A
+     `parallel` edge records that two people have demonstrably NEVER shared a
+     room; counting it as a verified tie is the one claim in the product that
+     contradicts its own schema. See NON_MEETING_TYPES in edges.ts.
+
+     THAT WAS ONLY HALF THE RULE AND THIS TABLE HAD THE OTHER HALF WRONG. The
+     loop this replaces bucketed on `isMeeting` alone, with no watched-set
+     anywhere in it, so the 확인된 인연 column was pinned to the whole atlas
+     while every other number on the row — best finish, 생존률, the row order —
+     already followed the reader. Measured at `bgx.watched='[]'`: all twelve
+     rows disagreed with the canvas and with their own dossiers, 이진형 6
+     against a `degree` of 0, 윤비 6 against 0, 홍진호 13 against 5, 박지민 11
+     against 4, 하승진 8 against 2, 서출구 8 against 1. 이진형's dossier printed
+     '아무와도 얽힌 적 없음' in the same session this table printed 6 for him.
+
+     `tieCounts` IS THE RULE — imported, not restated. It is the same function
+     the dossier headline, the hover card, the cast wall and the palette read,
+     and its `met` is `countsAsTie` applied to one adjacency, which is exactly
+     what `graph/build.ts` sets `GNode.degree` from. So the number in this cell
+     and the number on the disc cannot disagree: they are one predicate over
+     one edge list. A fourth private copy of `isMeeting(e.type) && …` here is
+     precisely the defect the round-13 handoff filed against build.ts.
+
+     The adjacency is built off `dataset.edges` rather than `graph.edgesOf`
+     because the sheet is handed the dataset and not the built graph, and the
+     two agree by construction — every edge is a tie between two cast members.
+     `watched` is PASSED, never left to the module mirror: this component holds
+     a real subscription and the mirror carries none. */
+  const incident = useMemo(() => {
+    const m = new Map<string, Edge[]>();
+    const add = (id: string, e: Edge) => {
+      const list = m.get(id);
+      if (list) list.push(e);
+      else m.set(id, [e]);
+    };
     for (const e of dataset.edges ?? []) {
-      const bucket = isMeeting(e.type) ? degree : parallel;
-      bucket.set(e.source, (bucket.get(e.source) ?? 0) + 1);
-      bucket.set(e.target, (bucket.get(e.target) ?? 0) + 1);
+      add(e.source, e);
+      add(e.target, e);
     }
+    return m;
+  }, [dataset.edges]);
+
+  const records = useMemo<RecordRow[]>(() => {
     /* `careerTableSeenBy`, not the pinned `careerTable`: the ordering IS a
        result. The pinned constant ranks whole careers off finishes the reader
        may not have been told, so at a narrow set the rows would have come out
@@ -730,6 +773,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
         }
       });
       const c = career[p.id];
+      const tallies = tieCounts(incident.get(p.id) ?? [], watched);
       rows.push({
         id: p.id,
         primary: name.primary,
@@ -738,8 +782,8 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
         played: runs.length,
         best,
         bestLabel,
-        ties: degree.get(p.id) ?? 0,
-        parallelTies: parallel.get(p.id) ?? 0,
+        ties: tallies.met,
+        parallelTies: tallies.parallel,
         share: c?.share,
         faced: c?.faced ?? 0,
         outlasted: c?.outlasted ?? 0,
@@ -749,7 +793,7 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
       });
     }
     return rows;
-  }, [dataset.edges, dataset.people, lang, watched]);
+  }, [incident, dataset.people, lang, watched]);
 
   const sortedRecords = useMemo<RecordRow[]>(() => {
     const byName = (a: RecordRow, b: RecordRow): number =>
@@ -804,7 +848,44 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
     [records],
   );
 
-  /* The three the `parallel` edge type was invented for, named. */
+  /* ── the three the `parallel` edge type was invented for, named ───────────
+     AND IT STAYS `neverFacedSeenBy`, WHICH IS NOT THE CANVAS'S PREDICATE. This
+     was examined this round against the canvas and deliberately not widened;
+     the reasoning is here so the next reader does not have to re-run it.
+
+     The canvas seats a disc on its cold band when `GNode.noTies` is true, i.e.
+     when `degree` is 0, i.e. when this reader may not be told about a single
+     one of that person's meetings. Measured at `bgx.watched='[]'` that is SIX
+     people — 윤비, 이진형, 김남희 and the three below — against the three here.
+     Six is the right answer to "who has no verified tie you can see", and the
+     dashed rim and the cold band are marks that say exactly that.
+
+     IT IS THE WRONG ANSWER TO THE SENTENCE UNDER THIS HEADING. 'about.coldBody'
+     says these people have never been in a field with any of the other
+     nineteen, that it is not a gap in the research, and that the single line
+     each of them carries is a parallel record. Every clause of that is FALSE of
+     윤비, who has six meetings on file and one of them a betrayal; widening the
+     list would make the atlas assert, about a named person, that nothing was
+     found — while holding what it found. PLAN-spoilers.md §3 rule 1 is that a
+     hidden thing is never rendered as a false value, and headToHead.ts's
+     `meetsHere` is the same call already made one layer down: a sealed edge
+     degrades to "they met", specifically so redaction can never widen
+     `neverFaced` into a false never-met claim. Doing it by hand here would undo
+     that on the one surface that spells the claim out in a sentence.
+
+     So the two lists differ on purpose and neither is stale: `neverFaced` is a
+     fact about the world (invariant — measured 3 at both the default and the
+     empty set, because all three `parallel` edges carry `scope: []`), and
+     `noTies` is a fact about the view. The number-level agreement this round is
+     about is in the 확인된 인연 column above, which now reads 0 for exactly the
+     people the canvas seats cold.
+
+     WHAT IS STILL OWED, and it is copy, not code: the dossier prints
+     'dossier.coldSub' — 'No shared credit … turned up in public sources' — for
+     all six at a narrowed set, which is the false sentence this block refuses.
+     Fixing that needs a second string that names the reader's own answer as the
+     cause, and src/data/i18n/ui.ts is not this round's file. It is in the
+     handoff. */
   const coldCast = useMemo(
     () =>
       neverFacedSeenBy(watched)

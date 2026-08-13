@@ -1,10 +1,10 @@
 import type { Dataset, Edge, Person } from '../data/types';
 import { dataset } from '../data/dataset';
-import { countsAsTie } from '../data/edges';
+import { countsAsTie, tieTypeVisible } from '../data/edges';
 import type { WatchedSet } from '../data/redact';
 import { runFacts } from '../data/i18n';
 import { peopleEn } from '../data/i18n/people.en';
-import { CATEGORY_COLOR, EDGE_COLOR } from './palette';
+import { CATEGORY_COLOR, EDGE_COLOR, INK_LOW } from './palette';
 import { markGeneration, markSet, type MarkSet } from './plateGeometry';
 import type { GLink, GNode } from './types';
 import { currentWatched } from '../state/useWatched';
@@ -124,6 +124,67 @@ function hash01(s: string): number {
   }
   return ((h >>> 0) % 100000) / 100000;
 }
+
+/* ── WHAT A SEALED TIE LOOKS LIKE, AND WHY IT IS STILL DRAWN ─────────────────
+ *
+ * Two honest answers were on the table: don't draw the line at all, or draw it
+ * in a neutral ink with no arrowhead. This file draws it, and the decision is
+ * not this painter's to make — works.ts already made it. `OUTCOME_FIELDS.Edge`
+ * says, in the comment beside the manifest entry:
+ *
+ *     "A line between two people is structure. `betrayal` is a verdict and
+ *      `directed` is a verdict with a direction — both degrade to a NEUTRAL
+ *      TIE, which is why the type itself is listed and source/target/season
+ *      are not."
+ *
+ * So `type` and `directed` are sealed and the pair, the season and the fact of
+ * a connection are not. Dropping the line would seal `source` and `target`,
+ * which the manifest deliberately declines to list, and would be this file's
+ * second private answer to a question the data layer has already answered —
+ * exactly the class of defect the round that wrote this comment was cleaning
+ * up. Three further consequences, all measured, all of them the same way:
+ *
+ *   · THE ARRANGEMENT WOULD BECOME A FUNCTION OF THE READER. `forceLink` is
+ *     given `links`; its distance is `edge.season` and `edge.strength`, both
+ *     structure. Keeping all 52 keeps the mesh's shape identical across
+ *     watched-sets. Dropping 28 of them at the empty set re-solves the whole
+ *     layout, and a layout that re-clusters when the reader narrows their set
+ *     is itself a statement about who is connected to whom.
+ *   · THE SURVIVORS WOULD MOVE TOO. `pairCount` fans siblings between one pair
+ *     out by ARRIVAL INDEX (0, +1, −1, +2 …). Remove a sealed sibling and the
+ *     visible one beside it takes a different curve — a watched-set-dependent
+ *     change to a line the reader is allowed to see in full.
+ *   · THE COLD BAND WOULD START LYING. `noTies` is read off `degree`, so
+ *     somebody whose every tie is sealed is already seated under 확인된 인연
+ *     없음. With the lines gone the canvas would assert there is no record;
+ *     with them drawn and clipped at the rail (render.ts, THE TERMINATOR'S
+ *     ADDRESS) it says the true thing — there is a record here and you have
+ *     not unlocked it.
+ *
+ * WHAT THE NEUTRAL IS. `INK_LOW`, which is not a relationship hue at all: it
+ * belongs to the canvas's STRUCTURE ink ramp, the register palette.ts reserves
+ * for hairlines and rings — which is precisely the claim, that this line is
+ * structure with the verdict withheld. Measured in CIELAB against the twelve
+ * relationship hues it is ΔE 12.2 from its nearest (`collab`) and 15.0 from
+ * `co-season`, i.e. under the 25.4 that ramp holds between two hues that mean
+ * different things. No achromatic value can do better: `co-season` sits at
+ * L* 40.5 and `collab` at L* 65.7, so a grey between them is ~12 from both and
+ * a grey outside them is ~11 from one. Hue alone therefore does not carry it,
+ * and it is not asked to — the same answer palette.ts reached for `parallel`.
+ * Two more channels do: a sealed line never takes an arrowhead (below), and it
+ * wears a fine dot rhythm nothing else on this canvas uses (render.ts,
+ * SEALED_DASH). What is left unbuilt is the legend entry, which lives in a file
+ * this change does not own; see the handoff.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The ink a tie wears when the reader may not be told what kind of tie it is.
+ *
+ * It belongs in palette.ts beside the four channels it is a fifth member of,
+ * and it is here because that file has a different owner this round. Move it
+ * when the two can be edited together; nothing but the import site changes.
+ */
+export const SEALED_LINK_INK = INK_LOW;
 
 export interface BuiltGraph {
   nodes: GNode[];
@@ -360,18 +421,48 @@ export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()
     const step = Math.ceil(n / 2) * (n % 2 === 0 ? 1 : -1);
     const curve = n === 0 ? 0.14 : step * 0.42;
 
+    /* MAY THIS READER BE TOLD WHAT KIND OF TIE THIS IS?
+     *
+     * `tieTypeVisible`, imported from beside the edge vocabulary — and
+     * deliberately NOT `countsAsTie`, which is the predicate two paragraphs
+     * down and answers a different question. A `parallel` edge whose scope is
+     * satisfied is a tie this reader may be told all about; it simply is not a
+     * MEETING, so it keeps its petrol hue, its long-dash/dot rhythm and its
+     * cold-band terminator while staying out of `degree`. Measured on today's
+     * corpus: 0 of 52 edges are sealed at the default set and 28 of 52 at the
+     * empty one (14 alliance, 5 betrayal, 9 rivalry), of which 6 carry
+     * `directed`. */
+    const tellable = tieTypeVisible(e, watched);
+
     links.push({
       id: e.id,
       edge: e,
       source: s,
       target: t,
+      /* `type` STAYS TRUE. It is the record's own field and half a dozen
+         surfaces gate it themselves with their own `pick` — Dossier's relation
+         row, EdgeCard, the hover card. Overwriting it here would seal the same
+         claim twice in one file and break the callers that seal it correctly.
+         What is gated is the PAINT: the two fields below, the dash in
+         render.ts, and the type filter in GraphCanvas. */
       type: e.type,
-      color: EDGE_COLOR[e.type] ?? EDGE_COLOR.collab,
+      color: tellable ? EDGE_COLOR[e.type] ?? EDGE_COLOR.collab : SEALED_LINK_INK,
       curve,
+      /* Strength is structure — works.ts lists it among the fields that are
+         always shown — so a sealed line keeps its weight. It is also what
+         `forceLink` reads, which is half of why the layout does not move. */
       width: 0.9 + e.strength * 0.52,
-      // Dashed = history from outside the Bloody Game house.
+      // Dashed = history from outside the Bloody Game house. `season` is
+      // structure too, so this rhythm survives sealing (and is overridden by
+      // SEALED_DASH when it fires — see render.ts).
       dashed: e.season === 0,
-      directed: Boolean(e.directed) || e.type === 'betrayal',
+      /* AN ARROWHEAD IS A VERDICT WITH A DIRECTION, which is the manifest's own
+         phrasing, and it is the loudest thing a sealed line could say: at the
+         empty set six of these were being drawn, five of them landing on the
+         rim of the person who was betrayed. `directed` is on
+         OUTCOME_FIELDS.Edge and `e.type === 'betrayal'` derives one from a
+         field that is also on it, so both halves go behind the same gate. */
+      directed: tellable && (Boolean(e.directed) || e.type === 'betrayal'),
       focus: 0,
       dim: 0,
       draw: 0,

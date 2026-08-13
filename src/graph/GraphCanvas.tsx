@@ -21,6 +21,8 @@ import { plateExtent } from './plate';
 import { PROBES } from '../probe';
 import { onPortraitLoad, preloadPortraits } from './portraits';
 import { CATEGORY_LABEL_I18N, EDGE_LABEL_I18N, edgeText, personName, t } from '../data/i18n';
+import { countsAsTie, tieTypeVisible } from '../data/edges';
+import { useWatched, type WatchedSet } from '../state/useWatched';
 import type { EdgeType } from '../data/types';
 import type { GLink, GNode, LayoutMode, Viewport } from './types';
 import { EdgeCard } from '../components/EdgeCard';
@@ -460,6 +462,34 @@ function prefersReduced(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/**
+ * Does the relationship-type filter let this line through — AND MAY IT BE ASKED?
+ *
+ * The rail's twelve checkboxes are an oracle over a sealed tie. Every line on
+ * this canvas was tested with `visibleEdgeTypes.has(l.type)` at three places
+ * (the draw/dim pass, the pointer hit test and the E-cycle), and `type` is on
+ * `OUTCOME_FIELDS.Edge`. So a reader who has been told nothing about season 2
+ * could still un-tick 배신 and watch five neutral grey lines disappear —
+ * recovering, by subtraction, precisely the verdict the neutral ink was
+ * introduced to withhold. Nothing about the stroke fixes that; the leak is in
+ * the question, not the answer.
+ *
+ * A sealed line is therefore NOT TYPE-FILTERABLE. Its type is not a fact this
+ * reader holds, so no control keyed on the type may move it: whatever the rail
+ * is set to, the same lines stay on screen and no subtraction is possible. It
+ * is still filtered by everything that is structure — both endpoints must pass
+ * the person filters, which is the `st.visible` half of every call site.
+ *
+ * The cost is honest and small: a reader cannot switch these lines off. The
+ * alternative — hiding sealed lines whenever ANY type is unticked — hides more
+ * than was asked for and still leaks, because which lines vanish is again a
+ * function of which box moved. When Phase 3 gives the rail its own "가려진
+ * 인연" row, that control belongs here and this function is where it lands.
+ */
+function passesTypeFilter(l: GLink, edgeTypes: Set<EdgeType>, watched: WatchedSet): boolean {
+  return tieTypeVisible(l.edge, watched) ? edgeTypes.has(l.type) : true;
+}
+
 export function GraphCanvas({
   nodes,
   links,
@@ -487,6 +517,20 @@ export function GraphCanvas({
   onWarm,
   handleRef,
 }: Props) {
+  /* THE READER'S SET, AND IT IS THE HOOK, NOT THE MIRROR.
+   *
+   * This component is the one place the canvas can subscribe. `nodes` and
+   * `links` arrive already resolved against the set — `buildGraph` gated
+   * `degree`, the rim ticks, the disc radius and, this round, the stroke's
+   * colour and its arrowhead — but four decisions are made HERE and cannot be
+   * carried on a GLink field: the type filter, the hit test, the E-cycle and
+   * the spoken sentence for a line. All four are questions about the reader.
+   *
+   * `useWatched()` is `useContext`, so narrowing the set re-renders this
+   * component and the props it re-reads. `currentWatched()` would answer once
+   * and then go stale, and stale in the narrowing direction is a leak rather
+   * than a lag — see the docblock on it in state/useWatched.ts. */
+  const { watched } = useWatched();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   /** The static layer under the scene: gradients, bloom, vignette, grain. */
@@ -656,6 +700,12 @@ export function GraphCanvas({
     selectedId,
     visible,
     visibleEdgeTypes,
+    /* The render loop is a long-lived effect keyed on `nodes`/`links`; every
+       other prop it reads comes through this mirror, and the reader's set is
+       no different. Putting it here rather than in the effect's dependency
+       list is what stops a narrowed set from tearing down and rebuilding the
+       simulation. */
+    watched,
     reveal,
     showLabels,
     lang,
@@ -675,6 +725,7 @@ export function GraphCanvas({
     selectedId,
     visible,
     visibleEdgeTypes,
+    watched,
     reveal,
     showLabels,
     lang,
@@ -690,6 +741,22 @@ export function GraphCanvas({
   };
   insetsRef.current = insets ?? { top: 0, right: 0, bottom: 0, left: 0 };
 
+  /**
+   * WHO IS JOINED TO WHOM BY A DRAWN LINE. Ungated on purpose.
+   *
+   * This drives two things and both are about the PICTURE: the entrance's hop
+   * ordering, and which discs light while a person is hovered or selected. Its
+   * contract is that it mirrors what is on the canvas — hovering somebody lifts
+   * exactly the lines that touch them and exactly the people at the far ends of
+   * those lines — and since a sealed tie is still drawn (in the neutral ink,
+   * see build.ts), it is still in here. Gating it would light a grey line and
+   * leave the person it lands on dimmed, which is a third state nobody has
+   * defined.
+   *
+   * It is NOT the answer to "which connections may this reader be told about";
+   * that is `tellableNeighbours` below, and the spoken list reads THAT. The two
+   * must not be swapped.
+   */
   const adjacency = useMemo(() => {
     const m = new Map<string, Set<string>>();
     for (const l of links) {
@@ -700,6 +767,47 @@ export function GraphCanvas({
     }
     return m;
   }, [links]);
+
+  /**
+   * …AND THE SAME MAP WITH THE SEALED LINES TAKEN OUT, FOR THE SPOKEN GRAPH.
+   *
+   * The sr-only list is the entire accessible representation of this canvas,
+   * and it prints two things in one sentence: `관계 {n}개` off `n.degree`, which
+   * `buildGraph` gates, and then, for the node under the cursor, `연결된 인물`
+   * off the map above, which nothing gated. Measured at `bgx.watched='[]'`:
+   * 이진형's item read 관계 5개 and then NAMED THIRTEEN PEOPLE — a count and a
+   * list contradicting each other inside one `<li>`, in the one layer of this
+   * app nobody would ever have seen it in. build.ts's `degree` note has been
+   * pointing at this list since round 9 as "the one place that could still use
+   * it"; that file could not reach it and this one can.
+   *
+   * `tieTypeVisible`, NOT `countsAsTie`, and the difference is Rule 0. The two
+   * predicates differ by exactly the three `parallel` records, which are
+   * tellable at every watched-set — so gating on `countsAsTie` would drop
+   * 허성범, 신승용 and 김남희 out of three spoken lists AT THE DEFAULT SET,
+   * where nothing may move. The `관계 0개 · 연결된 인물: 허성범` pairing those
+   * three produce is a real disagreement and a PRE-EXISTING one, between the
+   * headline rule (`degree` counts meetings) and this list (which names
+   * lines); it is not this change's to spend and it is named in the handoff.
+   *
+   * WHAT THIS STILL COSTS: a screen-reader user is told about fewer
+   * connections than a sighted reader can see grey lines for. The picture says
+   * "there is something here" in ink that has no words; saying it here needs a
+   * string (…외 N건은 아직 가려져 있습니다) and `data/i18n/ui.ts` has a different
+   * owner this round. Under-reporting is the side to be wrong on meanwhile —
+   * works.ts's own rule — and the gap is in the handoff.
+   */
+  const tellableNeighbours = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const l of links) {
+      if (!tieTypeVisible(l.edge, watched)) continue;
+      if (!m.has(l.source.id)) m.set(l.source.id, new Set());
+      if (!m.has(l.target.id)) m.set(l.target.id, new Set());
+      m.get(l.source.id)!.add(l.target.id);
+      m.get(l.target.id)!.add(l.source.id);
+    }
+    return m;
+  }, [links, watched]);
 
   /** Hops from the most connected person — drives the entrance so the mesh
    *  visibly propagates outward from the hub instead of arriving all at once. */
@@ -1852,6 +1960,17 @@ export function GraphCanvas({
           a: l.source.id,
           b: l.target.id,
           type: l.type,
+          /* WHAT THE PAINTER WAS ACTUALLY HANDED, beside what the record says.
+             `type` is the edge's own field and stays true whatever the reader
+             has watched; these three are the resolved stroke. Publishing both
+             is what lets an assertion say "this link is a betrayal AND it was
+             painted in the neutral ink with no arrowhead" without segmenting
+             pixels — the check the round that added the neutral ink could not
+             write, because nothing on the page exposed the ink. */
+          color: l.color,
+          directed: l.directed,
+          sealed: !tieTypeVisible(l.edge, stateRef.current.watched),
+          counts: countsAsTie(l.edge, stateRef.current.watched),
           ...(linkAnchorRef.current?.(l) ?? { x: 0, y: 0 }),
         })),
       /** How much of the frame the graph is actually holding, per axis.
@@ -2373,7 +2492,9 @@ export function GraphCanvas({
 
       for (const l of links) {
         const bothVisible =
-          st.visible.has(l.source.id) && st.visible.has(l.target.id) && st.visibleEdgeTypes.has(l.type);
+          st.visible.has(l.source.id) &&
+          st.visible.has(l.target.id) &&
+          passesTypeFilter(l, st.visibleEdgeTypes, st.watched);
         const want = bothVisible ? 1 : 0;
         const dDraw = (want - l.draw) * eBase;
         l.draw += dDraw;
@@ -2434,7 +2555,11 @@ export function GraphCanvas({
         track(dLD);
         if (l.focus > 0.02 && flowing) {
           l.flow += dt * 0.028;
-          if (l.dashed) motion = 1;
+          /* The crawl only asks for frames for a line that HAS a dash to crawl.
+             `l.dashed` was the whole test, and it is `season === 0`; a sealed
+             tie inside the house now carries SEALED_DASH and would have got a
+             `lineDashOffset` that nothing repainted. */
+          if (l.dashed || !tieTypeVisible(l.edge, st.watched)) motion = 1;
         }
       }
       // Latched after the pass that finished it, so the terminal frame is the
@@ -2830,6 +2955,11 @@ export function GraphCanvas({
         activeLinkPinned: st.pinnedLinkId != null,
         strings: st.canvasStrings,
         reducedMotion: reduced,
+        /* The painter's two remaining reader-dependent decisions: the sealed
+           dash rhythm and which lines stop at the cold band's rail. See the
+           note on `RenderState.watched` for why the SET is handed over rather
+           than a precomputed set of link ids. */
+        watched: st.watched,
       };
 
       /* The static layer first, and only when it has actually gone stale — and
@@ -2934,7 +3064,10 @@ export function GraphCanvas({
       for (const l of links) {
         if (l.draw < 0.5 || l.dim > 0.9) continue;
         if (!st.visible.has(l.source.id) || !st.visible.has(l.target.id)) continue;
-        if (!st.visibleEdgeTypes.has(l.type)) continue;
+        // The pointer may aim at whatever is painted, and no more — see
+        // passesTypeFilter. A line the filter cannot reach must stay pickable
+        // or it would be ink with no readout behind it.
+        if (!passesTypeFilter(l, st.visibleEdgeTypes, st.watched)) continue;
         // Same control point the painter derives in render.ts::linkPath.
         const dx = l.target.x - l.source.x;
         const dy = l.target.y - l.source.y;
@@ -3319,19 +3452,42 @@ export function GraphCanvas({
     [links, activeLinkId],
   );
 
-  /** One spoken sentence for a line, in the reader's language. */
+  /**
+   * One spoken sentence for a line, in the reader's language.
+   *
+   * THIS IS THE LINE'S WHOLE READOUT for anybody not looking at the pixels: it
+   * goes into the polite live region on hover and on every E press. It was
+   * assembled out of three things and two of them are verdicts —
+   * `EDGE_LABEL_I18N[lang][l.type]` (배신 / 'Betrayal') and the edge's own
+   * headline — so the canvas painted a neutral grey line and then said
+   * "이진형 — 윤비. 배신, 시즌 2." out loud over the top of it.
+   *
+   * `edgeText` is the accessor and it already seals the headline per part; what
+   * it needs is the SET, explicitly, because a component that leans on the
+   * `currentWatched()` default renders the right sentence once and then keeps
+   * speaking it after the reader narrows. The type clause is not the accessor's
+   * to gate — `EDGE_LABEL_I18N` is a lookup table, not a record — so it is
+   * dropped here when the type is sealed, leaving the two things works.ts calls
+   * structure: WHO, and WHERE (`season` is not on the manifest).
+   *
+   * Dropping rather than replacing, because the replacement would be a new UI
+   * string and `data/i18n/ui.ts` has a different owner this round. A sealed
+   * line should say "there is a connection here and its nature is not yours
+   * yet"; today it says the true half and stops. Named in the handoff.
+   */
   const describeLink = useCallback(
     (l: GLink): string => {
-      const txt = edgeText(l.edge, lang);
+      const txt = edgeText(l.edge, lang, watched);
       const a = personName(l.source.person, lang).primary;
       const b = personName(l.target.person, lang).primary;
       const where =
         l.edge.season > 0
           ? `${t(lang, 'dossier.seasonPrefix')} ${l.edge.season}`
           : t(lang, 'common.outsideHouse');
-      return `${a} — ${b}. ${EDGE_LABEL_I18N[lang][l.type]}, ${where}. ${txt.label}`;
+      const kind = tieTypeVisible(l.edge, watched) ? `${EDGE_LABEL_I18N[lang][l.type]}, ` : '';
+      return `${a} — ${b}. ${kind}${where}. ${txt.label}`;
     },
-    [lang],
+    [lang, watched],
   );
 
   /* The active line's two ends in client coords. Read at render time from the
@@ -3424,7 +3580,10 @@ export function GraphCanvas({
             (anchor == null || l.source.id === anchor || l.target.id === anchor) &&
             st.visible.has(l.source.id) &&
             st.visible.has(l.target.id) &&
-            st.visibleEdgeTypes.has(l.type),
+            // Keyboard parity with the pointer, including for a sealed line —
+            // the same set of lines, reachable the same way. See
+            // passesTypeFilter.
+            passesTypeFilter(l, st.visibleEdgeTypes, st.watched),
         )
         .sort((a, b) => a.id.localeCompare(b.id));
       if (!mine.length) return;
@@ -3686,8 +3845,11 @@ export function GraphCanvas({
                 String(n.degree),
               )}
               .
+              {/* `tellableNeighbours`, not `adjacency`: a name here is a claim
+                  that this reader may be told these two are joined. See the
+                  two docblocks on those maps. */}
               {n.id === kbdId
-                ? ` ${t(lang, 'canvas.srLinked')}: ${[...(adjacency.get(n.id) ?? [])]
+                ? ` ${t(lang, 'canvas.srLinked')}: ${[...(tellableNeighbours.get(n.id) ?? [])]
                     .map((id) => {
                       const other = nodes.find((x) => x.id === id);
                       return other ? (lang === 'en' ? other.labelEn : other.label) : null;

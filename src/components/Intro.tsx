@@ -3,7 +3,9 @@ import type { JSX } from 'react';
 import { useReducedMotion } from 'motion/react';
 import type { Dataset } from '../data/types';
 import { t, ui, type UiKey } from '../data/i18n';
+import { tieTypeVisible } from '../data/edges';
 import { useLang } from '../state/useLang';
+import { useWatched } from '../state/useWatched';
 import './Intro.css';
 
 export interface IntroProps {
@@ -106,6 +108,9 @@ function Gloss({ k, lang, className }: { k: UiKey; lang: 'ko' | 'en'; className:
 
 export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Element | null {
   const { lang } = useLang();
+  /* The cold open prints three numbers and one of them is a claim about
+     outcomes. See `stats` below. */
+  const { watched } = useWatched();
   const reduced = Boolean(useReducedMotion());
   const [exiting, setExiting] = useState(false);
   const [held, setHeld] = useState(false);
@@ -220,9 +225,30 @@ export function Intro({ dataset, onDone, onDismissBegin }: IntroProps): JSX.Elem
     rootRef.current?.focus();
   }, []);
 
+  /* ── the middle column is the only one of the three that is a claim ───────
+     CAST 20 and PRIOR SEASONS 3 are participation and the number of programmes
+     that exist; the plan keeps both at every watched-set, and works.ts lists
+     neither the fact of an appearance nor the existence of a season as an
+     outcome field. 관계 / CONNECTIONS is different: it is a tally over `type`,
+     which IS an outcome field, and it was `dataset.edges.length` — the raw
+     array — so at `bgx.watched='[]'` the cold open opened by telling a reader
+     who has watched nothing that there are 52 relationships here, before they
+     had touched anything. First screen, largest figures on it, and the first
+     number the atlas says to a redacted reader. Measured: 52 at the default,
+     24 at the empty set, which is the same pair the status bar and the rail's
+     인연 tile print once the curtain lifts — the three used to be one number
+     three times and now they are one QUESTION three times, asked with the
+     shared predicate rather than with three copies of a filter.
+
+     The docblock above this is emphatic that a number on this screen is the
+     claim and that a claim which is false for 900ms is false. A claim that is
+     false for the whole session is worse, and it is the same argument. */
   const stats: { key: UiKey; value: number }[] = [
     { key: 'intro.statCast', value: count(dataset.people) },
-    { key: 'intro.statConnections', value: count(dataset.edges) },
+    {
+      key: 'intro.statConnections',
+      value: (dataset.edges ?? []).reduce((n, e) => n + (tieTypeVisible(e, watched) ? 1 : 0), 0),
+    },
     { key: 'intro.statSeasons', value: count(dataset.seasons) },
   ];
 

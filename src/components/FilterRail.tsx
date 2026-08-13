@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { TEAM_COLOR } from '../data/lineage';
-import { tieCounts } from '../data/edges';
+import { tieCounts, tieTypeVisible } from '../data/edges';
 import type { Category, EdgeType, SeasonNumber } from '../data/types';
 import { CATEGORY_COLOR, EDGE_COLOR } from '../graph/palette';
 import {
@@ -25,6 +25,7 @@ import {
 } from '../data/i18n';
 import type { Lang, UiKey } from '../data/i18n';
 import { useLang } from '../state/useLang';
+import { useWatched } from '../state/useWatched';
 import {
   ALL_CATEGORIES,
   ALL_EDGE_TYPES,
@@ -304,6 +305,15 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
   const ready = introDone !== false;
   const updated = dataset.meta?.lastUpdated ?? '';
   const { lang } = useLang();
+  /* THE HOOK, AND EVERY COUNT BELOW IS HANDED IT BY HAND. This panel prints
+     four families of number and two of them are claims about outcomes: the
+     per-type relationship tallies and the 인연 tile. `tieCounts`'s default
+     parameter reads the module mirror, which carries no subscription — the
+     ranking below was the app's last caller still leaning on it, named as such
+     in data/edges.ts's own docblock — so a reader who narrowed their answer
+     would have kept the wide ranking until something unrelated re-rendered the
+     rail. Stale in that direction is a leak, not a lag. */
+  const { watched } = useWatched();
   const bodyRef = useRef<HTMLDivElement | null>(null);
   /* The top fade is held flat until the reader has actually scrolled — a
      panel that looks out of focus before it has been touched reads as a paint
@@ -409,15 +419,62 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
     return { rep, cat, returning };
   }, [graph]);
 
+  /* ── three tallies over one link list, and they are three because the rows
+        of this section do three different jobs ────────────────────────────────
+     `present` and `outside` describe THE PICTURE: how many lines of this type
+     the canvas draws, and whether every one of them is dashed. Both are
+     structure — works.ts leaves `Edge.source`, `target` and `season` off
+     `OUTCOME_FIELDS.Edge` on purpose, and `graph/build.ts` draws all 52 lines
+     at every watched-set. So both are counted raw, and a row exists exactly
+     when the dataset holds a line of that type. Measured: 7 rows at the default
+     and 7 at `bgx.watched='[]'`, which is what keeps a colour the reader can
+     see on the canvas from losing its key and its filter.
+
+     `count` is THE CLAIM, and it is the one that was leaking. '동맹 14' asserts
+     fourteen alliances happened and '배신 5' names five betrayals; `type` is in
+     `OUTCOME_FIELDS.Edge` precisely because a betrayal is a verdict about a
+     named person, and edges.ts says in as many words that a tally by type
+     prints that verdict as a census. Measured at `bgx.watched='[]'` this row of
+     numbers was identical to the default — 동맹 14 · 배신 5 · 라이벌 10 · 바깥
+     이력 12 · 같은 시즌 7 · 평행 이력 3 · 멘토 1 — while not one alliance and
+     not one betrayal was nameable anywhere else in the app, every dossier row,
+     hover row and edge card having been filtered out by this same predicate.
+
+     `tieTypeVisible` IS THAT PREDICATE, imported rather than restated: it is
+     the second half of `countsAsTie`, and asking it WITHOUT `isMeeting` is
+     deliberate and is what Dossier and HoverCard already do here — a parallel
+     record is a row of its own in this legend, so it is counted, not dropped.
+     A sealed line is counted by nothing, which is edges.ts's rule verbatim. */
   const edges = useMemo(() => {
+    const present = zeroEdgeTypes();
     const count = zeroEdgeTypes();
     const outside = zeroEdgeTypes();
     for (const link of graph.links) {
-      count[link.type] = (count[link.type] ?? 0) + 1;
+      present[link.type] = (present[link.type] ?? 0) + 1;
       if (link.edge?.season === 0) outside[link.type] = (outside[link.type] ?? 0) + 1;
+      if (link.edge && tieTypeVisible(link.edge, watched)) count[link.type] = (count[link.type] ?? 0) + 1;
     }
-    return { count, outside };
-  }, [graph]);
+    return { present, count, outside };
+  }, [graph, watched]);
+
+  /* The 인연 tile, and it is the sum of the rows above it rather than a second
+     reading of the same list. That invariant is the whole reason this number
+     exists at the tile size it does: the tile used to print `graph.links.length`
+     and its own comment defended the 47 on the grounds that the legend itemises
+     it, which was true at the default and false everywhere else — at
+     `bgx.watched='[]'` it printed 52 above a legend that could account for 24 of
+     them and a ranking that had already re-ranked. Summing the rows makes the
+     two agree by construction at every set: 52 = 14+12+5+10+7+1+3 at the
+     default, 24 = 12+1+7+1+3 at the empty set.
+
+     IT IS NOT THE RANKING'S NUMBER AND IS NOT MEANT TO BE. The ranking counts
+     verified connections per person, so it drops the three parallel records;
+     this counts lines the reader can be told the meaning of. That gap is 3 at
+     every set and is the one the legend names on its own row. */
+  const visibleLinks = useMemo(
+    () => ALL_EDGE_TYPES.reduce((n, type) => n + (edges.count[type] ?? 0), 0),
+    [edges],
+  );
 
   /* Most connected: VERIFIED connections, counted with the rule data/edges.ts
      owns rather than straight off the adjacency. The row's own aria-label says
@@ -441,7 +498,11 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
      panel desk and one from the house. */
   const top = useMemo(() => {
     const rows = graph.nodes
-      .map((node) => ({ node, count: tieCounts(graph.edgesOf.get(node.id) ?? []).met }))
+      /* `watched` PASSED, not defaulted. See the hook at the top of this
+         component: the default parameter reads a module global React does not
+         subscribe to, and this ranking was the last caller in the app still
+         taking it. */
+      .map((node) => ({ node, count: tieCounts(graph.edgesOf.get(node.id) ?? [], watched).met }))
       .filter((row) => row.count > 0)
       .sort(
         (a, b) =>
@@ -468,7 +529,7 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
     }
     for (const row of out) row.tied = out.filter((r) => r.rank === row.rank).length > 1;
     return out;
-  }, [graph, lang]);
+  }, [graph, lang, watched]);
 
   const total = graph.nodes.length;
   const shown = atlas.visible.size;
@@ -558,9 +619,21 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
 
   /* The types the dataset actually holds. Resolved once so the section's
      header count and its row list cannot disagree — a shut section whose
-     number does not match what opening it shows is worse than no number. */
+     number does not match what opening it shows is worse than no number.
+
+     KEYED ON `present`, NOT ON `count`, and that distinction is this round's.
+     The row is a colour key AND a filter for lines the canvas draws whatever
+     the reader has watched, so gating its EXISTENCE on the redacted tally would
+     have deleted the 동맹 and 배신 rows at `bgx.watched='[]'` — taking with them
+     the only key to two hues that are still on screen and the only control that
+     can switch them off. The tally inside the row is redacted; the row is not.
+     Consequence, stated because it is the honest one: at a narrow set a row can
+     read 0. That is the true count of alliances this reader may be told about,
+     and 0 is the under-statement direction. This list is 7 at every set, so the
+     rail's legend and the About sheet's colour legend — which is keyed on the
+     same raw presence — cannot drift apart either. */
   const liveEdgeTypes = useMemo(
-    () => ALL_EDGE_TYPES.filter((type) => (edges.count[type] ?? 0) > 0),
+    () => ALL_EDGE_TYPES.filter((type) => (edges.present[type] ?? 0) > 0),
     [edges],
   );
 
@@ -778,10 +851,19 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
             <ul className="frail__rows">
               {liveEdgeTypes.map((type, i) => {
                 const on = atlas.edgeTypes.has(type);
+                /* The claim: how many of this type the reader may be told about. */
                 const n = edges.count[type] ?? 0;
                 // Dashed once every recorded edge of this type happened outside
                 // the franchise; before any data lands, fall back to taxonomy.
-                const dashed = n > 0 ? edges.outside[type] === n : OUTSIDE_BY_NATURE.has(type);
+                /* OFF `present`, NOT `n`. The dash is a description of the lines
+                   on the canvas, and `season` is structure — all of them are
+                   drawn at every set. Reading it off the redacted tally would
+                   have made the swatch describe a subset: at `bgx.watched='[]'`
+                   the one visible 라이벌 line is an outside one, so the key would
+                   have gone dashed while nine solid rivalry lines sat on the
+                   canvas under it. */
+                const drawn = edges.present[type] ?? 0;
+                const dashed = drawn > 0 ? edges.outside[type] === drawn : OUTSIDE_BY_NATURE.has(type);
                 const label = EDGE_LABEL_I18N[lang][type];
                 const meaning = EDGE_GLOSS_I18N[lang][type];
                 return (
@@ -964,15 +1046,23 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
               </span>
             </div>
             <div className="fstat">
-              {/* STILL ALL 47, on purpose, and it is not the ranking's number.
-                  This tile counts the LINES on the canvas, and the relationship
-                  list eight rows above it is that same 47 broken out by type
-                  with 평행 이력 3 named among them — so 44 here would stop
-                  matching the legend that itemises it, which is a worse lie
-                  than the one it would be fixing. The ranking below counts
-                  verified connections, because a rank is a claim about a
-                  person; this is a claim about the picture. */}
-              <span className="fstat__n fig">{graph.links.length}</span>
+              {/* THE SUM OF THE LEGEND ABOVE, which is the invariant this tile
+                  has always been defended on and did not actually hold. It read
+                  `graph.links.length` — the raw edge array — so it printed 52 at
+                  every watched-set while the list eight rows above it broke that
+                  52 out by type. At the default the two agree and always did; at
+                  `bgx.watched='[]'` the legend could account for 24 and the tile
+                  still said 52, directly above a ranking that had correctly
+                  re-ranked. One header, three answers.
+
+                  Summing the rows removes the possibility rather than fixing an
+                  instance: whatever the legend can itemise is what this prints,
+                  at every set, by construction. Still not the ranking's number,
+                  for the reason that comment always gave — a rank is a claim
+                  about a person and drops the three parallel records; this is a
+                  claim about the picture and keeps them, under their own name,
+                  on their own row. */}
+              <span className="fstat__n fig">{visibleLinks}</span>
               <span className="fstat__l">
                 {t(lang, 'rail.statLinks')}
                 {lang === 'ko' ? (
