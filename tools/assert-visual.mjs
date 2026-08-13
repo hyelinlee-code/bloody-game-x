@@ -87,9 +87,42 @@ function provenanceFigures() {
   return [...new Set(nums)];
 }
 
+/**
+ * Every `WorkId`, read off the registry, so a profile can be PINNED.
+ *
+ * WHY THIS EXISTS, AND IT IS THE MOST IMPORTANT NOTE IN THIS FILE'S HEADER.
+ * `enterAndSettle` presses Enter. Once the cold open became a question, Enter
+ * activated the focused *아직 안 봤어요* button — so from the moment the reader's
+ * control shipped, EVERY suite in this harness was measuring the fully redacted
+ * profile, silently, and PLAN-spoilers.md §8's two-profile discipline ("every
+ * existing assertion must still pass at full exposure") was asserted by nothing.
+ * It is how two blockers sat in a green tree for three rounds.
+ *
+ * The fix is not to stop pressing Enter. It is to stop LETTING THE KEYSTROKE
+ * DECIDE: `openPage` writes the profile into storage before the first script
+ * runs, which makes `hasStoredAnswer()` true, which puts the cold open back to
+ * the plain ENTER curtain the rest of this file was written against. The
+ * profile is then a named argument at every call site instead of an accident of
+ * focus order.
+ *
+ * Read out of the source rather than restated, on `provenanceFigures`'s
+ * precedent: an id list typed twice is an id list that goes stale, and the one
+ * number this parse could get wrong — how many there are — is asserted against
+ * the running page in `suiteRedaction`.
+ */
+function workIds() {
+  const src = fs.readFileSync(new URL('../src/data/works.ts', import.meta.url), 'utf8');
+  const open = src.indexOf('export const WORKS = {');
+  const shut = src.indexOf('} as const satisfies', open);
+  if (open < 0 || shut < 0) throw new Error('works.ts: WORKS registry not found — the pin cannot be built');
+  return [...src.slice(open, shut).matchAll(/^ {2}'?([a-z0-9-]+)'?: \{/gm)].map((m) => m[1]);
+}
+
 import { preview, build } from 'vite';
 import fs, { existsSync } from 'node:fs';
 import path from 'node:path';
+
+const WORK_IDS = workIds();
 
 /* ── known-open defects ────────────────────────────────────────────────────
  * name (or dotted prefix) → the defect it belongs to. Measured and printed,
@@ -807,7 +840,23 @@ const VIEWPORTS = {
   mobile: { width: 390, height: 844 },
 };
 
-async function openPage(browser, base, { viewport, lang, dpr = 2, mobile = false, block = null, reduced = false }) {
+/**
+ * @param {'all'|'none'|string[]} watched  WHICH READER IS BEING MEASURED, and it
+ *   is never left to chance — see `workIds` above. `'all'` is the historic
+ *   profile every check in this file was written against and is the default, so
+ *   PLAN §8's "must still pass at full exposure" is what a bare `openPage`
+ *   asserts. `'none'` is the empty set: every outcome sealed.
+ * @param {'seen'|'fresh'} cue  Whether the badge coach mark has been dismissed.
+ *   `'seen'` by default, because a 300px card pinned over the bottom-right
+ *   corner is not the app — it is a first-visit annotation on it, and leaving it
+ *   up would put it in the frame of every plate, caption and wall measurement
+ *   below. `'fresh'` is for the one suite that measures the mark itself.
+ */
+async function openPage(
+  browser,
+  base,
+  { viewport, lang, dpr = 2, mobile = false, block = null, reduced = false, watched = 'all', cue = 'seen' },
+) {
   const ctx = await browser.newContext({
     viewport,
     deviceScaleFactor: dpr,
@@ -827,6 +876,21 @@ async function openPage(browser, base, { viewport, lang, dpr = 2, mobile = false
      frame before any page script, so the app sees this at module init. */
   await ctx.addInitScript(() => { window.__atlasProbe = true; });
   await ctx.addInitScript((l) => { try { localStorage.setItem('bgx.lang', l); } catch { /* private mode */ } }, lang);
+  /* THE PROFILE, WRITTEN BEFORE THE FIRST SCRIPT RUNS. Not clicked, not typed,
+     not implied by which button happened to hold focus when Enter arrived. It
+     also has to be a stored answer rather than a set: `hasStoredAnswer()` is
+     what decides whether the cold open is a question or a curtain, and a
+     harness that answers the question with a keystroke is a harness measuring
+     whichever answer the layout put first. */
+  await ctx.addInitScript(
+    ([ids, seen]) => {
+      try {
+        localStorage.setItem('bgx.watched', JSON.stringify(ids));
+        if (seen) localStorage.setItem('bgx.cue.badge', '1');
+      } catch { /* private mode */ }
+    },
+    [watched === 'all' ? WORK_IDS : watched === 'none' ? [] : watched, cue === 'seen'],
+  );
   if (block) await ctx.route(block, (r) => r.abort());
   const page = await ctx.newPage();
   const errors = { console: [], page: [], request: [] };
@@ -860,7 +924,14 @@ async function confirmedRequestFailures(page, urls) {
 
 /** Through the cold open and settled. Never a bare timeout on the entrance:
  *  the whole point of this harness is that the entrance's own clock is the
- *  thing under test, so wait on the clock. */
+ *  thing under test, so wait on the clock.
+ *
+ *  THE ENTER BELOW DISMISSES A CURTAIN AND NOTHING ELSE, and that is a property
+ *  of `openPage` pinning the profile rather than of this function: with an
+ *  answer in storage the cold open is not asking, so there is no focused button
+ *  for the keystroke to activate. Do not call this against a context that has
+ *  not been pinned — the keystroke silently becomes an exposure decision, which
+ *  is exactly the failure `workIds` documents. */
 async function enterAndSettle(page) {
   await page.waitForFunction(() => !!window.__atlasDebug, null, { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(900);
@@ -1692,14 +1763,18 @@ async function suiteChrome(browser, base) {
         return { icons, labels: labels.length, named: labels.some((e) => /Hyelin/.test(e.textContent || '')) };
       });
       const tag = `${w}.${lang}`;
-      check(
-        `chrome.creditAttributed.${tag}`,
-        m.icons === 0 ? 1 : m.labels,
-        (v) => v === 1,
-        '= 1',
-        'exactly one attributing label beside the marks',
-      );
-      check(`chrome.creditNamed.${tag}`, m.icons === 0 || m.named ? 1 : 0, (v) => v === 1, '= 1', 'and it names a person');
+      /* THESE TWO WERE NOT CHECKING ANYTHING. They were written against a
+         `check(name, measured, predicate, bound, note)` signature this file has
+         never had — the real one is `check(name, measured, {eq|min|max})`, so
+         the predicate landed in the `spec` slot, `spec.eq` was undefined, and
+         both passed for every value they were ever handed. Same claim, in the
+         signature the ledger actually reads. */
+      check(`chrome.creditAttributed.${tag}`, m.icons === 0 ? 1 : m.labels, {
+        eq: 1, note: 'exactly one attributing label beside the marks',
+      });
+      check(`chrome.creditNamed.${tag}`, m.icons === 0 || m.named ? 1 : 0, {
+        eq: 1, note: 'and it names a person',
+      });
       await ctx.close();
     }
   }
@@ -1733,9 +1808,13 @@ async function suiteChrome(browser, base) {
         };
       });
       const tag = `${w}.${lang}`;
-      check(`chrome.footerGap.${tag}`, m.gap, (v) => v >= 24, '>= 24', 'hint must clear the right-hand group');
-      check(`chrome.footerGapLeft.${tag}`, m.leftGap, (v) => v >= 0, '>= 0', 'and the counts on the left');
-      check(`chrome.footerOverflow.${tag}`, m.overflow, (v) => v === 0, '= 0', 'the bar may not scroll sideways');
+      /* Same correction as the two above: a predicate in the `spec` slot is not
+         a bound, so this entire family — the checks written FOR the 237px
+         footer collision — had been passing unconditionally since the day it
+         was written. */
+      check(`chrome.footerGap.${tag}`, m.gap, { min: 24, unit: 'px', note: 'hint must clear the right-hand group' });
+      check(`chrome.footerGapLeft.${tag}`, m.leftGap, { min: 0, unit: 'px', note: 'and the counts on the left' });
+      check(`chrome.footerOverflow.${tag}`, m.overflow, { eq: 0, note: 'the bar may not scroll sideways' });
       await ctx.close();
     }
   }
@@ -2032,6 +2111,297 @@ async function suiteWall(browser, base) {
   }
 }
 
+/* ── suite 6: the reader who has watched nothing ───────────────────────────
+ *
+ * THE SUITE THAT DID NOT EXIST WHILE THE DEFECT IT MEASURES WAS SHIPPING.
+ * PLAN-spoilers.md §8 asks for a `redaction.*` prefix; what stood in for it was
+ * that `enterAndSettle` happened to answer the cold open with *아직 안 봤어요*,
+ * so every OTHER suite silently measured the sealed profile and nothing
+ * measured what sealing actually draws. Two blockers lived three rounds in a
+ * green tree because of it (see `workIds`).
+ *
+ * Everything here drives BOTH profiles, because half of these invariants are
+ * about a mark being present and the other half about the same mark being
+ * absent — a legend row that never goes away is as wrong as one that never
+ * arrives.
+ */
+async function suiteRedaction(browser, base) {
+  console.log('\n── what a sealed reader is shown ─────────────────────────────────────');
+
+  /* Read every season arc off the SVG plates on the cast wall, classified by
+     the three states' own ink and weight. The wall is the surface that draws
+     all twenty at once, so one page gives the whole cast.
+
+     CLASSIFIED BY (ink, weight, dash) RATHER THAN BY A CLASS NAME, deliberately:
+     the defect this suite exists for was two different states rendering as one
+     PICTURE while the code that produced them was in different branches. A
+     probe that asked the DOM which branch ran would have passed on the day
+     이태균 and 이상민 were byte-identical. */
+  const READ_ARCS = () => {
+    const cards = [];
+    for (const svg of document.querySelectorAll('.gallery .portrait')) {
+      let host = svg.parentElement;
+      while (host && !(host.textContent || '').trim()) host = host.parentElement;
+      const name = ((host?.textContent || '').trim().split('\n')[0] || '').trim();
+      const arcs = [];
+      for (const p of svg.querySelectorAll('path')) {
+        const op = p.getAttribute('stroke-opacity');
+        const w = p.getAttribute('stroke-width');
+        if (!op) continue;
+        const dash = p.getAttribute('stroke-dasharray');
+        const d = p.getAttribute('d') || '';
+        const kind = dash ? 'beaded' : op === '0.12' && w === '2.6' ? 'sealed' : op === '0.12' ? 'track' : 'value';
+        /* THE SWEPT LENGTH, NOT THE PATH STRING. Every card on this wall draws
+           at one radius, so equal length is equal angle — which is the actual
+           claim ("this mark carries no quantity"). The `d` attribute cannot
+           make it: a slot's start coordinates differ by slot index, so two
+           identically-swept arcs in different slots are different strings. */
+        arcs.push({ kind, d, len: Math.round(p.getTotalLength() * 100) / 100 });
+      }
+      const brass = [...svg.querySelectorAll('[stroke]')].filter(
+        (e) => (e.getAttribute('stroke') || '').toLowerCase() === '#e6c07a',
+      ).length;
+      cards.push({ name, arcs, brass });
+    }
+    return cards;
+  };
+
+  for (const watched of ['none', 'all']) {
+    const { ctx, page } = await openPage(browser, base, {
+      viewport: VIEWPORTS.desktop,
+      lang: 'ko',
+      dpr: 1,
+      watched,
+    });
+    await enterAndSettle(page);
+
+    /* 0 · THE PIN ITSELF. `workIds` parses the registry out of the source; this
+       is the running app's own count of the same set, printed on the badge it
+       seals with. If the parse ever silently returns 3 ids, every profile above
+       becomes a different profile and this is the only line that would notice. */
+    if (watched === 'none') {
+      const n = await page.evaluate(() => {
+        const m = (document.querySelector('.sb__badge')?.textContent || '').match(/\d+/);
+        return m ? +m[0] : null;
+      });
+      check('redaction.profile.pinnedWorks', n, {
+        eq: WORK_IDS.length, note: 'the badge counts what workIds() pinned',
+      });
+    }
+
+    await page.keyboard.press('g');
+    await page.waitForTimeout(900);
+    const cards = await page.evaluate(READ_ARCS);
+    const all = cards.flatMap((c) => c.arcs);
+    const sealed = all.filter((a) => a.kind === 'sealed');
+    const played = cards.filter((c) => c.arcs.length > 0);
+
+    if (watched === 'none') {
+      /* 1 · The mark is on screen at all. Fourteen of the sixteen runs in this
+             cast were played at the prize; the floor is well under that so a
+             data edit does not fail the gate, and the invariants that actually
+             carry the design are 2 and 3. */
+      check('redaction.plate.sealedArcs.none', sealed.length, {
+        min: 10, note: 'runs drawn as sealed for a reader who has watched nothing',
+      });
+
+      /* 2 · AND IT CARRIES NO QUANTITY. Every sealed arc on the wall sweeps the
+             same angle, so there is nothing to measure and nothing to invert
+             back into a placing.
+
+             THE BOUND IS A SPREAD, NOT AN IDENTITY, and 0.1px is not a fudge:
+             `arc()` writes its endpoints through toFixed(2), so two genuinely
+             identical sweeps land 0.02px apart. One step of rank on this wall is
+             ~4.9px — SPAN_MAX/12 at the card radius — so the gate sits fifty
+             times under the smallest thing it has to catch. */
+      const lens = sealed.map((a) => a.len);
+      check('redaction.plate.sealedSweepSpread.none', lens.length ? +(Math.max(...lens) - Math.min(...lens)).toFixed(2) : null, {
+        max: 0.1, unit: 'px', note: 'one rank of difference would be ~4.9px',
+      });
+
+      /* 3 · THE REGRESSION ITSELF, BY NAME. 이태균 won season 1; 이상민 sat on a
+             studio panel. Before the third state they produced identical arc
+             signatures, so the app asserted a falsehood about a named person.
+             Measured as the number of plates whose signature collides across
+             the two, which must be zero. */
+      const sig = (n) => {
+        const c = cards.find((x) => x.name.includes(n));
+        return c ? c.arcs.map((a) => a.kind).join(',') : null;
+      };
+      const champ = sig('이태균');
+      const panel = sig('이상민');
+      check('redaction.plate.championVsPanellist.none', champ && panel ? (champ === panel ? 1 : 0) : null, {
+        eq: 0, note: `champion '${champ}' must not read as panellist '${panel}'`,
+      });
+
+      /* 4 · No brass anywhere. The laurel is a verdict and `isWinner` is gated
+             upstream in build.ts, where it also stops reaching the disc radius;
+             this is the pixel-side confirmation that nothing paints it anyway. */
+      check('redaction.plate.brassMarks.none', cards.reduce((n, c) => n + c.brass, 0), {
+        eq: 0, note: 'a laurel is a title, and nobody has been told about one',
+      });
+
+      /* 5 · And no track, on any plate. The track is the calibration that turns
+             an arc into a fraction; drawn under a sealed band it would make the
+             constant length readable as a value of zero. */
+      check('redaction.plate.tracksUnderSealed.none', all.filter((a) => a.kind === 'track').length, {
+        eq: 0, note: 'nothing to measure a sealed arc against',
+      });
+    } else {
+      /* 6 · THE OTHER PROFILE, which is the half PLAN §8 asks for and the half
+             that was never run: a reader who has watched everything sees the
+             atlas this app has always drawn. No sealed marks, and the value
+             arcs and their tracks are back. */
+      check('redaction.plate.sealedArcs.all', sealed.length, {
+        eq: 0, note: 'nothing is withheld from a reader who has seen it all',
+      });
+      check('redaction.plate.valueArcs.all', all.filter((a) => a.kind === 'value').length, {
+        min: 10, note: 'and the finishes are drawn again',
+      });
+      check('redaction.plate.platesWithArcs.all', played.length, {
+        min: 12, note: 'the cast wall still draws every played run',
+      });
+    }
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+
+    /* 7 · THE LEGEND MOVES WITH THE GEOMETRY (PLAN §3), and it moves BOTH ways:
+           the rail's resting node key gains the sealed row exactly when a plate
+           on the canvas is wearing the band, and loses it when none is. A row
+           explaining a mark that is not on screen is the failure the key's own
+           contract names. */
+    const legend = await page.evaluate(() =>
+      [...document.querySelectorAll('.frail__nodekey .platekey__what')].map((e) => e.textContent || ''),
+    );
+    check(
+      `redaction.legend.sealedRow.${watched}`,
+      legend.filter((s) => /가림|sealed/i.test(s)).length,
+      { eq: watched === 'none' ? 1 : 0, note: `node key rows: ${legend.length}` },
+    );
+
+    /* 8 · THE CAREER TABLE MAY NOT DENY A RUN. A sealed cell used to fall to
+           the same '—' an unplayed season gets, so 이태균's row read '— — —'
+           under a caption promising that who was in which season is still here.
+           Stated generically off the table's own numbers rather than about one
+           person: no row may show a dash in every season column while its own
+           출전 시즌 count says they played. */
+    await page.keyboard.press('?');
+    await page.waitForTimeout(700);
+    const table = await page.evaluate(() => {
+      const tab = [...document.querySelectorAll('[role=tab]')][3];
+      if (!tab) return null;
+      tab.click();
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          const rows = [...document.querySelectorAll('.abt-rec__who')].map((th) => {
+            const tr = th.closest('tr');
+            const cells = [...tr.querySelectorAll('.abt-rec__cell')];
+            const nums = [...tr.querySelectorAll('.abt-rec__n')];
+            return {
+              dashes: cells.filter((td) => td.querySelector('.abt-rec__none')).length,
+              cells: cells.length,
+              sealed: cells.filter((td) => td.querySelector('.abt-rec__sealed')).length,
+              played: +((nums[0]?.textContent || '').trim() || 0),
+            };
+          });
+          resolve({
+            rows: rows.length,
+            allDash: rows.filter((r) => r.played > 0 && r.dashes === r.cells).length,
+            sealed: rows.reduce((n, r) => n + r.sealed, 0),
+          });
+        }, 500),
+      );
+    });
+    check(`redaction.table.rowDeniesItsOwnRun.${watched}`, table ? table.allDash : null, {
+      eq: 0, note: 'a played season may never render as the not-there glyph',
+    });
+    check(`redaction.table.sealedCells.${watched}`, table ? table.sealed : null, {
+      min: watched === 'none' ? 1 : 0,
+      max: watched === 'none' ? 99 : 0,
+      note: watched === 'none' ? 'played, finish withheld' : 'nothing sealed at full exposure',
+    });
+
+    await ctx.close();
+  }
+
+  /* 9 · THE BADGE IS POINTED AT, ONCE. The control the whole feature hangs on
+         is eleven pixels of shield in the corner the eye reaches last, and a
+         reader who has answered the cold open has no reason to look at it
+         again. The card is a first-visit annotation, so the invariant is
+         two-sided: present for a reader who has never opened the picker, gone
+         for one who has — and, while it is up, actually ON the badge rather
+         than floating near it. */
+  for (const cue of ['fresh', 'seen']) {
+    const { ctx, page } = await openPage(browser, base, {
+      viewport: VIEWPORTS.laptop, lang: 'ko', dpr: 1, cue,
+    });
+    await enterAndSettle(page);
+    const m = await page.evaluate(() => {
+      const card = document.querySelector('.sbcue');
+      const badge = document.querySelector('.sb__badge');
+      if (!badge) return null;
+      const b = badge.getBoundingClientRect();
+      if (!card) return { card: 0, gap: null, tipOnBadge: null, ring: 0 };
+      const c = card.getBoundingClientRect();
+      const tip = document.querySelector('.sbcue__tip')?.getBoundingClientRect();
+      const tx = tip ? tip.left + tip.width / 2 : null;
+      return {
+        card: 1,
+        /* Above the badge and touching it — the card must not be a toast that
+           happens to be in the same corner. */
+        gap: Math.round(b.top - c.bottom),
+        tipOnBadge: tx !== null && tx > b.left && tx < b.right ? 1 : 0,
+        ring: badge.classList.contains('is-cued') ? 1 : 0,
+      };
+    });
+    check(`cue.card.${cue}`, m ? m.card : null, {
+      eq: cue === 'fresh' ? 1 : 0, note: cue === 'fresh' ? 'never opened the picker' : 'has opened it',
+    });
+    if (cue === 'fresh') {
+      check('cue.gapToBadgePx', m ? m.gap : null, { min: 2, max: 24, unit: 'px', note: 'sits on the badge, not near it' });
+      check('cue.tipOnBadge', m ? m.tipOnBadge : null, { eq: 1, note: 'the tip points inside the badge at every width' });
+      check('cue.ringOnBadge', m ? m.ring : null, { eq: 1, note: 'and the badge itself is marked' });
+    }
+    await ctx.close();
+  }
+
+  /* 10 · EVERY MULTI-SELECT SECTION IN THE RAIL OFFERS ALL / NONE. The blocs
+          were the one group without it — five chips, so four clicks to isolate
+          one and four more to come back, on the panel that is open by default.
+          Stated as a property of the panel rather than as three named sections,
+          so a sixth filter added tomorrow is held to it. */
+  {
+    const { ctx, page } = await openPage(browser, base, { viewport: VIEWPORTS.desktop, lang: 'ko', dpr: 1 });
+    await enterAndSettle(page);
+    const missing = await page.evaluate(() => {
+      /* Open every fold first: the rail hides a shut section's bulk control on
+         purpose ("all/none for a group you cannot see is a control with no
+         subject"), so a closed section must not read as a missing one. */
+      for (const b of document.querySelectorAll('.frail__sec-btn')) {
+        if (b.getAttribute('aria-expanded') === 'false') b.click();
+      }
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          const bad = [];
+          for (const sec of document.querySelectorAll('.frail__sec')) {
+            const toggles = sec.querySelectorAll('[aria-pressed], [role=switch]').length;
+            /* A group of one is not a group; the switch inside the lineage
+               block is a single row and is not counted against it. */
+            if (toggles < 2) continue;
+            if (!sec.querySelector('.fmini')) bad.push(sec.dataset.sec || '?');
+          }
+          resolve(bad);
+        }, 400),
+      );
+    });
+    check('rail.bulkOnEverySection', missing.length, {
+      eq: 0, note: missing.length ? `no all/none: ${missing.join(', ')}` : 'blocs, relationships, archetype',
+    });
+    await ctx.close();
+  }
+}
+
 /* ── suite 5: the design system and the disclosure ─────────────────────────
  * Two invariants that are about what the product SAYS rather than how it
  * moves, and both of them failed silently for rounds because nothing measured
@@ -2265,6 +2635,7 @@ async function main() {
     await suiteChrome(browser, base);
     await suiteWall(browser, base);
     await suiteSystem(browser, base);
+    await suiteRedaction(browser, base);
   } finally {
     await browser.close();
     if (server) await server.close();
