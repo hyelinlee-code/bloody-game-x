@@ -1493,3 +1493,15 @@
     padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* The updated date, moved here from the status bar so the byline there has room
+   to name the author. Sits above the dashed-line key as the rail's last word —
+   the register is the same (a note about the document, not about the data). */
+.frail__updated {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4) var(--sp-2);
+  font-size: var(--t-xs);
+  color: var(--ink-low);
+}

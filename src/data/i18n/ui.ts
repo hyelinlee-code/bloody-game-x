@@ -688,7 +688,11 @@ export const ui = {
        One sentence per language rather than a name slotted into a template:
        Korean puts the maker after the thing, English puts them after "by", and
        a shared template gives you one natural line and one translated one. */
-    'credit.by': '만든 사람 · Hyelin Lee · 피드백과 문의 환영합니다',
+    /* Split in two. The name is the part that must survive a narrow bar — an
+       atlas that cannot name its author on a 1440px laptop, which is most of
+       them, is anonymous in practice. The invitation is the part that yields. */
+    'credit.by': '만든 사람 · Hyelin Lee',
+    'credit.invite': '피드백과 문의 환영합니다',
     'credit.linkPrefix': 'Hyelin Lee —',
   },
 
@@ -1176,7 +1180,9 @@ export const ui = {
     'lang.ko': 'Korean',
     'lang.en': 'English',
     /* See the Korean entry. */
-    'credit.by': 'Built with love by Hyelin Lee · any feedback or inquiry welcomed',
+    /* See the Korean entry. */
+    'credit.by': 'Built with love by Hyelin Lee',
+    'credit.invite': 'any feedback or inquiry welcomed',
     'credit.linkPrefix': 'Hyelin Lee on',
   },
 } as const;

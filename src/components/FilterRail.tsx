@@ -34,6 +34,7 @@ import {
 } from '../state/useAtlas';
 import { PlateMarkSwatch } from './Portrait';
 import './FilterRail.css';
+import { dataset } from '../data/dataset';
 
 /* The node key's specimen. The rail's key is not about any one person, so it
    needs a stand-in: one archetype hue for the ring row and two seasons for the
@@ -301,6 +302,7 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
   /* `!== false` rather than a bare read: an unwired flag must not leave the
      whole panel stuck at opacity 0. */
   const ready = introDone !== false;
+  const updated = dataset.meta?.lastUpdated ?? '';
   const { lang } = useLang();
   const bodyRef = useRef<HTMLDivElement | null>(null);
   /* The top fade is held flat until the reader has actually scrolled — a
@@ -1092,6 +1094,16 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
       {/* The dashed-line key. It explains the one edge convention that colour
           cannot carry, so it is a fixed foot row rather than a footnote inside
           a scroll box whose bottom ramp was permanently parked on it. */}
+      {/* Moved here from the status bar so the byline there has room — see the
+          note at StatusBar's right-hand group. */}
+      {updated ? (
+        <p className="frail__updated" style={{ '--i': 8 } as CSSProperties}>
+          <span className="eyebrow">{t(lang, 'status.updated')}</span>
+          <time className="mono tnum" dateTime={updated.replace(/\./g, '-')}>
+            {updated}
+          </time>
+        </p>
+      ) : null}
       <p className="frail__foot" style={{ '--i': 7 } as CSSProperties}>
         <span className="frail__foot-swatch">
           <EdgeSwatch dashed />

@@ -95,6 +95,9 @@ export function Credit({ lang }: CreditProps): JSX.Element {
           after "by", so a shared template would have produced one natural line
           and one translated-sounding one. */}
       <span className="credit__by">{t(lang, 'credit.by')}</span>
+      <span className="credit__invite">
+        <span aria-hidden="true">{'·'}</span> {t(lang, 'credit.invite')}
+      </span>
       <span className="credit__links">
         {LINKS.map((l) => (
           <a

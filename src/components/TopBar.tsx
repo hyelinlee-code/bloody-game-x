@@ -777,7 +777,11 @@ export function TopBar({
           type="button"
           className="tb-btn"
           onClick={onOpenAbout}
-          title={`${t(lang, 'topbar.about')} (?)`}
+          /* Was `${…} (?)`. The parenthesised glyph is the keyboard shortcut, but
+             next to the words "About and scope" it reads as an uncertainty
+             marker — "about and scope, question mark?" — and the shortcut is
+             already spoken by aria-label and listed in the sheet itself. */
+          title={t(lang, 'topbar.about')}
           aria-label={t(lang, 'topbar.aboutAria')}
           {...rise(7, reduce, ready)}
         >

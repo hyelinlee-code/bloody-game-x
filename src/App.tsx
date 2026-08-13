@@ -713,7 +713,13 @@ function Atlas() {
         onSelect={selectAndFrame}
       />
 
-      <StatusBar atlas={atlas} dataset={dataset} onReset={atlas.resetFilters} introDone={chromeReady} />
+      <StatusBar
+        atlas={atlas}
+        dataset={dataset}
+        onReset={atlas.resetFilters}
+        introDone={chromeReady}
+        onOpenAbout={() => setAboutOpen(true)}
+      />
 
       <CommandPalette
         open={paletteOpen}

@@ -7,6 +7,8 @@ import { Credit } from './Credit';
 import './StatusBar.css';
 
 export interface StatusBarProps {
+  /** Opens the About sheet — the badge is a control now, not a label. */
+  onOpenAbout: () => void;
   atlas: AtlasState;
   dataset: Dataset;
   onReset: () => void;
@@ -40,9 +42,8 @@ interface HintLayer {
   hint: Hint;
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function StatusBar({ atlas, dataset, onReset, introDone }: StatusBarProps): JSX.Element {
+export function StatusBar({ onOpenAbout, atlas, dataset, onReset, introDone }: StatusBarProps): JSX.Element {
   const { graph, visible, edgeTypes, selectedId, filtersActive } = atlas;
   const ready = introDone !== false;
   const { lang } = useLang();
@@ -99,9 +100,6 @@ export function StatusBar({ atlas, dataset, onReset, introDone }: StatusBarProps
     const t = window.setTimeout(() => setLayers((l) => l.slice(-1)), 240);
     return () => window.clearTimeout(t);
   }, [layers]);
-
-  const updated = dataset.meta?.lastUpdated ?? '';
-  const isIso = ISO_DATE.test(updated);
 
   /* Screen-reader sentence. Korean glues each counter to its unit and needs a
      comma between the two figures; English counts, then says "of". Assembled
@@ -188,7 +186,12 @@ export function StatusBar({ atlas, dataset, onReset, introDone }: StatusBarProps
               reads maker -> promise -> freshness rather than interrupting the
               two data statements with a byline. */}
           <Credit lang={lang} />
-          <span className="sb__badge" title={spoilerTitle}>
+          {/* A BUTTON, NOT A SPAN. It carried `cursor: help` and a title and
+              then did nothing when clicked, which is the worst of both: it
+              advertises that there is more to read and then refuses to show it.
+              The badge makes the atlas's central promise, so clicking it opens
+              the sheet where that promise is spelled out. */}
+          <button type="button" className="sb__badge" title={spoilerTitle} onClick={onOpenAbout}>
             <svg className="sb__shield" width="11" height="12" viewBox="0 0 11 12" aria-hidden="true" focusable="false">
               <path
                 d="M5.5 0.7 10 2.3v3.6c0 2.6-1.8 4.4-4.5 5.4C2.8 10.3 1 8.5 1 5.9V2.3Z"
@@ -212,20 +215,20 @@ export function StatusBar({ atlas, dataset, onReset, introDone }: StatusBarProps
             ) : null}
             <span className="sb__badge-line">{t(lang, 'status.spoilerBadge')}</span>
             <span className="sr-only">{spoilerTitle}</span>
-          </span>
+          </button>
 
-          {updated ? (
-            <span className="sb__updated">
-              <span className="eyebrow">{t(lang, 'status.updated')}</span>
-              {isIso ? (
-                <time className="mono tnum sb__date" dateTime={updated}>
-                  {updated.replace(/-/g, '.')}
-                </time>
-              ) : (
-                <span className="mono tnum sb__date">{updated}</span>
-              )}
-            </span>
-          ) : null}
+          {/* THE DATE MOVED TO THE RAIL'S FOOT. It was the third thing in this
+              group, and with a byline beside it the group outgrew its track —
+              the sentence had to hide below 1560px, which is most laptops, so
+              the atlas stopped naming its author on the screens most people
+              read it on.
+
+              Freshness and authorship are both "about the document rather than
+              the data", so either could have gone; the date went because the
+              rail's foot already carries that register and because a date is
+              something you look up once, while a byline is something you either
+              see or do not. Cost, stated: the rail can be closed, and the date
+              goes with it. See FilterRail's foot. */}
         </div>
       </div>
     </footer>
