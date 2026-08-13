@@ -12,6 +12,8 @@ import {
   R_LAUREL_OUT,
   R_RIM,
   R_SEASON,
+  SEALED_ARC_INK,
+  SEALED_ARC_W,
   TAU,
   fitMark,
   markLines,
@@ -72,6 +74,11 @@ export interface PlateSpec {
   ranks: (number | undefined)[];
   /** Field size for each of those runs, aligned. */
   fieldSizes: (number | undefined)[];
+  /** Which of those runs were PLAYED and whose finish this reader may not be
+      told — aligned with `seasons`, decided in `build.ts` because deciding it
+      needs the watched-set. See `SeasonArc.sealed`; a painter reads this before
+      it reads `ranks`. */
+  sealed: boolean[];
   /** One entry per tie, best first, for the rim ticks. Should be meetings only
       — a `parallel` record is by definition not one and the rim tick is the mark
       the legend calls a verified connection — but is not filtered yet; see the
@@ -556,10 +563,27 @@ export function drawPlate(ctx: CanvasRenderingContext2D, d: PlateDraw): void {
     ctx.stroke();
     ctx.setLineDash([]);
   } else {
-    const arcs = seasonArcs(spec.seasons, spec.ranks, spec.fieldSizes);
+    const arcs = seasonArcs(spec.seasons, spec.ranks, spec.fieldSizes, spec.sealed);
     arcs.forEach((s, i) => {
       const ink = SEASON_COLOR[spec.seasons[i] as 1 | 2 | 3] ?? BONE;
       ctx.lineCap = 'round';
+
+      /* SEALED — a run that was played, whose finish this reader has not asked
+         to be told. The season's colour is kept, because colour is
+         participation and the plate is allowed to state that; everything that
+         encodes the FINISH is gone — the track, the cap dot, the winner's
+         heavier stroke, and the laurel two blocks down (which `isWinner` has
+         already dropped upstream, in build.ts, where it also stops reaching the
+         disc's radius). What is left is one constant band, the same on every
+         sealed run on every plate. */
+      if (s.sealed) {
+        ctx.beginPath();
+        ctx.arc(x, y, rSeason, s.start, s.start + s.room);
+        ctx.strokeStyle = alpha(ink, SEALED_ARC_INK + focus * 0.06);
+        ctx.lineWidth = Math.max(r * SEALED_ARC_W * U, 1.2 / k);
+        ctx.stroke();
+        return;
+      }
 
       if (s.beaded) {
         /* Present all season, no finish to record. A dash pattern of

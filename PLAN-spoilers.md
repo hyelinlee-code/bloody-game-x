@@ -107,6 +107,16 @@ three meanings, no overlap. Deleted in redacted mode: the laurel (all three
 variants), the terminal cap dot, the winner's heavier stroke, and the track —
 the track is the calibration that turns "an arc of some length" into a placing.
 
+> **As built — one departure, and the rule above is the reason for it.** The ink
+> is the track's, as specified. The WEIGHT is the value arc's, not the track's
+> (`SEALED_ARC_INK` / `SEALED_ARC_W` in `plateGeometry.ts`). At the track's ink
+> *and* the track's weight a sealed slot is pixel-for-pixel an empty track, and
+> an empty track is not neutral — it is the calibration with nothing on it, so a
+> plate carrying one sealed and one unsealed run reads the sealed one as a value
+> of zero, i.e. the bottom of the field. That is rule 1's false value, drawn in
+> vector. Same ink, double the weight: no quantity, and not the empty half of a
+> scale either.
+
 **The legend moves in the same commit as the geometry**, or a constant-length
 ring becomes a claim about a finish.
 

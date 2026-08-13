@@ -237,6 +237,17 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
                 initials={lang === 'en' ? link.source.initialsEn : link.source.initials}
                 category={link.source.category}
                 seasons={link.source.seasons}
+                /* THE SAME PLATE AS EVERY OTHER SURFACE. These two chips passed
+                   no ranks at all, so `seasonArcs` fell to its no-rank branch
+                   and drew EVERY season as the beaded ring — the mark for
+                   "present, not competing" — on both ends of every tie, at
+                   every watched-set, including a reader who has seen
+                   everything. Read off `plate`, like the dossier's relation
+                   chips: the gate has already run there, and a chip suppresses
+                   its own track anyway. */
+                ranks={link.source.plate.ranks}
+                fieldSizes={link.source.plate.fieldSizes}
+                sealed={link.source.plate.sealed}
                 isWinner={link.source.isWinner}
                 isHost={link.source.isHost}
                 noTies={link.source.noTies}
@@ -258,6 +269,9 @@ export function EdgeCard({ link, pinned, pointer, insets, ends, onClear }: EdgeC
                 initials={lang === 'en' ? link.target.initialsEn : link.target.initials}
                 category={link.target.category}
                 seasons={link.target.seasons}
+                ranks={link.target.plate.ranks}
+                fieldSizes={link.target.plate.fieldSizes}
+                sealed={link.target.plate.sealed}
                 isWinner={link.target.isWinner}
                 isHost={link.target.isHost}
                 noTies={link.target.noTies}

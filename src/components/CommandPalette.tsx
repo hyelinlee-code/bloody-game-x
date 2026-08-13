@@ -17,7 +17,7 @@ import { tieCounts } from '../data/edges';
 import type { Dataset, Person, SeasonNumber } from '../data/types';
 import type { LayoutMode } from '../graph/types';
 import type { AtlasState } from '../state/useAtlas';
-import { monogram, monogramEn } from '../graph/build';
+import { monogram, monogramEn, sealedRun } from '../graph/build';
 import { Portrait } from './Portrait';
 import {
   CATEGORY_LABEL_I18N,
@@ -243,8 +243,9 @@ function scorePerson(p: Person, q: string, lang: Lang, watched: WatchedSet): Per
    * answers with a franchise winner whose panels are sealed — the gate does the
    * stripping, which is why they were never stripped here. The winner pip and
    * the plate's rank arcs both come off `runFacts` now; see `isWinner` and
-   * `plateOf`. Phase 3 still owns what a sealed plate should LOOK like — this
-   * only stops it asserting a finish. */
+   * `plateOf`. What a sealed plate LOOKS like has since landed — the third arc
+   * state in `plateGeometry.ts` — and this file needed nothing for it: search
+   * has no plate. */
   for (const r of p.priorSeasons ?? []) {
     const hay = `시즌${r.season} 시즌 ${r.season} season${r.season} s${r.season}`;
     if (hay.toLowerCase().includes(q)) {
@@ -395,11 +396,12 @@ function isWinner(p: Person, lang: Lang, watched: WatchedSet): boolean {
    `rank`'s, so a denominator can never outlive its numerator — and `bestOf`
    then does the same min-per-season it always did over whatever survives.
 
-   THIS IS NOT PHASE 3's THIRD PLATE STATE. Nothing new is drawn: a withheld
-   rank is `undefined`, which is the value this plate has always taken for a
-   panel seat or a dealer, and `Portrait` already draws that case as a beaded
-   ring. Designing a mark that says "sealed" rather than "no finish" is Phase 3
-   and is deliberately not attempted here. */
+   AND IT RETURNS THE THIRD STATE, which for two rounds it did not. A withheld
+   rank is `undefined`, which is also the value a panel seat carries, so these
+   chips drew a sealed champion with the beaded ring that means "present, not
+   competing" — the same false statement the canvas and the wall were making,
+   in the drawer a reader opens by typing a name. `sealedRun` is build.ts's own
+   predicate; do not re-derive it here. */
 function plateOf(
   p: Person,
   lang: Lang,
@@ -408,6 +410,7 @@ function plateOf(
   seasons: SeasonNumber[];
   ranks: (number | undefined)[];
   fieldSizes: (number | undefined)[];
+  sealed: boolean[];
   isWinner: boolean;
   isHost: boolean;
 } {
@@ -429,6 +432,7 @@ function plateOf(
     seasons,
     ranks: seasons.map((s) => bestOf(s, 'rank')),
     fieldSizes: seasons.map((s) => bestOf(s, 'fieldSize')),
+    sealed: seasons.map((s) => sealedRun(p, s, watched)),
     isWinner: isWinner(p, lang, watched),
     /* WHICH seasons, and whether they were competing in them, are
        participation and stay raw — see `isWinner`. */

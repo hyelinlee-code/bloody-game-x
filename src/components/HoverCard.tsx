@@ -17,7 +17,7 @@ import { useLang } from '../state/useLang';
 import { useWatched, type WatchedSet } from '../state/useWatched';
 import { edges, isMeeting, tieCounts, tieTypeVisible } from '../data/edges';
 import { people } from '../data/people';
-import { monogram, monogramEn } from '../graph/build';
+import { monogram, monogramEn, sealedRun } from '../graph/build';
 import type { SeasonNumber } from '../data/types';
 import { ALL_EDGE_TYPES } from '../state/useAtlas';
 import { PlateKey, Portrait, type PlateMarkKind, type PortraitConnection } from './Portrait';
@@ -212,6 +212,7 @@ function warmSubject(
   seasons: SeasonNumber[];
   ranks: (number | undefined)[];
   fields: (number | undefined)[];
+  sealed: boolean[];
   isWinner: boolean;
   isHost: boolean;
   connections: PortraitConnection[];
@@ -268,6 +269,10 @@ function warmSubject(
     seasons,
     ranks: seasons.map(rankOf),
     fields: seasons.map(fieldOf),
+    /* The third arc state, from build.ts's own predicate rather than a fourth
+       copy of it here — the warm pass exists to paint what the card will paint,
+       and a sealed run drawn as beads off-screen warms the wrong shape. */
+    sealed: seasons.map((s) => sealedRun(best, s, watched)),
     isWinner: won(best),
     isHost: best.priorSeasons.some(watchedRun),
     connections: mine.map((e) => ({ type: e.type, strength: e.strength })),
@@ -649,6 +654,7 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
                   seasons={warm.seasons}
                   ranks={warm.ranks}
                   fieldSizes={warm.fields}
+                  sealed={warm.sealed}
                   isWinner={warm.isWinner}
                   isHost={warm.isHost}
                   connections={warm.connections}
@@ -669,6 +675,7 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
               lang={lang}
               category={warm.person.category}
               seasons={warm.seasons}
+              sealed={warm.sealed}
               isWinner={warm.isWinner}
               isHost={warm.isHost}
               connections={warm.connections}
@@ -696,6 +703,7 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
                   seasons={content.node.seasons}
                   ranks={content.node.plate.ranks}
                   fieldSizes={content.node.plate.fieldSizes}
+                  sealed={content.node.plate.sealed}
                   isWinner={content.node.isWinner}
                   isHost={content.node.isHost}
                   noTies={content.node.noTies}
@@ -841,6 +849,7 @@ export function HoverCard({ node, relations, pointer, suppressed }: HoverCardPro
               lang={lang}
               category={content.node.category}
               seasons={content.node.seasons}
+              sealed={content.node.plate.sealed}
               isWinner={content.node.isWinner}
               isHost={content.node.isHost}
               noTies={content.node.noTies}

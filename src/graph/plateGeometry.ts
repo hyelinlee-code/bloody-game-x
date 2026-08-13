@@ -82,6 +82,31 @@ export const SPAN_FLOOR = 0.18;
     two arcs on a three-season plate can ever touch. */
 export const SLOT_GAP = 0.35;
 
+/* ── how a sealed run is struck, in both painters ──────────────────────────
+   Exported rather than typed into `plate.ts` and `Portrait.tsx` separately,
+   because this repo has already shipped three divergences between those two
+   files and this is the mark where a divergence would be a false statement
+   about a person rather than a cosmetic drift.
+
+   THE INK IS THE TRACK'S (PLAN §3: "a single hairline at the track's own ~12%
+   ink"). It has to be the quietest thing on the plate: a sealed run is the app
+   declining to say something, and a mark that competes with the value arc would
+   read as an answer.
+
+   THE WEIGHT IS THE VALUE ARC'S, AND THAT IS THE ONE PLACE THIS DEPARTS FROM
+   THE PLAN'S LETTER — with the plan's own rule 1 as the reason. At the track's
+   ink AND the track's weight, a sealed slot is pixel-for-pixel an EMPTY TRACK,
+   and an empty track is not neutral: the track is the calibration, so a reader
+   looking at a plate that carries one sealed and one unsealed run reads the
+   sealed one as a value arc of length zero, i.e. as the bottom of the field.
+   That is a false value, drawn in vector, which is the failure the third state
+   exists to prevent. Same ink, double the weight: it cannot be read as a
+   quantity and it cannot be mistaken for the empty part of a scale. The track
+   is suppressed under a sealed slot for the same reason — there is nothing to
+   calibrate. */
+export const SEALED_ARC_INK = 0.12;
+export const SEALED_ARC_W = 2.6;
+
 export const TAU = Math.PI * 2;
 
 /**
@@ -921,9 +946,26 @@ export interface SeasonArc {
   start: number;
   /** How much of the circle this slot owns, minus its gap. */
   room: number;
-  /** How much of `room` the finish fills. 0 when beaded. */
+  /** How much of `room` the finish fills. 0 when beaded, `room` when sealed —
+      and a painter may not read this without reading `sealed` first. */
   span: number;
   beaded: boolean;
+  /**
+   * A RUN THAT WAS PLAYED AND WHOSE FINISH THIS READER MAY NOT BE TOLD.
+   *
+   * THE THIRD STATE, AND WHY IT HAD TO EXIST (PLAN-spoilers.md §3). Until this
+   * landed a withheld rank arrived here as `undefined` and fell into `beaded`,
+   * whose established meaning is "present, not competing" — a studio panel
+   * seat, a dealer, a host. So at the empty watched-set 이태균, who WON season
+   * 1, and 이상민, who sat on a panel, produced a byte-identical arc signature:
+   * the app was not withholding a claim, it was asserting a false one about a
+   * named person. Fourteen of the sixteen beaded rings at that set were runs
+   * that were played.
+   *
+   * Three states, three meanings, no overlap. Never reuse this for anything
+   * else, and never let a fourth case fall through to one of the other two.
+   */
+  sealed: boolean;
   won: boolean;
 }
 
@@ -933,19 +975,31 @@ export interface SeasonArc {
  * `count` is at least 3 so a one-season plate does not draw a single arc
  * sweeping the whole circle — the slot is a unit of measure, and it has to be
  * the same unit on every plate for two plates to be comparable.
+ *
+ * `sealed[i]` OUTRANKS `ranks[i]`, and the order of the two branches below is
+ * the whole guarantee: a sealed slot may not consult a rank even if one is
+ * somehow still in the array. `buildGraph` is where the flag is decided,
+ * because deciding it needs the reader's watched-set and this file has no
+ * business holding one.
  */
 export function seasonArcs(
   seasons: readonly number[],
   ranks?: readonly (number | undefined)[],
   fieldSizes?: readonly (number | undefined)[],
+  sealed?: readonly boolean[],
 ): SeasonArc[] {
   const slot = TAU / Math.max(3, seasons.length);
   const room = slot - SLOT_GAP;
   return seasons.map((_, i) => {
     const start = -Math.PI / 2 + i * slot + SLOT_GAP / 2;
+    /* CONSTANT LENGTH IS THE POINT. The full slot on every sealed run on every
+       plate, so the mark carries no quantity to invert — arc length here is a
+       property of the slot, which is the same on every plate of three seasons
+       or fewer, and not of anything that happened in the season. */
+    if (sealed?.[i]) return { start, room, span: room, beaded: false, sealed: true, won: false };
     const rank = ranks?.[i];
-    if (!rank || rank < 1) return { start, room, span: 0, beaded: true, won: false };
+    if (!rank || rank < 1) return { start, room, span: 0, beaded: true, sealed: false, won: false };
     const span = Math.min(room, SPAN_MAX * rankFrac(rank, fieldSizes?.[i] ?? FIELD_DEFAULT));
-    return { start, room, span, beaded: false, won: rank === 1 };
+    return { start, room, span, beaded: false, sealed: false, won: rank === 1 };
   });
 }

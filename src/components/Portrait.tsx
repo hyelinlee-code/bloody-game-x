@@ -5,7 +5,6 @@ import { t, type Lang, type UiKey } from '../data/i18n';
 import { isMeeting } from '../data/edges';
 import { castMarkSet } from '../graph/build';
 import {
-  FIELD_DEFAULT,
   HOST_RING,
   MARK_LEADING,
   PHOTO_LEVEL,
@@ -18,11 +17,11 @@ import {
   R_LAUREL_OUT,
   R_RIM,
   R_SEASON,
-  SLOT_GAP,
-  SPAN_MAX,
+  SEALED_ARC_INK,
+  SEALED_ARC_W,
   TAU,
   markLines,
-  rankFrac,
+  seasonArcs,
   seatStops,
   seeded,
 } from '../graph/plateGeometry';
@@ -138,13 +137,25 @@ export interface PortraitProps {
    * fourteen arcs in thirteen distinct lengths — under run rows that named no
    * finish at all.
    *
-   * `undefined` MEANS TWO THINGS and both draw the beaded ring: a run that was
-   * never at the prize (a host, a panel seat, a dealer) and a run whose finish
-   * is sealed. They are different states, the beads currently say only the
-   * first, and the third mark that tells them apart is PLAN-spoilers.md §3 —
-   * landing in both painters and in the legend in one commit, never here alone.
+   * `undefined` MEANS TWO THINGS and they are told apart by `sealed`, never by
+   * this array: a run that was never at the prize (a host, a panel seat, a
+   * dealer) draws the beads, and a run whose finish is withheld draws the third
+   * mark. Do not add a case to this field to carry that distinction — the
+   * canvas painter would need the same case and the two would have to be kept
+   * in step by hand, which is what `seasonArcs` exists to stop.
    */
   ranks?: (number | undefined)[];
+  /**
+   * Which of those runs were played and are sealed against this reader —
+   * aligned with `seasons`, and, like `ranks`, ALREADY THROUGH THE GATE when it
+   * arrives. `node.plate.sealed` is the one source; `buildGraph` decides it,
+   * because deciding it takes the watched-set.
+   *
+   * A call site that passes `ranks` and forgets this one gets the old defect
+   * back — every sealed run falls to the beaded mark, which says the person was
+   * present and not competing. See `SeasonArc.sealed` for who that libelled.
+   */
+  sealed?: boolean[];
   /**
    * How many people were in each of those fields, aligned with `seasons`. Gated
    * with `ranks` and by the same rule — a denominator may never outlive the
@@ -209,6 +220,7 @@ export function Portrait({
   seasons,
   ranks,
   fieldSizes,
+  sealed,
   isWinner = false,
   isHost = false,
   noTies = false,
@@ -347,8 +359,6 @@ export function Portrait({
      broken. `castMarkSet` is the cohort the canvas gets for free. */
   const { size: fs, squeeze: sq } = castMarkSet(glyph, R).cut(glyph, R);
   const lh = fs * MARK_LEADING;
-
-  const slot = TAU / Math.max(3, seasons.length);
 
   return (
     <svg
@@ -546,16 +556,41 @@ export function Portrait({
           strokeDasharray="2.5 4"
         />
       ) : (
-        seasons.map((s, i) => {
-          const start = -Math.PI / 2 + i * slot + SLOT_GAP / 2;
-          const room = slot - SLOT_GAP;
-          const rank = ranks?.[i];
-          const won = rank === 1;
+        /* THE SOLVER IS SHARED, and this is the round that made it so. The
+           three cases below used to be re-derived here — slot, room, start,
+           the SPAN_MAX × rankFrac product and the `rank === 1` test, all
+           written a second time — while `graph/plate.ts` called `seasonArcs`
+           for the same three. Two authorings of one encoding is precisely what
+           this file's own header forbids, and it is how the two painters
+           managed to disagree three times. Now there is one layout and this
+           file only decides how each state is INKED. */
+        seasonArcs(seasons, ranks, fieldSizes, sealed).map((a, i) => {
+          const s = seasons[i];
+          const { start, room, span } = a;
+
+          /* SEALED — played, and the finish is not this reader's to see. Season
+             colour kept (colour is participation); the track, the cap and the
+             winner's weight all gone, because those are the finish. Constant
+             length on every sealed run on every plate, so there is nothing to
+             measure. See SEALED_ARC_INK on why it is not simply the track. */
+          if (a.sealed) {
+            return (
+              <path
+                key={`${s}-${i}`}
+                d={arc(cx, cy, Rseason, start, start + room)}
+                fill="none"
+                stroke={SEASON_COLOR[s]}
+                strokeOpacity={SEALED_ARC_INK}
+                strokeWidth={SEALED_ARC_W}
+                strokeLinecap="round"
+              />
+            );
+          }
 
           /* No rank is not a bad rank. A studio-panel seat or a dealer's run
              has no finish, so it draws the whole slot as beads rather than the
              short stub a 13th place draws. */
-          if (!rank || rank < 1) {
+          if (a.beaded) {
             return (
               <path
                 key={`${s}-${i}`}
@@ -570,7 +605,7 @@ export function Portrait({
             );
           }
 
-          const span = Math.min(room, SPAN_MAX * rankFrac(rank, fieldSizes?.[i] ?? FIELD_DEFAULT));
+          const won = a.won;
           const [ex, ey] = polar(cx, cy, Rseason, start + span);
           return (
             <g key={`${s}-${i}`}>
@@ -733,16 +768,39 @@ export function Portrait({
    The swatches are drawn from the same constants as the plate above, at the
    same relative radii, for the same reason. */
 
-export type PlateMarkKind = 'laurel' | 'hostRing' | 'newcomer' | 'noTies' | 'arcs' | 'ticks' | 'ring';
+export type PlateMarkKind =
+  | 'laurel'
+  | 'hostRing'
+  | 'sealed'
+  | 'newcomer'
+  | 'noTies'
+  | 'arcs'
+  | 'ticks'
+  | 'ring';
 
 /** Rarest and most-decorated first: that is the order a reader asks in. The
     archetype ring is on every plate, so it is the row that gets dropped when
-    a surface can only afford two. */
-const MARK_ORDER: PlateMarkKind[] = ['laurel', 'hostRing', 'newcomer', 'noTies', 'arcs', 'ticks', 'ring'];
+    a surface can only afford two.
+
+    `sealed` sits high for a different reason from the two above it: it is the
+    only mark on this plate that is a fact about the READER rather than about
+    the person, so somebody meeting it needs it explained before the rows that
+    describe the record. It also displaces `arcs` — see `plateMarks`. */
+const MARK_ORDER: PlateMarkKind[] = [
+  'laurel',
+  'hostRing',
+  'sealed',
+  'newcomer',
+  'noTies',
+  'arcs',
+  'ticks',
+  'ring',
+];
 
 const MARK_TEXT: Record<PlateMarkKind, UiKey> = {
   laurel: 'about.tileHalo',
   hostRing: 'about.tileHostRing',
+  sealed: 'about.tileSealed',
   newcomer: 'about.tileDashedRim',
   noTies: 'about.tileNoTies',
   arcs: 'about.tileArcs',
@@ -754,6 +812,9 @@ export interface PlateKeyProps {
   lang: Lang;
   category: Category;
   seasons: SeasonNumber[];
+  /** Aligned with `seasons`, as on `Portrait`. A key that is not told this
+      explains a plate the reader is not looking at. */
+  sealed?: boolean[];
   isWinner?: boolean;
   isHost?: boolean;
   noTies?: boolean;
@@ -842,6 +903,54 @@ export function PlateMarkSwatch({
           {body}
         </svg>
       );
+    case 'sealed':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          {/* One unsealed slot beside one sealed one, because the whole lesson
+              is the DIFFERENCE: a value arc over its track against a constant
+              band with no track under it. A specimen that showed the sealed
+              band alone would be a dim ring the reader has no reason to read as
+              anything. The ink is the plate's own; the weight is scaled by the
+              same 1.9/2.6 the `arcs` swatch beside it uses, so the two rows
+              stay one drawing at two sizes rather than two drawings. */}
+          {[0, 1].map((i) => {
+            const start = -Math.PI / 2 + i * Math.PI + 0.18;
+            const room = Math.PI - 0.36;
+            const s = seasons[i] ?? ((i + 1) as SeasonNumber);
+            return i === 0 ? (
+              <g key={i}>
+                <path
+                  d={arc(c, c, 7.2, start, start + room)}
+                  fill="none"
+                  stroke={SEASON_COLOR[s]}
+                  strokeOpacity={0.16}
+                  strokeWidth={0.9}
+                  strokeLinecap="round"
+                />
+                <path
+                  d={arc(c, c, 7.2, start, start + room * 0.72)}
+                  fill="none"
+                  stroke={SEASON_COLOR[s]}
+                  strokeOpacity={0.95}
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                />
+              </g>
+            ) : (
+              <path
+                key={i}
+                d={arc(c, c, 7.2, start, start + room)}
+                fill="none"
+                stroke={SEASON_COLOR[s]}
+                strokeOpacity={SEALED_ARC_INK}
+                strokeWidth={SEALED_ARC_W * 0.73}
+                strokeLinecap="round"
+              />
+            );
+          })}
+          {body}
+        </svg>
+      );
     case 'arcs':
       return (
         <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -900,16 +1009,31 @@ export function PlateMarkSwatch({
 /** The marks a given plate actually carries, in reading order. */
 function plateMarks({
   seasons,
+  sealed,
   isWinner,
   isHost,
   noTies,
   connections,
-}: Pick<PlateKeyProps, 'seasons' | 'isWinner' | 'isHost' | 'noTies' | 'connections'>): PlateMarkKind[] {
+}: Pick<
+  PlateKeyProps,
+  'seasons' | 'sealed' | 'isWinner' | 'isHost' | 'noTies' | 'connections'
+>): PlateMarkKind[] {
   const present = new Set<PlateMarkKind>(['ring']);
   if (isWinner) present.add('laurel');
   if (isHost) present.add('hostRing');
+  const anySealed = (sealed ?? []).some(Boolean);
   if (seasons.length === 0) present.add('newcomer');
-  else present.add('arcs');
+  /* SEALED DISPLACES `arcs` RATHER THAN JOINING IT when every run on the plate
+     is sealed, and the reason is the key's own contract: it names the marks
+     THIS plate carries. '바깥 호 = 출연한 이전 시즌' glosses a value arc against
+     its track, and on an all-sealed plate there is no such arc on screen — the
+     row would be explaining a mark the reader cannot find, next to a row
+     explaining the one they can. A plate with one of each keeps both. */
+  else if (anySealed && sealed?.every(Boolean)) present.add('sealed');
+  else {
+    present.add('arcs');
+    if (anySealed) present.add('sealed');
+  }
   /* The key names the marks THIS plate carries, so it counts what the plate
      counts: a parallel record draws no tick, and a row explaining a mark that
      is not on the disc beside it is worse than a missing row. */
@@ -922,6 +1046,7 @@ export function PlateKey({
   lang,
   category,
   seasons,
+  sealed,
   isWinner = false,
   isHost = false,
   noTies = false,
@@ -931,7 +1056,7 @@ export function PlateKey({
   className,
 }: PlateKeyProps): JSX.Element | null {
   const color = CATEGORY_COLOR[category] ?? CATEGORY_COLOR.other;
-  let marks = plateMarks({ seasons, isWinner, isHost, noTies, connections });
+  let marks = plateMarks({ seasons, sealed, isWinner, isHost, noTies, connections });
   if (omit?.length) marks = marks.filter((m) => !omit.includes(m));
   const shown = limit ? marks.slice(0, limit) : marks;
   if (shown.length === 0) return null;

@@ -381,15 +381,16 @@ export function buildGraph(data: Dataset, watched: WatchedSet = currentWatched()
            rank prints the placing whatever the text around it says. At the
            empty set this was still holding 이태균 `ranks: [1]`.
 
-           A withheld rank arrives here as `undefined`, which the plate already
-           draws as the beaded ring — the mark for "no finish to record", which
-           a panel seat draws today. That is the correct INTERIM and not the
-           final answer: sealed and never-competed are different states and
-           Phase 3 owns the third mark that tells them apart. Drawing the
-           beaded ring meanwhile says less than the truth, which is the side to
-           be wrong on. */
+           A withheld rank arrives here as `undefined`, and `undefined` used to
+           be the whole answer — so the plate drew the beaded ring, whose
+           meaning is "present, not competing". That was not saying less than
+           the truth, which the earlier note here claimed; it was saying
+           something false about a named person, and at the empty set it said it
+           about a season champion. `sealed` below is the third state, and the
+           painters read it BEFORE they read a rank. */
         ranks: seasons.map((s) => bestRank(p, s, watched)),
         fieldSizes: seasons.map((s) => fieldOf(p, s, watched)),
+        sealed: seasons.map((s) => sealedRun(p, s, watched)),
         ties: [],
         tieTypes: [],
         isHost,
@@ -564,6 +565,39 @@ function bestRank(p: Person, season: number, watched: WatchedSet): number | unde
     if (best === undefined || rank < best) best = rank;
   }
   return best;
+}
+
+/**
+ * WAS THERE A FINISH HERE THAT THIS READER MAY NOT BE TOLD ABOUT?
+ *
+ * The question the plate could not previously ask, and the reason 이태균 and
+ * 이상민 came out identical: `bestRank` returns `undefined` for a sealed
+ * champion and for a studio panellist alike, and the painters had no third
+ * answer to give. This is the third answer.
+ *
+ * IT READS `r.rank` RAW, WHICH IS ALLOWED HERE AND ALMOST NOWHERE ELSE, and the
+ * distinction is what the value is used FOR. Nothing downstream receives the
+ * number; it is collapsed to a boolean that says only "a finish exists in the
+ * record", which is participation — the thing PLAN §2 keeps at every
+ * watched-set, and the thing the plate has always been allowed to state by
+ * drawing the season's slot at all. What the number itself would say is exactly
+ * what stays behind the accessor.
+ *
+ * The predicate is deliberately the CONTESTANT one, matching `wonASeason`: a
+ * host's or a panellist's run has no finish to seal, so it must keep falling to
+ * the beaded mark rather than being sealed into silence about a run that was
+ * never a run at the prize.
+ *
+ * EXPORTED so the hover card's warm pass can ask the same question of the same
+ * record. That pass paints, off-screen, the plate the card is about to show;
+ * asking it differently would warm a plate that never arrives, and asking it
+ * with a second copy of this predicate is how the two painters drifted before.
+ */
+export function sealedRun(p: Person, season: number, watched: WatchedSet): boolean {
+  const played = p.priorSeasons.some(
+    (r) => r.season === season && r.role === 'contestant' && typeof r.rank === 'number',
+  );
+  return played && bestRank(p, season, watched) === undefined;
 }
 
 /** Field size for that person's run in that season — the denominator a rank is

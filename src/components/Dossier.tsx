@@ -1090,6 +1090,7 @@ function RelRow({ link, other, subject, lang, onSelect }: RelRowProps): JSX.Elem
                 seasons={other.seasons}
                 ranks={ranksFor(other, lang, watched)}
                 fieldSizes={fieldsFor(other, lang, watched)}
+                sealed={other.plate.sealed}
                 isWinner={other.isWinner}
                 isHost={other.isHost}
                 noTies={other.noTies}
@@ -1775,6 +1776,12 @@ function DossierPanel({
                 seasons={node.seasons}
                 ranks={ranksFor(node, lang, watched)}
                 fieldSizes={fieldsFor(node, lang, watched)}
+                /* Off the plate rather than re-derived beside `ranksFor`: the
+                   flag is a fact about the record and the reader's set, both of
+                   which `buildGraph` already had, and a second derivation here
+                   is how the two painters drifted three times. Aligned with
+                   `node.seasons`, which IS `node.plate.seasons`. */
+                sealed={node.plate.sealed}
                 isWinner={node.isWinner}
                 isHost={node.isHost}
                 noTies={node.noTies}
@@ -1858,6 +1865,7 @@ function DossierPanel({
               lang={lang}
               category={node.category}
               seasons={node.seasons}
+              sealed={node.plate.sealed}
               isWinner={node.isWinner}
               isHost={node.isHost}
               noTies={node.noTies}

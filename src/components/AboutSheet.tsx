@@ -13,7 +13,13 @@ import {
   INK_MID,
   SEASON_COLOR,
 } from '../graph/palette';
-import { PHOTO_SEAT_A0, PHOTO_SEAT_A1, PHOTO_SEAT_IN, PHOTO_SEAT_INK } from '../graph/plateGeometry';
+import {
+  PHOTO_SEAT_A0,
+  PHOTO_SEAT_A1,
+  PHOTO_SEAT_IN,
+  PHOTO_SEAT_INK,
+  SEALED_ARC_INK,
+} from '../graph/plateGeometry';
 import { HAS_PORTRAITS, portraitUrl } from '../graph/portraits';
 import { tieCounts } from '../data/edges';
 import { careerSeenBy, careerTableSeenBy, neverFacedSeenBy } from '../data/headToHead';
@@ -266,10 +272,20 @@ type SortKey = 'name' | 'seasons' | 'best' | 'share' | 'ties';
 
 interface RecordCell {
   /** '우승' / '4th' / '진행' — the short form, in the reader's language.
-      Empty when the finish is withheld: the cell then falls to the same '—'
-      an unplayed season gets. Telling those two states apart on the page is
-      Phase 3's sealed mark, not this phase's. */
+      Empty when the finish is withheld; `sealed` is then what the cell draws. */
   label: string;
+  /**
+   * PLAYED, AND THE FINISH IS NOT THIS READER'S TO SEE.
+   *
+   * It used to be absent, and the cell fell to the same '—' an unplayed season
+   * gets — so 이태균's row read '— — —' for a man who was in season 1, three
+   * columns of the table's own glyph for "was not there". PLAN-spoilers.md §3
+   * rule 1 names the em dash specifically: never a false value, and never the
+   * empty state that belongs to a different fact. Worse, the caption directly
+   * above this table promises that who was in which season is still here, which
+   * made three user-facing strings false of the grid they sat on.
+   */
+  sealed: boolean;
   /** '/ 13명 중' — the field the rank was taken from, where there is one. */
   of: string;
   /** GATED. Drives the brass on a win and the muted ink on a role, so it is
@@ -737,13 +753,19 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
            person in that season", which is participation and is never
            redacted — so dropping the entry here would have quietly emptied the
            연표 as well as the table. */
+        /* The same predicate `sealedRuns` counts one line down, and the same one
+           the plate seals on: a run at the prize whose rank this reader may not
+           be told. A host's or a panellist's run is not sealed — it has a label
+           of its own and nothing to withhold. */
+        const sealed = run.role === 'contestant' && !facts.rank;
         cells.set(run.season, {
           label,
+          sealed,
           of: fieldOf(run, lang, facts),
           rank: facts.rank,
           season: run.season,
         });
-        if (run.role === 'contestant' && !facts.rank) sealedRuns += 1;
+        if (sealed) sealedRuns += 1;
         if (run.role === 'contestant' && facts.rank && facts.rank < best) {
           best = facts.rank;
           bestLabel = label;
@@ -1078,6 +1100,33 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
           <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.musician, 0.14)} stroke={CATEGORY_COLOR.musician} strokeWidth="2" />
           <path d={arcPath(66, 40, 24, -128, -38)} fill="none" stroke={SEASON_COLOR[2]} strokeWidth="3.4" strokeLinecap="round" />
           <path d={arcPath(66, 40, 24, -22, 74)} fill="none" stroke={SEASON_COLOR[3]} strokeWidth="3.4" strokeLinecap="round" />
+        </KeyTile>
+
+        {/* THE THIRD ARC STATE, and the row that keeps the one above honest.
+            A value arc is a finish; a beaded arc (two tiles down, on the host
+            ring) is "present, not competing"; this constant band is "played,
+            and you have asked not to be told how it went". Until it existed a
+            sealed run fell through to the beads, so the atlas told an
+            unanswered reader that a season champion had been a panellist — see
+            SeasonArc.sealed. The specimen carries one of each on purpose: the
+            difference between a fraction of a slot and the whole of it, drawn
+            side by side, is the lesson. PLAN-spoilers.md §3 requires this tile
+            to land in the same commit as the geometry. */}
+        <KeyTile lang={lang} k="about.tileSealed">
+          <Specimen cx={66} cy={40} r={15} />
+          <circle cx="66" cy="40" r="15" fill={HAS_PORTRAITS ? 'none' : alpha(CATEGORY_COLOR.esports, 0.14)} stroke={CATEGORY_COLOR.esports} strokeWidth="2" />
+          {/* left: a finish, against its track */}
+          <path d={arcPath(66, 40, 24, -128, -38)} fill="none" stroke={SEASON_COLOR[2]} strokeOpacity={0.16} strokeWidth="1.6" strokeLinecap="round" />
+          <path d={arcPath(66, 40, 24, -128, -62)} fill="none" stroke={SEASON_COLOR[2]} strokeWidth="3.4" strokeLinecap="round" />
+          {/* right: sealed — the whole slot, the track's ink, no track, no cap */}
+          <path
+            d={arcPath(66, 40, 24, -22, 74)}
+            fill="none"
+            stroke={SEASON_COLOR[3]}
+            strokeOpacity={SEALED_ARC_INK}
+            strokeWidth="3.4"
+            strokeLinecap="round"
+          />
         </KeyTile>
 
         {/* THE SHARPEST CASE ON THE PANEL. This tile is captioned '황동 후광 =
@@ -1719,19 +1768,40 @@ export function AboutSheet({ open, dataset, onClose }: AboutSheetProps): JSX.Ele
                     const cell = r.cells.get(n);
                     return (
                       <td className="abt-rec__cell" key={n}>
-                        {/* `cell.label` AND NOT JUST `cell`. A withheld finish
-                            keeps its cell — the spine counts those — but has no
-                            string to set, and rendering the chip empty would
-                            print a bordered, season-tinted box around nothing:
-                            a mark that says "there is a result here" while
-                            refusing to say what, which is a louder claim than
-                            the dash. It falls to the same '—' an unplayed
-                            season gets. Those two states are deliberately not
-                            distinguished this phase; the sealed mark that tells
-                            them apart is Phase 3, in the commit that also adds
-                            the legend row explaining it. At the default every
-                            cell has a label, so this reads as it always did. */}
-                        {cell && cell.label ? (
+                        {/* THREE STATES, THREE MARKS — the table's half of the
+                            plate's third arc state, landing in the same commit
+                            for the same reason.
+
+                            A chip is a finish. The bar is a season that was
+                            PLAYED and whose finish is sealed: the season's own
+                            colour, at the plate's sealed ink, constant width,
+                            no border — nothing that could be read back as a
+                            placing, and nothing that could be mistaken for the
+                            dash beside it. The dash is what it always was, and
+                            now means only one thing: this person was not in
+                            that season.
+
+                            Falling to the dash — which is what shipped for two
+                            rounds — printed 이태균's season 1 row as '— — —'.
+                            The dash is the glyph for "was not there", so the
+                            table was not withholding his finish, it was denying
+                            his run, under a caption promising the opposite.
+
+                            IT IS NAMED, NOT INTERACTIVE, and that is a
+                            deliberate cut against PLAN §3's "reversible in
+                            place": the cells are 30px wide in a table of sixty
+                            of them, and sixty buttons opening one sheet is a
+                            grid of controls rather than a record. The name says
+                            where the control is instead. */}
+                        {cell && !cell.label && cell.sealed ? (
+                          <span
+                            className="abt-rec__sealed"
+                            style={{ '--run': SEASON_COLOR[n] } as CSSProperties}
+                            title={t(lang, 'career.sealedCell')}
+                          >
+                            <span className="sr-only">{t(lang, 'career.sealedCell')}</span>
+                          </span>
+                        ) : cell && cell.label ? (
                           <span
                             className={`abt-rec__run${cell.rank === 1 ? ' abt-rec__run--win' : ''}${
                               cell.rank ? '' : ' abt-rec__run--role'

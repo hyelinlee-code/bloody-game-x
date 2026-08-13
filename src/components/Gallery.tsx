@@ -419,25 +419,20 @@ export function Gallery({ open, graph, visible, onClose, onSelect }: GalleryProp
                                across two reads here is exactly the failure that
                                interlock exists to stop.
 
-                               A WITHHELD RANK ARRIVES AS `undefined` AND DRAWS
-                               THE BEADED RING — 'present all season, no finish
-                               to record'. That is the shipped interim, not the
-                               destination: the canvas node, the hover card, the
-                               dossier crest and the dossier's relation chips all
-                               already draw it, so until this line the two
-                               painters of one object disagreed about the same
-                               person on two surfaces, which is the single thing
-                               plateGeometry.ts's docblock forbids. Sealed and
-                               never-competed are still different states and the
-                               third mark that tells them apart is
-                               PLAN-spoilers.md §3, in the same commit as the
-                               legend row that glosses it; build.ts says the same
-                               thing over `plate.ranks`. Saying less than the
-                               truth on twelve cards is the side to be wrong on,
-                               and it is the side the rest of the app is already
-                               on. */
+                               A WITHHELD RANK ARRIVES AS `undefined`, AND IT NO
+                               LONGER DRAWS THE BEADED RING. That interim shipped
+                               for two rounds and was not a smaller claim than
+                               the truth, it was a different and false one: the
+                               beads mean 'present all season, not competing', so
+                               the wall told a sealed reader that 이태균 had been
+                               a panellist in the season he won. `sealed` is the
+                               third state (PLAN-spoilers.md §3) and it is what
+                               this card passes now — one constant band per
+                               sealed run, no track under it, nothing to
+                               measure. */
                             ranks={n.plate.ranks}
                             fieldSizes={n.plate.fieldSizes}
+                            sealed={n.plate.sealed}
                             isWinner={n.isWinner}
                             isHost={n.isHost}
                             noTies={n.noTies}

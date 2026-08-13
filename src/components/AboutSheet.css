@@ -1202,6 +1202,29 @@
   border-bottom-style: dotted;
 }
 
+/* PLAYED, FINISH SEALED — the table's third state, beside the chip and the
+   dash. It is the run's own underline with the ordinal lifted off it: same
+   2px, same season hue, so a reader who has met the plate's sealed band reads
+   this as the same fact in a different medium.
+
+   FIXED WIDTH IS THE INVARIANT. Every sealed cell in the grid is this exact
+   bar, so there is no length, no count and no ordering to recover from it —
+   the same property the plate's constant arc has, stated in a 30px cell.
+
+   NOT THE PLATE'S 12% INK. On a ring 24px across against a near-black canvas
+   that reads as a deliberate mark; on a 16px underline inside a table it
+   composites to nothing, and an invisible mark is the empty cell we are trying
+   not to draw. The quantity-free requirement is carried by the fixed width
+   here, which leaves the ink free to do the only job left: be legible. */
+.abt-rec__sealed {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  vertical-align: middle;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--run) 45%, transparent);
+}
+
 .abt-rec__none {
   color: var(--ink-low);
 }

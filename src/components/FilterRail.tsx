@@ -550,6 +550,15 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
     for (const type of ALL_EDGE_TYPES)
       if (atlas.edgeTypes.has(type) !== on) atlas.toggleEdgeType(type);
   };
+  /* The blocs were the one multi-select group in this rail with no all/none,
+     and being five chips rather than a list is not a reason: clearing four of
+     five to look at one bloc was four clicks, and the way back was four more.
+     `Reset` is not that control — it clears every filter in the panel, so a
+     reader who had also switched off two relationship types loses those too. */
+  const repsOn = ALL_REPRESENTS.filter((r) => atlas.represents.has(r)).length;
+  const setAllRepresents = (on: boolean) => {
+    for (const r of ALL_REPRESENTS) if (atlas.represents.has(r) !== on) atlas.toggleRepresent(r);
+  };
 
   /* ── what is behind the fold, and why these three fold ──────────────────
      Measured at 1600×1000: 1856px of content in a 685px port. At rest the
@@ -636,6 +645,10 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
     () => ALL_EDGE_TYPES.filter((type) => (edges.present[type] ?? 0) > 0),
     [edges],
   );
+
+  /* Is anybody on this canvas wearing the sealed band? See the node key below
+     for why the row is asked this rather than asked the watched-set. */
+  const anySealed = useMemo(() => graph.nodes.some((n) => n.plate.sealed.some(Boolean)), [graph]);
 
   return (
     <aside
@@ -758,7 +771,21 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
             that all five are on screen. It rides the group's accessible name
             and its tooltip instead, the same place .fedge__meaning's sentence
             goes when its row has to compress. */}
-        <Section lang={lang} titleKey="rail.secLineage" index={1}>
+        <Section
+          lang={lang}
+          titleKey="rail.secLineage"
+          index={1}
+          action={
+            <Bulk
+              lang={lang}
+              nounKey="rail.lineageBulkLabel"
+              onAll={() => setAllRepresents(true)}
+              onNone={() => setAllRepresents(false)}
+              allDisabled={repsOn === ALL_REPRESENTS.length}
+              noneDisabled={repsOn === 0}
+            />
+          }
+        >
           <div
             className="frail__chips"
             role="group"
@@ -958,6 +985,24 @@ export function FilterRail({ atlas, open, onClose, introDone, onOpenAbout }: Fil
               </span>
               <span className="platekey__what">{t(lang, 'rail.nodeHalo')}</span>
             </li>
+            {/* THE FIFTH ROW ARRIVES WITH THE MARK IT EXPLAINS, and it is the
+                only conditional row in this key. PLAN-spoilers.md §3 requires
+                the legend to move in the same commit as the geometry — "or a
+                constant-length ring becomes a claim about a finish" — and this
+                is the resting copy of it, on the panel that is open 100% of the
+                time. It is keyed off the graph rather than off the watched-set
+                because the question is "is this mark on screen", not "how much
+                has this reader watched": a reader who has seen every season
+                seals nothing and is not shown a row for a band no plate is
+                wearing. */}
+            {anySealed ? (
+              <li className="platekey__row">
+                <span className="platekey__mark">
+                  <PlateMarkSwatch kind="sealed" color={KEY_HUE} seasons={KEY_SEASONS} tickColors={KEY_TICKS} />
+                </span>
+                <span className="platekey__what">{t(lang, 'rail.nodeSealed')}</span>
+              </li>
+            ) : null}
           </ul>
           {/* Names the destination AND offers it, when the app has handed one
               down. Prose that names a fix the reader then has to go find is

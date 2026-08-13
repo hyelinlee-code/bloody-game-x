@@ -73,6 +73,7 @@ export const ui = {
     'rail.bulkNoneAria': '선택 해제',
     'rail.secLineage': '출신',
     'rail.secLineageFoot': '시즌 1–3 출신 세 팀과 챌린저·루키 두 팀',
+    'rail.lineageBulkLabel': '출신 팀',
     'rail.lineageGroupAria': '출신 팀으로 거르기',
     'rail.onlyReturning': '프랜차이즈 경험자만',
     'rail.secArchetype': '직업군',
@@ -102,6 +103,10 @@ export const ui = {
     'rail.nodeRing': '링 색 = 직업군',
     'rail.nodeArcs': '바깥 호 = 출연한 이전 시즌',
     'rail.nodeHalo': '황동 후광 = 이전 시즌 우승',
+    /* The rail's line is shorter than the field guide's tile
+       ('about.tileSealed'): this column is ~205px wide and every one of these
+       four wraps at two lines already. Same claim, fewer words. */
+    'rail.nodeSealed': '연한 통 호 = 결과 가림',
     'rail.nodeKeyMore': '나머지 부호 — 안내서에서',
     'rail.outsideTie': '하우스 밖 인연',
     'rail.secMostConnected': '가장 얽힌 인물',
@@ -241,6 +246,13 @@ export const ui = {
     'career.share': '생존률',
     'career.seasons': '출전 시즌',
     'career.titles': '우승',
+    /* THE SEALED CELL'S NAME. It has to carry three things in one line, because
+       it is the whole of what a screen reader gets for that cell: that the
+       person WAS in the season (participation, never redacted), that the finish
+       is being withheld rather than missing, and where the setting that decides
+       it lives. The cell is not a button — see the note at the render site — so
+       naming the control is what replaces reaching it. */
+    'career.sealedCell': '이 시즌에 출연했습니다 · 결과는 가려 둠 (아래 상태 바의 배지에서 바꿀 수 있습니다)',
     /* Printed under the ledger. It used to be the ENTIRE defence against '1승
        0패' beside '같은 판 순위' reading as "he beat him" — a footnote asked to
        retract the sentence in the row above it, which is not something a
@@ -433,6 +445,12 @@ export const ui = {
     'about.tileSize': '크기 = 연결 수',
     'about.tileRing': '링 색 = 직업군',
     'about.tileArcs': '바깥 호 = 출연한 이전 시즌',
+    /* THE THIRD ARC STATE. The wording has one job the other tiles do not: it
+       has to say that the arc is the app declining to answer, not an answer.
+       '연한' (faint) is the mark, '가린' (sealed) is the reason, and 출연 stays
+       in the sentence because participation is the half that is still true —
+       without it the row reads as "this season did not happen to them". */
+    'about.tileSealed': '연한 통 호 = 출연했지만 결과를 가린 시즌',
     'about.tileHalo': '황동 후광 = 이전 시즌 우승',
     /* Three different dashed circles are drawn on the plates and the key used
        to cover one of them, in wording that made the other two read as their
@@ -504,8 +522,13 @@ export const ui = {
        session and racing them was the collision the ownership rule exists to
        prevent. Same words, both sides, now a `UiKey` like every other line of
        copy in the app. */
+    /* IT NOW NAMES THE MARK, because the mark now exists. The old wording
+       promised that who was in which season was still here while the sealed
+       cells fell to the same '—' an unplayed season gets — so the sentence was
+       false of the grid it sat under. The bar is the fix; the last clause is
+       what makes the dash mean one thing again. */
     'about.recordSealedNote':
-      '아직 보지 않았다고 표시한 시즌의 성적은 이 표에서 빠집니다. 누가 어느 시즌에 있었는지와 어떤 자리였는지는 그대로 남아 있습니다.',
+      '아직 보지 않았다고 표시한 시즌의 성적은 이 표에서 빠집니다. 그 시즌에 출연했다는 사실은 옅은 막대로 그대로 남고, 빈칸은 출연하지 않은 시즌입니다.',
     /* The other half of the same finding, and the app knew it and never said
        it: 스무 명 중 세 명은 이 라인업의 누구와도 같은 방에 있었던 적이 없다.
        That is a casting decision, not a hole in the research, so it is stated
@@ -700,7 +723,6 @@ export const ui = {
     'watched.groupFranchise': '피의 게임',
     'watched.groupFranchiseFoot': '순서대로 방영된 세 시즌. 본 데까지만 켜 두면 됩니다.',
     'watched.groupGenius': '더 지니어스',
-    'watched.groupSmtm': '쇼미더머니',
     'watched.groupRest': '그 밖의 프로그램',
     'watched.groupRestFoot': '이 아틀라스가 결과를 언급하는 나머지 작품들.',
     /* The live readout. Both halves are stated because a control that only
@@ -727,6 +749,18 @@ export const ui = {
     'arrive.body':
       '링크는 보낸 사람이 무엇을 봤는지 옮기지 않습니다. 그래서 결과는 가린 채로 열었습니다.',
     'arrive.dismiss': '알겠습니다',
+
+    /* ── the badge coach mark ─────────────────────────────────────────────
+       Shown once, beside the badge, to a reader who has just answered the cold
+       open — the question is behind them and the object that keeps the answer
+       is 11px of shield in the corner they look at last. The copy names the
+       object, says what pressing it does, and promises reversibility; it may
+       NOT describe the current state, because the badge itself is doing that
+       12px away and two sentences about one setting is how they drift. */
+    'cue.watchedTitle': '스포일러 설정은 여기 있습니다',
+    'cue.watchedBody': '무엇을 봤는지 알려주면 아직 안 본 결과만 가려 둡니다. 언제든 다시 바꿀 수 있습니다.',
+    'cue.watchedDismiss': '알겠습니다',
+    'cue.watchedRegion': '스포일러 설정 안내',
 
     /* ── path card ────────────────────────────────────────────────────── */
     'path.regionLabel': '두 사람 사이의 경로',
@@ -888,6 +922,7 @@ export const ui = {
     'rail.bulkNoneAria': 'Clear all',
     'rail.secLineage': 'Lineage',
     'rail.secLineageFoot': 'three blocs drawn from earlier seasons, plus challengers and rookies',
+    'rail.lineageBulkLabel': 'blocs',
     'rail.lineageGroupAria': 'Filter by lineage',
     'rail.onlyReturning': 'Has franchise history',
     'rail.secArchetype': 'Background',
@@ -904,6 +939,7 @@ export const ui = {
     'rail.nodeRing': 'Ring colour = background',
     'rail.nodeArcs': 'Outer arcs = prior seasons',
     'rail.nodeHalo': 'Brass halo = won a past season',
+    'rail.nodeSealed': 'Faint full arc = finish sealed',
     'rail.nodeKeyMore': 'The rest of the marks — field guide',
     'rail.outsideTie': 'a tie from outside the house',
     'rail.secMostConnected': 'Most connected',
@@ -996,6 +1032,7 @@ export const ui = {
     'career.share': 'Outlasted',
     'career.seasons': 'Seasons played',
     'career.titles': 'Titles',
+    'career.sealedCell': 'Played this season — the finish is sealed (change it from the badge in the status bar)',
     'faced.note':
       'A duel is one player against one. A same-field result means the two were in one field and one finished higher — not that they played each other.',
     'faced.scoreLabel': 'Score',
@@ -1145,6 +1182,7 @@ export const ui = {
     'about.tileSize': 'Node size = how connected they are',
     'about.tileRing': 'Ring colour = what they do for a living',
     'about.tileArcs': 'Arcs around a node = the prior seasons they played',
+    'about.tileSealed': 'A faint full arc = played that season, finish sealed',
     'about.tileHalo': 'Brass halo = won a past season',
     'about.tileDashedRim': 'Dashed season ring = never played a prior season',
     'about.tileHostRing': 'Beaded arc = there that season without competing, no placing; solid outer ring = has been in a season off the board',
@@ -1189,7 +1227,7 @@ export const ui = {
        reader's own answer as the cause and English says the same thing in the
        shape English says it in. Neither side counts the withheld finishes. */
     'about.recordSealedNote':
-      'Finishes from the seasons you have not marked as watched are left out of this table. Who was in which season, and in what role, is still here.',
+      'Finishes from the seasons you have not marked as watched are left out of this table. That they were in the season stays, as a faint bar; an empty cell means they were not in it.',
     'about.coldHeading': 'Walking in cold',
     'about.coldBody':
       'These three have never been in a field with any of the other nineteen. That is not a gap in the research — there is no point of contact to find, and the single line each of them carries is a parallel record between people who have never met.',
@@ -1323,7 +1361,6 @@ export const ui = {
     'watched.groupFranchise': 'Bloody Game',
     'watched.groupFranchiseFoot': 'Three seasons, aired in order. Tick as far as you got.',
     'watched.groupGenius': 'The Genius',
-    'watched.groupSmtm': 'Show Me The Money',
     'watched.groupRest': 'Other programmes',
     'watched.groupRestFoot': 'Everything else whose result this atlas states.',
     'watched.countLabel': '{n} works ticked',
@@ -1343,6 +1380,13 @@ export const ui = {
     'arrive.body':
       'A link never carries the sender’s viewing history, so this opened with the endings sealed.',
     'arrive.dismiss': 'Got it',
+
+    /* ── the badge coach mark — see the Korean entry ──────────────────────── */
+    'cue.watchedTitle': 'The spoiler setting lives here',
+    'cue.watchedBody':
+      'Tell it what you have watched and it seals only the endings you have not seen. Change it whenever you like.',
+    'cue.watchedDismiss': 'Got it',
+    'cue.watchedRegion': 'Where the spoiler setting lives',
 
     /* ── path card ────────────────────────────────────────────────────── */
     'path.regionLabel': 'Path between two people',
