@@ -1666,6 +1666,44 @@ async function suiteChrome(browser, base) {
    * byline shown, English cleared by 16px at 1440 where Korean cleared by 143.
    * A positive number is not the bar — 16px is a collision that has not happened
    * yet — so the floor is 24. */
+  /* 3y · THE SOCIAL MARKS ARE NEVER ANONYMOUS.
+   *
+   * This is an atlas ABOUT a real television programme, under a masthead reading
+   * 피의 게임X. Three unlabelled icons in its footer do not read as the author's
+   * accounts — they read as the SHOW's, which is a misattribution the byline
+   * exists to prevent. It shipped that way to a preview: the label had a
+   * breakpoint and the icons did not, so below it the footer offered three
+   * anonymous links.
+   *
+   * The invariant is not "the label usually shows". It is: if any mark is
+   * visible, exactly one attributing label is visible beside it. Exactly one,
+   * not at least one — two would mean the long and short forms are both on. */
+  for (const lang of ['ko', 'en']) {
+    for (const w of [360, 390, 768, 1024, 1280, 1366, 1600, 1920]) {
+      const { ctx, page } = await openPage(browser, base, {
+        viewport: { width: w, height: 900 },
+        lang,
+        dpr: 1,
+      });
+      const m = await page.evaluate(() => {
+        const vis = (el) => !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
+        const icons = [...document.querySelectorAll('.credit__link')].filter(vis).length;
+        const labels = ['.credit__by', '.credit__short'].map((s) => document.querySelector(s)).filter(vis);
+        return { icons, labels: labels.length, named: labels.some((e) => /Hyelin/.test(e.textContent || '')) };
+      });
+      const tag = `${w}.${lang}`;
+      check(
+        `chrome.creditAttributed.${tag}`,
+        m.icons === 0 ? 1 : m.labels,
+        (v) => v === 1,
+        '= 1',
+        'exactly one attributing label beside the marks',
+      );
+      check(`chrome.creditNamed.${tag}`, m.icons === 0 || m.named ? 1 : 0, (v) => v === 1, '= 1', 'and it names a person');
+      await ctx.close();
+    }
+  }
+
   for (const lang of ['ko', 'en']) {
     for (const w of [1440, 1600, 1920]) {
       /* openPage owns the context — it also seeds bgx.lang, arms the probe and

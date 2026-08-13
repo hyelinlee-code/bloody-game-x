@@ -741,6 +741,11 @@ export const ui = {
        them, is anonymous in practice. The invitation is the part that yields. */
     'credit.by': '만든 사람 · Hyelin Lee',
     'credit.invite': '피드백과 문의 환영합니다',
+    /* The narrowest form. Three bare marks in the footer of a site ABOUT a real
+       programme read as that programme's official accounts — the one reading a
+       byline exists to prevent. So there is no width at which the icons appear
+       without a name: this is what is left when the sentence cannot fit. */
+    'credit.byShort': '만든 사람 Hyelin Lee',
     'credit.linkPrefix': 'Hyelin Lee —',
   },
 
@@ -1262,6 +1267,8 @@ export const ui = {
     /* See the Korean entry. */
     'credit.by': 'Built with love by Hyelin Lee',
     'credit.invite': 'any feedback or inquiry welcomed',
+    /* See the Korean entry. */
+    'credit.byShort': 'Built by Hyelin Lee',
     'credit.linkPrefix': 'Hyelin Lee on',
   },
 } as const;

@@ -108,7 +108,12 @@ export function Credit({ lang }: CreditProps): JSX.Element {
           a template: Korean puts the maker after the thing and English puts them
           after "by", so a shared template would have produced one natural line
           and one translated-sounding one. */}
+      {/* TWO LABELS, EXACTLY ONE VISIBLE. The long form yields to the short one
+          rather than to nothing, because the alternative — three unlabelled
+          marks under a masthead reading 피의 게임X — reads as the show's own
+          accounts. Credit.css guarantees one is always on. */}
       <span className="credit__by">{t(lang, 'credit.by')}</span>
+      <span className="credit__short">{t(lang, 'credit.byShort')}</span>
       <span className="credit__invite">
         <span aria-hidden="true">{'·'}</span> {t(lang, 'credit.invite')}
       </span>
