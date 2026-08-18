@@ -24,7 +24,15 @@
  * forever. Over-teaching is annoying in a way that compounds; under-teaching
  * costs a reader one hover over a badge that carries a tooltip anyway.
  */
-const KEY = 'bgx.cue.badge';
+/**
+ * VERSIONED, AND THE SUFFIX IS LOAD-BEARING. A reader who dismissed the first
+ * cue dismissed a different object: it was retired by ANY route into the
+ * picker, including the cold open's own link, so half the people carrying this
+ * key were marked as taught by a screen that never taught them. `v2` is the
+ * cue that is retired only by the badge itself. Bump it again if what the mark
+ * claims changes; do not bump it to re-nag about the same claim.
+ */
+const KEY = 'bgx.cue.badge.v2';
 
 export function hasSeenBadgeCue(): boolean {
   if (typeof window === 'undefined') return true;
@@ -36,10 +44,16 @@ export function hasSeenBadgeCue(): boolean {
 }
 
 /**
- * Called when the cue has done its job — dismissed, or the picker opened by any
- * route at all. Finding the control is the goal; how the reader got there is
- * not the app's business, and a cue that kept reappearing to somebody who has
- * already used the sheet would be arguing with them.
+ * Called when the cue has done its job — and its job is narrower than "the
+ * reader has seen the picker".
+ *
+ * THE CLAIM IS A LOCATION: the setting lives in the badge, bottom right. So it
+ * is retired by the routes that TEACH that location — pressing the badge, or
+ * pressing the cue's own button — and not by the cold open's link, which opens
+ * the same sheet from a screen the badge is not on. The first version retired
+ * on any open at all, which meant a reader who took the landing page's own
+ * invitation was marked as taught and never saw the mark. That is the bug the
+ * `v2` key above exists to undo.
  */
 export function markBadgeCueSeen(): void {
   if (typeof window === 'undefined') return;

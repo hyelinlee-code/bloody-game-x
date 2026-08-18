@@ -893,7 +893,10 @@ async function openPage(
            key at all, because `hasStoredAnswer()` reads its PRESENCE and not
            its value. Everything else pins an answer. */
         if (ids) localStorage.setItem('bgx.watched', JSON.stringify(ids));
-        if (seen) localStorage.setItem('bgx.cue.badge', '1');
+        /* The VERSIONED key — `badgeCue.ts` owns the name and bumped it when
+           the mark's retirement rule changed. Seeding the retired name would
+           quietly make `cue.card.seen` pass for the wrong reason. */
+        if (seen) localStorage.setItem('bgx.cue.badge.v2', '1');
       } catch { /* private mode */ }
     },
     [
@@ -2447,9 +2450,44 @@ async function suiteRedaction(browser, base) {
         await page.waitForTimeout(1400);
         const m = await page.evaluate(() => {
           const b = document.querySelector('.intro__scope');
-          return { asking: !!document.querySelector('.wpq-q'), scope: b ? (b.textContent || '').trim() : null };
+          const px = (sel) => {
+            const e = document.querySelector(sel);
+            return e ? Math.round(parseFloat(getComputedStyle(e).fontSize)) : null;
+          };
+          const stage = document.querySelector('.intro__stage') ?? document.querySelector('.intro');
+          const r = stage?.getBoundingClientRect();
+          return {
+            asking: !!document.querySelector('.wpq-q'),
+            scope: b ? (b.textContent || '').trim() : null,
+            titlePx: px('.intro__scope-title'),
+            bodyLen: (document.querySelector('.intro__scope-body')?.textContent || '').trim().length,
+            cta: (document.querySelector('.intro__scope-cta')?.textContent || '').trim().length,
+            over: r ? Math.round(Math.max(0, -r.top) + Math.max(0, r.bottom - innerHeight)) : null,
+          };
         });
         check(`intro.reasksAnswered.${tag}`, m.asking ? 1 : 0, { eq: 0, note: 'a settled question is not asked twice' });
+
+        /* THE SIZE IS PART OF THE CLAIM, so it is measured rather than trusted.
+           This block replaced an 11px chip the owner could not read the purpose
+           of; a later tidy-up that puts it back on --t-xs would restore the
+           defect while leaving every other check here green. 15 is the floor,
+           not the target — the rule sets --t-body. */
+        check(`intro.scopeTitlePx.${tag}`, m.titlePx, {
+          min: 15, unit: 'px', note: 'the state must be readable, not a footnote',
+        });
+        /* And it EXPLAINS rather than labels: a state with no sentence under it
+           is the chip again, in a bigger font. */
+        check(`intro.scopeExplains.${tag}`, m.bodyLen, {
+          min: 40, note: 'what is kept, and why the count above reads what it reads',
+        });
+        check(`intro.scopeHasAction.${tag}`, m.cta, { min: 4, note: 'one button, and it says what it opens' });
+        /* The cost of a three-line block on a short stage, measured where it
+           bites: Korean at 1280x720 overflowed by 7px on the first cut of this
+           design, and a curtain that overflows can scroll its own masthead off
+           the top. */
+        check(`intro.scopeStageOverflowPx.${tag}`, m.over, {
+          max: 0, unit: 'px', note: 'the curtain still fits its viewport with the block on it',
+        });
         check(`intro.scopeLine.sealed.${tag}`, m.scope ? 1 : 0, {
           eq: 1, note: `states the setting behind the figures: ${m.scope ?? '-'}`,
         });
@@ -2459,7 +2497,7 @@ async function suiteRedaction(browser, base) {
            screen that shows them. */
         const kept = await page.evaluate(() => {
           localStorage.setItem('bgx.watched', JSON.stringify(['bg1', 'bg2']));
-          const b = document.querySelector('.intro__scope');
+          const b = document.querySelector('.intro__scope-cta');
           if (b) b.click();
           return new Promise((r) =>
             setTimeout(() => r({ picker: !!document.querySelector('.wpick'), set: localStorage.getItem('bgx.watched') }), 700),
@@ -2521,6 +2559,77 @@ async function suiteRedaction(browser, base) {
       check('cue.tipOnBadge', m ? m.tipOnBadge : null, { eq: 1, note: 'the tip points inside the badge at every width' });
       check('cue.ringOnBadge', m ? m.ring : null, { eq: 1, note: 'and the badge itself is marked' });
     }
+    await ctx.close();
+  }
+
+  /* 9b · AND THE COLD OPEN'S OWN OFFER DOES NOT COUNT AS HAVING BEEN TAUGHT.
+          This is the defect the mark's first version shipped with, reported as
+          "원래는 coach mark 같은게 떠있었는데 지금 버전에서는 사라졌네": the
+          landing block invites the reader into the picker, the picker retired
+          the mark on ANY open, so taking the invitation cost you the one screen
+          that says where the setting lives afterwards. The claim is a LOCATION
+          and only the badge can teach it.
+
+          Driven in both languages, because the landing block's button is the
+          thing being pressed and it is authored copy on both sides. */
+  for (const lang of ['ko', 'en']) {
+    const { ctx, page } = await openPage(browser, base, {
+      viewport: VIEWPORTS.laptop, lang, dpr: 1, watched: 'none', cue: 'fresh',
+    });
+    await page.waitForTimeout(1400);
+    const took = await page.evaluate(() => {
+      const b = document.querySelector('.intro__scope-cta');
+      if (!b) return null;
+      b.click();
+      return new Promise((r) => setTimeout(() => r(!!document.querySelector('.wpick')), 700));
+    });
+    check(`cue.introOfferOpensPicker.${lang}`, took === null ? null : took ? 1 : 0, {
+      eq: 1, note: 'the landing block is a way in',
+    });
+    /* THROUGH THE APP'S OWN CONTROLS, and both of these are corrections.
+       The first cut pressed Escape twice and leaned on the auto-advance: the
+       picker HOLDS the curtain's countdown, so the waiting was not clock, and
+       the curtain's own key handler competes for Escape with the sheet's. The
+       run did not just fail, it aborted — `page.click('.sb__badge')` 30s later
+       was still being intercepted by a scrim that had never gone away.
+
+       So: the sheet's own Done button, the curtain's own ENTER, each clicked in
+       page context so a scrim cannot swallow the pointer, each waited on by the
+       thing it changes rather than by a duration. */
+    await page.evaluate(() => document.querySelector('.wpick__done')?.click());
+    await page.waitForFunction(() => !document.querySelector('.wpick'), null, { timeout: 8000 }).catch(() => {});
+    await page.evaluate(() => document.querySelector('.intro__enter')?.click());
+    await page
+      .waitForFunction(() => (window.__atlasDebug?.intro?.().reveal ?? 0) >= 0.999, null, { timeout: 15000 })
+      .catch(() => {});
+    await page.waitForFunction(() => !document.querySelector('.intro'), null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(2200);
+    const survived = await page.evaluate(() => ({
+      card: document.querySelector('.sbcue') ? 1 : 0,
+      stored: localStorage.getItem('bgx.cue.badge.v2'),
+      curtain: document.querySelector('.intro') ? 1 : 0,
+    }));
+    check(`cue.introRouteReachedAtlas.${lang}`, survived.curtain, {
+      eq: 0, note: 'the control below is measured on the atlas, not through a curtain',
+    });
+    check(`cue.survivesIntroRoute.${lang}`, survived.card, {
+      eq: 1, note: `taking the cold open's offer must not retire the mark (stored ${survived.stored})`,
+    });
+
+    /* …and the badge does retire it, which is the other half — a mark nothing
+       can dismiss is a permanent decoration. */
+    await page.evaluate(() => document.querySelector('.sb__badge')?.click());
+    await page.waitForFunction(() => !!document.querySelector('.wpick'), null, { timeout: 8000 }).catch(() => {});
+    await page.evaluate(() => document.querySelector('.wpick__done')?.click());
+    await page.waitForFunction(() => !document.querySelector('.wpick'), null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(900);
+    const after = await page.evaluate(() => ({
+      card: document.querySelector('.sbcue') ? 1 : 0,
+      stored: localStorage.getItem('bgx.cue.badge.v2'),
+    }));
+    check(`cue.badgeRetiresIt.${lang}`, after.card === 0 && after.stored === '1' ? 1 : 0, {
+      eq: 1, note: `pressing the badge is what teaches the location (stored ${after.stored})`,
+    });
     await ctx.close();
   }
 

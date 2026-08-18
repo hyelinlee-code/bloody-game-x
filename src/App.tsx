@@ -407,14 +407,26 @@ function Atlas() {
     if (introDone) startReveal();
   }, [introDone, startReveal]);
 
-  /* The picker opening AT ALL retires the coach mark, whichever object opened
-     it — the badge, the arrival banner, the cold open's own link. The cue's
-     whole claim is "the setting lives here"; a reader standing in the sheet has
-     been shown, and repeating it on their next visit would be the app arguing
-     with somebody who already knows. */
-  useEffect(() => {
-    if (pickerOpen) dismissCue();
-  }, [pickerOpen, dismissCue]);
+  /**
+   * WHO OPENED THE PICKER, AND WHY THAT DECIDES THE COACH MARK.
+   *
+   * This used to be `if (pickerOpen) dismissCue()` — any route at all — and it
+   * was wrong in the one way that mattered: the cold open's own line opens this
+   * sheet, so a reader who took the landing page's invitation was recorded as
+   * having been taught where the badge is by a screen the badge is not on. They
+   * then met the atlas with an unexplained chip in the corner, which is the
+   * defect the mark exists to prevent, reported back verbatim.
+   *
+   * The mark's claim is a LOCATION. Only the routes that demonstrate it retire
+   * it: pressing the badge, and pressing the mark's own button.
+   */
+  const openPicker = useCallback(
+    (from: 'badge' | 'cue' | 'elsewhere') => {
+      if (from !== 'elsewhere') dismissCue();
+      setPickerOpen(true);
+    },
+    [dismissCue],
+  );
 
   /* The shortest chain of real relationships between the two ends, recomputed
      whenever the question or the graph it is asked of changes. This is the
@@ -814,7 +826,7 @@ function Atlas() {
         dataset={dataset}
         onReset={atlas.resetFilters}
         introDone={chromeReady}
-        onOpenWatched={() => setPickerOpen(true)}
+        onOpenWatched={() => openPicker('badge')}
         /* Stands down for the cold open, for the sheet it points at, and for
            the arrival banner — which is the same message in more words, to the
            one reader who was never asked the question. Two cards making one
@@ -879,7 +891,7 @@ function Atlas() {
         <ArrivalBanner
           onOpenPicker={() => {
             setArrival(false);
-            setPickerOpen(true);
+            openPicker('elsewhere');
           }}
           onDismiss={() => {
             /* Dismissing IS answering — the same rule the picker's close path
@@ -899,7 +911,9 @@ function Atlas() {
           dataset={dataset}
           onDismissBegin={startReveal}
           onDone={() => setIntroDone(true)}
-          onOpenPicker={() => setPickerOpen(true)}
+          /* 'elsewhere': the cold open is not the badge, so taking its
+             offer must not count as having been shown where the badge is. */
+          onOpenPicker={() => openPicker('elsewhere')}
         />
       )}
     </div>
