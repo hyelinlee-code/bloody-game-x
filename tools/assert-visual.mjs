@@ -841,11 +841,15 @@ const VIEWPORTS = {
 };
 
 /**
- * @param {'all'|'none'|string[]} watched  WHICH READER IS BEING MEASURED, and it
+ * @param {'all'|'none'|'fresh'|string[]} watched  WHICH READER IS BEING MEASURED, and it
  *   is never left to chance — see `workIds` above. `'all'` is the historic
  *   profile every check in this file was written against and is the default, so
  *   PLAN §8's "must still pass at full exposure" is what a bare `openPage`
- *   asserts. `'none'` is the empty set: every outcome sealed.
+ *   asserts. `'none'` is the empty set: every outcome sealed. `'fresh'` writes
+ *   nothing at all — a reader who has never answered, which is the only state
+ *   in which the cold open asks its question, and therefore the only one that
+ *   must never be driven through `enterAndSettle`: its Enter would answer for
+ *   them.
  * @param {'seen'|'fresh'} cue  Whether the badge coach mark has been dismissed.
  *   `'seen'` by default, because a 300px card pinned over the bottom-right
  *   corner is not the app — it is a first-visit annotation on it, and leaving it
@@ -885,11 +889,17 @@ async function openPage(
   await ctx.addInitScript(
     ([ids, seen]) => {
       try {
-        localStorage.setItem('bgx.watched', JSON.stringify(ids));
+        /* `null` is "never answered" — the one state that must NOT write the
+           key at all, because `hasStoredAnswer()` reads its PRESENCE and not
+           its value. Everything else pins an answer. */
+        if (ids) localStorage.setItem('bgx.watched', JSON.stringify(ids));
         if (seen) localStorage.setItem('bgx.cue.badge', '1');
       } catch { /* private mode */ }
     },
-    [watched === 'all' ? WORK_IDS : watched === 'none' ? [] : watched, cue === 'seen'],
+    [
+      watched === 'fresh' ? null : watched === 'all' ? WORK_IDS : watched === 'none' ? [] : watched,
+      cue === 'seen',
+    ],
   );
   if (block) await ctx.route(block, (r) => r.abort());
   const page = await ctx.newPage();
@@ -1330,6 +1340,54 @@ function attentionTook(rest, hot) {
   return best;
 }
 
+/**
+ * A REST BASELINE THAT HAS ACTUALLY COME TO REST.
+ *
+ * `faceCores` samples three frames 220ms apart and takes the median, which
+ * smooths a jitter and cannot see a RAMP: if the scene is still arriving, all
+ * three land on the way up and the median is a point on the slope. Every
+ * reading in this suite is a ratio against that baseline, so a hot baseline
+ * fails the drop check while the picture is perfect.
+ *
+ * MEASURED, TWICE, BEFORE THIS EXISTED. `hover.faceLumaDropPct.mobile.en` went
+ * red at 37.9% with 곽범 at "L* 49.61 → 30.81"; five consecutive hand-driven
+ * passes on the same build put his rest L* at 30.49 every time and his hovered
+ * face 0.3–1.4% BRIGHTER. The 49.61 was the baseline, taken mid-arrival. The
+ * run before that failed `hover.facesProbed.mobile.ko` at 0 on the preview,
+ * with all twenty discs aimable a minute later. Same cause, different symptom.
+ *
+ * So the baseline is now self-verifying: sample, sample again, and accept only
+ * when every face agrees with itself between the two. `enterAndSettle` waits on
+ * the app's own clocks and they are the right clocks — this waits on the thing
+ * the measurement is actually about, which is the pixels.
+ *
+ * IT RETURNS AN UNSTABLE READING RATHER THAN LOOPING FOREVER, and the caller
+ * checks the flag. A harness that quietly retries until it likes the answer is
+ * worse than one that fails: the honest report is "this scene never settled",
+ * which is a finding.
+ */
+const REST_L_TOLERANCE = 0.03;
+
+async function settledCores(page, tries = 5) {
+  let prev = await faceCores(page, 3, 220);
+  for (let i = 0; i < tries; i++) {
+    await page.waitForTimeout(320);
+    const next = await faceCores(page, 3, 220);
+    let worst = 0;
+    for (const [id, a] of next) {
+      const b = prev.get(id);
+      if (!b || !b.L) continue;
+      worst = Math.max(worst, Math.abs(a.L - b.L) / Math.abs(b.L));
+    }
+    /* Same population, and nobody's face moved: the scene is at rest. */
+    if (next.size > 0 && next.size === prev.size && worst <= REST_L_TOLERANCE) {
+      return { cores: next, settled: true, worst: +worst.toFixed(4), passes: i + 1 };
+    }
+    prev = next;
+  }
+  return { cores: prev, settled: false, worst: null, passes: tries };
+}
+
 async function suiteHover(browser, base) {
   console.log('\n── what pointing at somebody costs their photograph ──────────────────');
   const states = [
@@ -1374,7 +1432,18 @@ async function suiteHover(browser, base) {
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.mouse.move(4, 4);
     await page.waitForTimeout(700);
-    const rest = await faceCores(page, 3, 220);
+    /* Not `faceCores` directly — see `settledCores`. Two false FAILs in two
+       consecutive runs came out of a baseline taken while the scene was still
+       arriving, both on the mobile profile, where the entrance has the most to
+       do and the least room to do it in. */
+    const restRead = await settledCores(page);
+    const rest = restRead.cores;
+    check(`hover.restSettled.${tag}`, restRead.settled ? 1 : 0, {
+      eq: 1,
+      note: restRead.settled
+        ? `baseline agreed with itself after ${restRead.passes} pass(es), worst face drift ${restRead.worst}`
+        : 'the scene never came to rest — every ratio below is against a moving baseline',
+    });
 
     const took = new Map();
     const record = (hit) => {
@@ -2323,6 +2392,95 @@ async function suiteRedaction(browser, base) {
     });
 
     await ctx.close();
+  }
+
+  /* 8b · THE COLD OPEN, IN BOTH STATES A READER CAN MEET IT IN.
+   *
+   * Reported from the preview, in these words: "why does it keep flipping?" —
+   * the first visit asked the question, the second showed a curtain with no
+   * trace of it, and the reader concluded the build had reverted. Nothing had:
+   * the question is asked once BY DESIGN (`hasStoredAnswer`). What was missing
+   * is that the curtain said nothing about the setting WHILE PRINTING A FIGURE
+   * DERIVED FROM IT — the stat row reads 24 ties sealed and 52 open.
+   *
+   * Both halves are asserted, in both languages: a state line that never goes
+   * away is as wrong as one that never arrives, because a reader who opened
+   * everything has no anomaly to explain and must not be shown one.
+   *
+   * AND THE LEAD IS ASSERTED ON SCREEN, which is the other half of the same
+   * report. It carried nothing until this round, so a rule dropped it below
+   * 820px of height and that rule's own comment said the question still
+   * carried the sentence. The lead now IS the sentence — what this atlas
+   * prints, and about which works — so it is no longer the thing a short
+   * viewport may spend. 800 and 768 are the two commonest laptop heights and
+   * both used to hide it. */
+  for (const lang of ['ko', 'en']) {
+    for (const vp of [{ width: 1280, height: 800 }, { width: 1280, height: 720 }]) {
+      const tag = `${vp.height}.${lang}`;
+
+      /* never answered: the question, with its subject on screen */
+      {
+        const { ctx, page } = await openPage(browser, base, { viewport: vp, lang, dpr: 1, watched: 'fresh' });
+        await page.waitForTimeout(1400);
+        const m = await page.evaluate(() => {
+          const el = document.querySelector('.wpq-lead');
+          const st = document.querySelector('.intro__stage');
+          const vis = el ? getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0 : false;
+          const r = st ? st.getBoundingClientRect() : null;
+          return {
+            asking: !!document.querySelector('.wpq-q'),
+            lead: vis ? (el.textContent || '').trim().length : 0,
+            /* The stage is `place-items: center` inside `overflow: hidden`, so
+               anything it cannot fit is gone rather than scrolled to. */
+            clipped: r ? (r.top < -1 || r.bottom > innerHeight + 1 ? 1 : 0) : null,
+          };
+        });
+        check(`intro.asksFirstVisit.${tag}`, m.asking ? 1 : 0, { eq: 1, note: 'a reader with no stored answer is asked' });
+        check(`intro.askLeadOnScreen.${tag}`, m.lead, { min: 20, note: 'the line that says what the question is about' });
+        check(`intro.stageClipped.${tag}`, m.clipped, { eq: 0, note: 'the curtain never loses its own controls off-screen' });
+        await ctx.close();
+      }
+
+      /* answered, and sealing something: the state is on the curtain */
+      {
+        const { ctx, page } = await openPage(browser, base, { viewport: vp, lang, dpr: 1, watched: 'none' });
+        await page.waitForTimeout(1400);
+        const m = await page.evaluate(() => {
+          const b = document.querySelector('.intro__scope');
+          return { asking: !!document.querySelector('.wpq-q'), scope: b ? (b.textContent || '').trim() : null };
+        });
+        check(`intro.reasksAnswered.${tag}`, m.asking ? 1 : 0, { eq: 0, note: 'a settled question is not asked twice' });
+        check(`intro.scopeLine.sealed.${tag}`, m.scope ? 1 : 0, {
+          eq: 1, note: `states the setting behind the figures: ${m.scope ?? '-'}`,
+        });
+        /* AND IT DOES NOT ANSWER FOR THEM. `answer('pick')` commits the empty
+           set before opening the sheet, which is right for a first-time reader
+           and would wipe a returning one's ticked works on the way to the
+           screen that shows them. */
+        const kept = await page.evaluate(() => {
+          localStorage.setItem('bgx.watched', JSON.stringify(['bg1', 'bg2']));
+          const b = document.querySelector('.intro__scope');
+          if (b) b.click();
+          return new Promise((r) =>
+            setTimeout(() => r({ picker: !!document.querySelector('.wpick'), set: localStorage.getItem('bgx.watched') }), 700),
+          );
+        });
+        check(`intro.scopeOpensPicker.${tag}`, kept.picker ? 1 : 0, { eq: 1, note: 'the line is the way back to the sheet' });
+        check(`intro.scopeKeepsSet.${tag}`, kept.set === '["bg1","bg2"]' ? 1 : 0, {
+          eq: 1, note: `must not answer for the reader - read back ${kept.set}`,
+        });
+        await ctx.close();
+      }
+
+      /* answered, and sealing nothing: no line, because there is no anomaly */
+      {
+        const { ctx, page } = await openPage(browser, base, { viewport: vp, lang, dpr: 1, watched: 'all' });
+        await page.waitForTimeout(1400);
+        const scope = await page.evaluate(() => (document.querySelector('.intro__scope') ? 1 : 0));
+        check(`intro.scopeLine.open.${tag}`, scope, { eq: 0, note: 'nothing sealed, nothing to explain' });
+        await ctx.close();
+      }
+    }
   }
 
   /* 9 · THE BADGE IS POINTED AT, ONCE. The control the whole feature hangs on
