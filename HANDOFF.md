@@ -3,18 +3,34 @@
 Written 2026-08-13, at the end of a long session, for a fresh chat.
 
 `tsc`, `validate-data` and `vite build` all exit 0; the visual harness runs
-**340 invariants / 325 ok / 0 FAILING / 15 known-open** — and the profile it
+**378 invariants / 363 ok / 0 FAILING / 15 known-open** — and the profile it
 measures is now pinned rather than accidental, which is why the known-open list
 moved. See §4.
 
 ```
 origin/main          971ab34   ← LIVE at bloody-game-x.vercel.app
-phase-1-scope-spine            ← ahead of main. Current branch.
+phase-1-scope-spine            ← ahead of main. Current branch. Pushed.
 ```
 
-**Not yet pushed at the time of writing, so no preview has asserted this work.**
-Push, let Vercel build, run the three proofs below against the preview, and only
-then merge.
+**Pushed, and the preview has been asserted. Not merged.** The owner reads each
+preview before it becomes production; merging is the deploy, so it waits for
+them. Run the three proofs in §1 against the newest preview before any merge —
+they are cheap and the last one has caught something every time.
+
+### What the last preview round found, because it is the lesson and not the fix
+
+Two runs of this gate went red on the MOBILE HOVER profile in two different
+ways — `facesProbed 0` on one, a 37.9% face-luma drop on the next — and neither
+was a defect in the app. Both were the rest BASELINE being sampled while the
+scene was still arriving, and every reading in that suite is a ratio against it.
+`settledCores` now makes the baseline agree with itself before anything is
+measured against it, and `hover.restSettled.*` fails loudly when a scene never
+comes to rest.
+
+The rule that got this right, and it is worth keeping: **measure the anomaly
+before believing it.** Five hand-driven passes on the failing build put the
+"38% darker" face at 0.3–1.4% BRIGHTER. Widening the threshold would have hidden
+a real defect the day one turned up; the threshold is the claim.
 
 ---
 
@@ -316,7 +332,25 @@ season-2 cohort was five pairs short).
    accessible name. The Dossier's `faced.noResult` branch is the sharpest case.
 4. Then round 17 of the critic loop: `npm run shots`, then `critics.mjs`. Tell it
    what changed — the third arc state, the coach mark, 쇼미더머니 leaving the
-   registry — or it will review a product that no longer exists.
+   registry, the cold open's lead and its returning-reader line — or it will
+   review a product that no longer exists.
 
-Merge to `main` only after a preview run comes back clean. The branch is 18
-commits ahead and every one of them is verified; nothing is merged yet.
+### Still owed, and named so it is not rediscovered
+
+- **The cold open is the only surface that reports the setting on arrival.** The
+  badge does it at rest and the picker does it in full. If a third surface ever
+  needs to, take the words from `status.watchedBadge` rather than writing a
+  fourth phrasing of one state.
+- **`intro.askSkip` still says the badge is at the foot of the screen** and that
+  is now true twice over — the returning curtain names it too. Fine, but if the
+  badge ever moves, three strings move with it.
+- **`.intro` overflows its own viewport at 720px** — `scrollHeight` 816 against a
+  720 client — which is PRE-EXISTING and unrelated to the lead (measured: the
+  scroll height is identical with the lead hidden). It does not clip on a fresh
+  load, but a focus scroll can shift the masthead off the top. Nobody has
+  reported it; it is written down so the next person measures before blaming the
+  lead.
+
+Merge to `main` only after a preview run comes back clean. Every commit on this
+branch is verified; nothing is merged yet, and the merge is the owner's call
+because the merge is the deploy.
