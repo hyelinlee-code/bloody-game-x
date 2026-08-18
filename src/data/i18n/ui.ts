@@ -818,10 +818,36 @@ export const ui = {
     /* ── the one question ─────────────────────────────────────────────────
        Asked only of a reader who has never answered it. Three presets, in the
        order a first-time reader is most likely to want them, and each one says
-       what it will do rather than what it is called. */
-    'intro.askLead': '들어가기 전에 하나만 —',
+       what it will do rather than what it is called.
+
+       THE LEAD CARRIES THE SUBJECT OF THE QUESTION, and it did not until a
+       reader on the preview said so: '들어가기 전에 하나만 —' is a throat-clear,
+       so '어디까지 보셨나요?' arrived with no antecedent — how much of WHAT? —
+       and no stake. A reader who does not know the atlas prints placements has
+       no way to judge the three answers under it, and the safe answer looks
+       like the boring one.
+
+       So it names the danger in the app's own vocabulary (순위·탈락·우승 are
+       exactly the words status.watchedTitle and watched.hides use), and anchors
+       the count on two titles this audience will recognise before it says
+       '{n}개 작품'. Two shows and a number beats an abstract fourteen. */
+    'intro.askLead': '이 아틀라스는 피의 게임 시즌 1–3과 더 지니어스를 비롯한 {n}개 작품의 순위·탈락·우승을 그대로 적습니다.',
     'intro.askNone': '아직 안 봤어요',
-    'intro.askNoneSub': '결과는 가려 둡니다',
+    /* '만' IS THE WHOLE EDIT, and it is the difference between a bounded
+       choice and a crippled one. The sealed default is what most first-time
+       readers take, and 'the endings are sealed' describes it as a loss with no
+       floor — a reader who reads it that way declines the safe answer for fear
+       of getting a thinner atlas. What is actually withheld is the outcome
+       layer and nothing else; twenty people, the cast, the blocs and every
+       season somebody was in survive it.
+
+       AND IT MAY NOT CLAIM MORE THAN THAT. '관계망은 그대로' was drafted here
+       and cut: at the empty set 28 of the 52 ties lose the word for what they
+       are and the ledger reads 24, so "the map is intact" is exactly the kind
+       of over-promise PLAN-spoilers.md §0 exists because of. The full list of
+       what survives is `watched.keeps`, on the sheet, where there is room to
+       be complete. */
+    'intro.askNoneSub': '결과만 가려 둡니다',
     'intro.askAll': '다 봤어요',
     'intro.askAllSub': '전부 펼쳐서',
     'intro.askPick': '골라서 볼게요',
@@ -830,6 +856,15 @@ export const ui = {
        A cold open that cannot be skipped is a wall, and the reader who skips
        has to know both where they land and how to change it. */
     'intro.askSkip': '건너뛰면 결과를 가린 채로 열립니다 — 화면 아래 배지에서 언제든 바꿀 수 있습니다',
+    /* THE RETURNING READER'S LINE, and it is two strings rather than one on
+       purpose: the STATE is `status.watchedBadge` — the badge's own words, so
+       the sentence the reader meets here is the sentence they meet at the foot
+       of the atlas thirty seconds later — and this is only the verb after it.
+       `watched.open` ('본 작품 고르기' / 'Choose what you have watched') is the
+       right label on a CTA that is the whole point of its panel, and too long
+       to sit inside a one-line pill after a state: measured, the English came
+       out 'Endings hidden · 14 works Choose what you have watched'. */
+    'intro.scopeChange': '바꾸기',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* Korean counters do not inflect: 1명 and 20명 take the same word, so the
@@ -1348,7 +1383,12 @@ export const ui = {
     'status.watchedOpen': 'Click to say what you have watched.',
 
     /* ── the watched picker ─────────────────────────────────────────────── */
-    'watched.question': 'How much of it have you watched?',
+    /* NO DANGLING 'IT'. The Korean '어디까지 보셨나요?' needs no object; the
+       English did, and 'it' had nothing to point at on either surface that
+       prints this — the cold open now names the works in the line above
+       (intro.askLead) and the sheet names them in the rows below. Dropping the
+       pronoun is what lets one string serve both. */
+    'watched.question': 'How much have you watched?',
     'watched.lede':
       'Only the works you tick have their endings shown. The rest keep who appeared and who knows whom, and hold the results back.',
     'watched.dialogLabel': 'Choose what you have watched',
@@ -1418,15 +1458,17 @@ export const ui = {
     'intro.hintAuto': 'or wait — it opens on its own',
     'intro.hintNoAuto': 'nothing advances on its own — begin whenever you like',
     /* ── the one question. See the Korean entries. ─────────────────────── */
-    'intro.askLead': 'One question before you go in —',
+    'intro.askLead':
+      'This atlas spells out the placements, eliminations and winners of Bloody Game 1–3, The Genius, and {n} works in all.',
     'intro.askNone': 'None of it yet',
-    'intro.askNoneSub': 'keep the endings sealed',
+    'intro.askNoneSub': 'only the endings are sealed',
     'intro.askAll': 'All of it',
     'intro.askAllSub': 'open everything',
     'intro.askPick': 'Let me choose',
     'intro.askPickSub': 'from {n} works',
     'intro.askSkip':
       'Skip and it opens sealed — the badge at the foot of the screen changes it any time',
+    'intro.scopeChange': 'Change',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* The singular half of each counted noun. See the note on the Korean side:

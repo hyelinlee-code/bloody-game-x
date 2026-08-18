@@ -144,6 +144,14 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
   if (askingRef.current === null) askingRef.current = !hasStoredAnswer();
   const asking = askingRef.current;
 
+  /* How many works this reader is currently sealing. Live rather than read
+     once: the returning-reader line below reports it, and a reader who opens
+     the sheet from that line and comes back should not find the curtain still
+     quoting the number they just changed. (In practice the curtain is gone by
+     then — `openScope` dismisses — but a figure that reports state must track
+     state, or it is a caption on a screenshot.) */
+  const sealedWorks = ALL_WORK_IDS.length - watched.size;
+
   const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
   const exitTimerRef = useRef(0);
@@ -276,6 +284,21 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
     [setWatched, onOpenPicker],
   );
 
+  /**
+   * THE RETURNING READER'S ROUTE BACK TO THE SETTING — and it is deliberately
+   * not `answer('pick')`.
+   *
+   * That one commits WATCHED_NONE before opening the sheet, which is right for
+   * somebody who has just said "let me choose" to a question they had never
+   * answered, and wrong for somebody who answered weeks ago and ticked six
+   * works: it would wipe the six on the way to the screen that shows them. This
+   * opens the sheet and touches nothing.
+   */
+  const openScope = useCallback(() => {
+    onOpenPicker?.();
+    dismissRef.current();
+  }, [onOpenPicker]);
+
   /* Enter / Space / Esc anywhere. Capture phase so the app's global shortcut
      handler never sees these while the cold-open owns the screen. */
   useEffect(() => {
@@ -290,7 +313,12 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
          capture handler would swallow the key before the button ever saw it,
          and the reader would land on the opposite of what they pressed. Escape
          is not exempted — dismissing is dismissing wherever focus is. */
-      if (e.key !== 'Escape' && e.target instanceof HTMLElement && e.target.closest('.wpq-btn')) return;
+      if (
+        e.key !== 'Escape' &&
+        e.target instanceof HTMLElement &&
+        e.target.closest('.wpq-btn, .intro__scope')
+      )
+        return;
       e.preventDefault();
       e.stopPropagation();
       dismissRef.current();
@@ -437,7 +465,9 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                same idempotent dismissal itself, so the bubble is a no-op rather
                than a race. */
             <div className="wpq-row">
-              <p className="wpq-lead">{t(lang, 'intro.askLead')}</p>
+              <p className="wpq-lead">
+                {t(lang, 'intro.askLead').replace('{n}', String(ALL_WORK_IDS.length))}
+              </p>
               <p className="wpq-q">{t(lang, 'watched.question')}</p>
               <div className="wpq-btns">
                 <button
@@ -499,6 +529,36 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                   />
                 )}
               </div>
+              {/* WHAT THE READER ALREADY CHOSE, ON THE SCREEN THAT SHOWS ITS
+                  CONSEQUENCES — reported from the preview, and the sharpest
+                  version of it is three lines above this one: the stat row
+                  prints 관계 24 for a sealed reader and 관계 52 for an open one,
+                  and nothing on this screen said which of those the reader was
+                  looking at, or why. A returning visitor met a curtain
+                  identical to the pre-redaction one, carrying a quietly
+                  redacted number, and concluded the feature had gone.
+
+                  IT DOES NOT RE-ASK. The question is answered; asking again on
+                  every visit is the nag `asking` exists to prevent. It states,
+                  and it offers, in one line.
+
+                  IT BORROWS THE BADGE'S OWN WORDS (`status.watchedBadge`)
+                  rather than authoring a second phrasing of one state, so the
+                  reader who meets the badge at the foot of the atlas thirty
+                  seconds later recognises the sentence they have already read.
+
+                  ONLY WHEN SOMETHING IS SEALED. For a reader who opened
+                  everything the figures are the whole dataset, there is no
+                  anomaly to explain, and a line saying so would be chrome
+                  reporting its own default back at them. */}
+              {sealedWorks > 0 && (
+                <button type="button" className="intro__scope" onClick={openScope}>
+                  <span className="intro__scope-state">
+                    {t(lang, 'status.watchedBadge').replace('{n}', String(sealedWorks))}
+                  </span>
+                  <span className="intro__scope-act">{t(lang, 'intro.scopeChange')}</span>
+                </button>
+              )}
               <p className="intro__hint">
                 <span>{t(lang, 'intro.hintKeys')}</span>
                 <span className="intro__hint-sub">

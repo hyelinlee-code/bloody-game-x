@@ -819,12 +819,25 @@
    `overflow: hidden`, so anything the stage cannot fit is not scrolled to — it
    is gone, and on this screen the thing that would go is the answer the reader
    came here to press. The question block adds ~170px over the single CTA it
-   replaces, so it gives that back in two steps: the framing line first (the
-   question itself still carries the sentence), then the button rhythm. Intro.css
-   compresses the rest of the stage at 640px on its own. */
+   replaces, so it gives that back in the button rhythm below. Intro.css
+   compresses the rest of the stage at 640px on its own.
+
+   THE LEAD USED TO BE THE FIRST THING DROPPED HERE, on the argument that "the
+   question itself still carries the sentence". That was true of '들어가기 전에
+   하나만 —', which carried nothing; it stopped being true the moment the lead
+   became the line that says WHAT the reader is being asked about and what this
+   atlas will otherwise print at them. Dropping it at 820px would have hidden
+   the subject of the question on every 1280×800 and 1366×768 laptop — which is
+   most of them — and left '어디까지 보셨나요?' floating over three answers.
+
+   So it compresses instead of disappearing: one rank down, tighter leading, and
+   the height that buys is smaller than the 170px the rules below are already
+   giving back. Measured after the change at 1280×720, the tightest case this
+   file documents: the stage still clears the viewport. */
 @media (max-height: 820px) {
   .wpq-lead {
-    display: none;
+    font-size: var(--t-xs);
+    line-height: 1.35;
   }
 }
 
