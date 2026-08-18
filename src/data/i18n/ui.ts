@@ -864,7 +864,20 @@ export const ui = {
        right label on a CTA that is the whole point of its panel, and too long
        to sit inside a one-line pill after a state: measured, the English came
        out 'Endings hidden · 14 works Choose what you have watched'. */
-    'intro.scopeChange': '바꾸기',
+    /* THE RETURNING READER'S BLOCK. It replaced a pill reading '결과 가려짐 ·
+       14개 작품 · 바꾸기' at 11px, which the owner reported in these words:
+       "이 정도로는 이게 뭔지 아무도 짐작 못할 것 같음."
+
+       They were right, and the reason is that the pill named a STATE and never
+       said what the state DOES. Three sentences do the job the badge's eight
+       characters cannot: what is being held back, what is not, and — the line
+       that actually answers the question a reader is asking on this screen —
+       why the 연결 figure two inches above reads 24 rather than 52. That figure
+       is the visible symptom of the setting, so it is what the explanation
+       hangs off. */
+    'intro.scopeTitle': '{n}개 작품의 결과를 가리고 있습니다',
+    'intro.scopeBody':
+      '순위 · 탈락 · 우승은 가려 두고, 누가 누구를 아는지는 그대로 보여 줍니다. 위의 연결 수도 이 설정에 맞춰 센 것입니다.',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* Korean counters do not inflect: 1명 and 20명 take the same word, so the
@@ -1468,7 +1481,10 @@ export const ui = {
     'intro.askPickSub': 'from {n} works',
     'intro.askSkip':
       'Skip and it opens sealed — the badge at the foot of the screen changes it any time',
-    'intro.scopeChange': 'Change',
+    /* See the Korean entry for why this is three sentences and not a chip. */
+    'intro.scopeTitle': 'Endings are hidden for {n} works',
+    'intro.scopeBody':
+      'Placements, eliminations and winners stay sealed; who knows whom is still here. The connection count above is counted for this setting too.',
 
     /* ── shared vocabulary ────────────────────────────────────────────── */
     /* The singular half of each counted noun. See the note on the Korean side:

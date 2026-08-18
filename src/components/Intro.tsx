@@ -552,12 +552,44 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                   anomaly to explain, and a line saying so would be chrome
                   reporting its own default back at them. */}
               {sealedWorks > 0 && (
-                <button type="button" className="intro__scope" onClick={openScope}>
-                  <span className="intro__scope-state">
-                    {t(lang, 'status.watchedBadge').replace('{n}', String(sealedWorks))}
-                  </span>
-                  <span className="intro__scope-act">{t(lang, 'intro.scopeChange')}</span>
-                </button>
+                <div className="intro__scope">
+                  <p className="intro__scope-title">
+                    {/* The badge's own shield, at the size this block is set
+                        in. It is the only mark the two surfaces share, and it
+                        is what makes the chip in the corner of the atlas
+                        recognisable thirty seconds later as the same object. */}
+                    <svg
+                      className="intro__scope-shield"
+                      width="15"
+                      height="17"
+                      viewBox="0 0 11 12"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M5.5 0.7 10 2.3v3.6c0 2.6-1.8 4.4-4.5 5.4C2.8 10.3 1 8.5 1 5.9V2.3Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M5.5 2.05 8.75 3.2v2.7c0 1.95-1.35 3.3-3.25 4.05C3.6 9.2 2.25 7.85 2.25 5.9V3.2Z"
+                        fill="currentColor"
+                        fillOpacity="0.55"
+                        stroke="none"
+                      />
+                    </svg>
+                    {t(lang, 'intro.scopeTitle').replace('{n}', String(sealedWorks))}
+                  </p>
+                  <p className="intro__scope-body">{t(lang, 'intro.scopeBody')}</p>
+                  {/* `watched.open` — the picker's own words for its own door,
+                      not a fourth phrasing. The reader meets this exact string
+                      on the badge's tooltip and in the coach mark. */}
+                  <button type="button" className="intro__scope-cta" onClick={openScope}>
+                    {t(lang, 'watched.open')}
+                  </button>
+                </div>
               )}
               <p className="intro__hint">
                 <span>{t(lang, 'intro.hintKeys')}</span>
