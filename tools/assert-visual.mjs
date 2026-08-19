@@ -195,7 +195,52 @@ const OPEN = {
      What is still owed here is the fix this entry was always for: a seat search
      that finds honest room for those sixteen. Getting the count back by
      re-opening the own-face seat is not that fix. */
-  'captions.unnamed': 'r12 — render.ts: the seat search gives up and the node goes nameless. Round 15 traded ~12 more people into it to get captions off faces — see the block above',
+  'captions.unnamed': 'r12 — render.ts: 16 names across 6 states, and the reason is BELOW, not here — see captions.dropReason.*. Round 15 traded ~12 people into this to get captions off faces',
+
+  /* ── WHY, WHICH THIS FILE NEVER ASKED ────────────────────────────────────
+   *
+   * `captions.unnamed` is a count with no cause attached, and for rounds its
+   * note here said "the seat search gives up". The painter has published the
+   * solver's own reason all along and nothing read it. Read now, held over 45
+   * frames, the split is:
+   *
+   *     stray    13 of 16 — seats were FOUND and every one was refused
+   *     no-seat   3 of 16 — nowhere legal to put the box at all
+   *
+   * Those want opposite fixes, which is the whole reason to separate them. A
+   * `no-seat` is a crowding problem: chrome, a stranger's photograph, or a
+   * stranger's plate priced every candidate at Infinity. A `stray` is a layout
+   * problem: the argmin over all 29 seats is FINITE and still reads as somebody
+   * else's face, so the solver refused to lie. Every stray node measured is a
+   * 10-17px disc with neighbours 20-60px away.
+   *
+   * MEASURED TODAY, per state, so a fix has something to move:
+   *     stray    desktop.ko.dossier 1 · desktop.en.dossier 1 · laptop.ko.dossier 1
+   *              laptop.en.fitted 1 · laptop.en.dossier 4 · mobile.en.fitted 3
+   *     no-seat  desktop.en.dossier 1 · laptop.ko.dossier 1 · laptop.en.dossier 1
+   *              (all three are jung-keun-woo, all three with the dossier open)
+   *
+   * WHAT HAS BEEN TRIED AND DID NOT WORK, so it is not tried again. A uniform
+   * 16-bearing probe grid at two radii — 61 seats instead of 29, with a
+   * closed-form corner standoff and a stricter honesty test that also counts
+   * discs behind the panel. Built, measured on the production build, REVERTED:
+   * `unnamed` moved 16 -> 14 across the same 6 failing states, with two states
+   * better, one worse and three unchanged, which is inside the +/-1-2 run noise.
+   * The probe seats were used (up to 9 per state) and every one was honest, so
+   * the mechanism worked and the geometry still did not yield. Taxing the probes
+   * so the old inventory wins ties was also measured and is worse (16 -> 15):
+   * the movement is redistribution, not churn — a label taking a probe VACATES a
+   * fixed seat a cramped neighbour then takes.
+   *
+   * WHAT THE GEOMETRY SAYS IS LEFT. park-ji-min and lee-jin-hyung on the phone
+   * sit in a cluster interior whose Voronoi cell is narrower than the caption
+   * box itself; no seat generator reaches them. The remaining levers all cost
+   * something a solver cannot decide on its own — a smaller caption in crowded
+   * scenes, dropping the role line, or re-opening the own-face seat that round
+   * 15 withdrew to win `captions.overPlate`. Those are product calls. */
+  'captions.dropReason.stray':
+    'render.ts: 13 of 16 unnamed are seats FOUND and refused as reading like another person — the layout problem. See the block above for what was tried',
+  'captions.dropReason.noSeat': 'render.ts: 3 of 16 unnamed have no legal seat at all — jung-keun-woo, dossier open, all three states. The crowding problem',
   /* THESE TWO ARE PASSING AND THEY ARE STILL HERE, ON PURPOSE.
    *
    * render.ts made MISSEAT unreachable rather than merely expensive (the
@@ -734,7 +779,22 @@ function boxCircleOverlapPx(box, cx, cy, r) {
 const HOLD = 0.5;
 function attribution(s) {
   const n = s.shots.length;
-  const tally = { mis: new Map(), orphan: new Map(), unnamed: new Map(), stray: new Map() };
+  /* `dropped` and `seat` have been published by the painter for rounds and NO
+     CHECK HAS EVER READ EITHER, so `captions.unnamed` has always reported a
+     count with no cause attached — which is how its own OPEN note came to say
+     "the seat search gives up" when, held over 45 frames, that is true of three
+     drops in thirteen and the other ten are `stray`. Two different failures
+     wanting opposite fixes, scored as one number.
+
+     Two counts, not one, because the two failures want opposite fixes. */
+  const tally = {
+    mis: new Map(),
+    orphan: new Map(),
+    unnamed: new Map(),
+    stray: new Map(),
+    noSeat: new Map(),
+    strayDrop: new Map(),
+  };
   const bump = (m, k, why) => m.set(k, { hits: (m.get(k)?.hits ?? 0) + 1, why });
 
   for (const shot of s.shots) {
@@ -759,10 +819,25 @@ function attribution(s) {
       if (visibleFraction(d, s) >= 0.6) bump(tally.unnamed, d.id, 'no caption inked');
     }
     for (const x of shot.strayed) bump(tally.stray, x.id, `→ ${x.reads}`);
+    /* THE SOLVER'S OWN REASON, which is the only thing that can tell "nowhere
+       legal to put the box" from "nowhere honest to put it". The first is a
+       crowding problem and the second is a layout one, and a fix aimed at one
+       is invisible in a count that mixes them. */
+    for (const d of shot.dropped ?? []) {
+      if (d.why === 'no-seat') bump(tally.noSeat, d.id, 'no legal seat');
+      else if (d.why === 'stray') bump(tally.strayDrop, d.id, 'no honest seat');
+    }
   }
   const settled = (m) =>
     [...m.entries()].filter(([, v]) => v.hits >= HOLD * n).map(([id, v]) => `${id} (${v.why})`);
-  return { mis: settled(tally.mis), orphan: settled(tally.orphan), unnamed: settled(tally.unnamed), stray: settled(tally.stray) };
+  return {
+    mis: settled(tally.mis),
+    orphan: settled(tally.orphan),
+    unnamed: settled(tally.unnamed),
+    stray: settled(tally.stray),
+    noSeat: settled(tally.noSeat),
+    strayDrop: settled(tally.strayDrop),
+  };
 }
 
 /**
@@ -1059,7 +1134,7 @@ async function assertState(page, tag, { expectAllTwenty = false, expectPhotos = 
       typeOver: Math.max(...all.map((x) => x.typeOver ?? 0)),
     };
   });
-  const { mis, orphan, unnamed, stray } = attribution(s);
+  const { mis, orphan, unnamed, stray, noSeat, strayDrop } = attribution(s);
 
   // 1 · no caption may sit nearer a stranger's plate than its own
   check(`captions.misattributed.${tag}`, mis.length, { max: 0, note: mis.slice(0, 4).join(', ') });
@@ -1075,6 +1150,16 @@ async function assertState(page, tag, { expectAllTwenty = false, expectPhotos = 
   check(`captions.orphan.${tag}`, orphan.length, { max: 0, note: orphan.slice(0, 4).join(', ') });
   // 3 · every node the reader can actually see carries a name
   check(`captions.unnamed.${tag}`, unnamed.length, { max: 0, note: unnamed.slice(0, 4).join(', ') });
+  /* …and WHY, split by the solver's own answer. These two are the diagnosis the
+     count above never carried: a fix that moves `unnamed` while `strayDrop`
+     stays flat did not hit the mechanism it was aimed at. */
+  check(`captions.dropReason.stray.${tag}`, strayDrop.length, {
+    max: 0, note: strayDrop.slice(0, 4).join(', ') || 'no honest seat — the layout problem',
+  });
+  check(`captions.dropReason.noSeat.${tag}`, noSeat.length, {
+    max: 0, note: noSeat.slice(0, 4).join(', ') || 'no legal seat — the crowding problem',
+  });
+
   /* 4 · …and no name is set ON a face. plate.ts's own rule is "no mark over a
    *     face: a photograph IS the identification, and a name set across
    *     someone's eyes is neither" — the mark obeys it and the caption does
