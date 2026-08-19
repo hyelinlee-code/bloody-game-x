@@ -549,7 +549,10 @@ const READ_PAINT = (frames) =>
     const shots = [];
     const tick = () => {
       shots.push({
-        labels: P.labels.map((l) => ({ id: l.id, kind: l.kind, x: l.x, y: l.y, w: l.w, h: l.h, a: l.a })),
+        /* `px` rides along, and it has to: this mapper is field-by-field, so a
+           new field on PaintedLabel that is not named here arrives as undefined
+           and the floor check below silently passes on every frame. */
+        labels: P.labels.map((l) => ({ id: l.id, kind: l.kind, x: l.x, y: l.y, w: l.w, h: l.h, a: l.a, px: l.px })),
         discs: P.frame.discs.map((d) => ({ id: d.id, x: d.x, y: d.y, r: d.r, vis: d.vis })),
         dropped: P.frame.dropped.map((d) => ({ id: d.id, why: d.why })),
         strayed: P.frame.strayed.map((d) => ({ id: d.id, reads: d.reads })),
@@ -1155,6 +1158,21 @@ async function assertState(page, tag, { expectAllTwenty = false, expectPhotos = 
      stays flat did not hit the mechanism it was aimed at. */
   check(`captions.dropReason.stray.${tag}`, strayDrop.length, {
     max: 0, note: strayDrop.slice(0, 4).join(', ') || 'no honest seat — the layout problem',
+  });
+  /* THE LEGIBILITY FLOOR, and it is a gate rather than an OPEN entry because it
+     has never failed and must never start. It exists because of a measured dead
+     end: shrinking the caption to fit a crowded seat DOES recover names — at
+     floor 7px the phone's four dropped names fall to two — and every one of them
+     comes back at 7.2px, which is not a name, it is a smudge that scores as one.
+     `captions.unnamed` counts labels, not legible labels, so without this the
+     cheapest way to turn that metric green is to make the type unreadable.
+     9 is tokens.css's own absolute floor, and its note says even that is for a
+     count pip and never for a sentence. Measured today: 9.4-12.5px. */
+  const minPx = Math.min(
+    ...s.shots.flatMap((sh) => sh.labels.filter((l) => l.kind === 'name' && typeof l.px === 'number').map((l) => l.px)),
+  );
+  check(`captions.minNamePx.${tag}`, Number.isFinite(minPx) ? +minPx.toFixed(2) : null, {
+    min: 9, unit: 'px', note: 'a name too small to read is not a name recovered',
   });
   check(`captions.dropReason.noSeat.${tag}`, noSeat.length, {
     max: 0, note: noSeat.slice(0, 4).join(', ') || 'no legal seat — the crowding problem',

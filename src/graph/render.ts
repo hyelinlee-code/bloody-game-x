@@ -1509,6 +1509,18 @@ export interface PaintedLabel {
    *  yielding one keeps it at the veil floor, so a harness counting names has
    *  to be able to tell 0.92 from 0.45 from 0.29 without OCR. */
   a: number;
+  /**
+   * The px size the name was set at — `12.5 * captionLod(k)`, the frame's own
+   * zoom ramp.
+   *
+   * Published because of what an attempt to fix `captions.unnamed` by shrinking
+   * type found: at mobile zoom the ramp already sets names at 10.2px, and the
+   * crowded nodes only find an honest seat below about 9px — so "make the
+   * caption smaller" recovers names by making them unreadable, which scores as
+   * a win on a metric that counts labels rather than legible ones. The gate
+   * that stops that is `captions.minNamePx`, and it needs this number.
+   */
+  px?: number;
 }
 export const paintedLabels: PaintedLabel[] = [];
 
@@ -3000,7 +3012,8 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
     const alphaOut = paint * (1 - VEIL_TAKE * memo.veil);
     if (alphaOut <= VEIL_INK) paintedFrame.dropped.push({ id: n.id, why: 'veiled' });
     if (alphaOut <= 0.02) continue;
-    if (alphaOut > VEIL_INK) paintedLabels.push({ id: n.id, kind: 'name', ...inkBox, a: alphaOut });
+    if (alphaOut > VEIL_INK)
+      paintedLabels.push({ id: n.id, kind: 'name', ...inkBox, a: alphaOut, px: nameSize });
 
     // Hand the camera the real screen extent of this name so bounds() can pad
     // the world box with it instead of framing bare discs.
