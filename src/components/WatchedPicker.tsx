@@ -10,7 +10,7 @@ import { useWatched, WATCHED_ALL } from '../state/useWatched';
 import './WatchedPicker.css';
 
 /**
- * THE CONTROL. One question — "what have you watched?" — and fourteen answers.
+ * THE CONTROL. One question — "what have you watched?" — and twelve answers.
  *
  * WHY THE QUESTION IS SHAPED THIS WAY. It is never "how spoiled do you want to
  * be", because the reader knows their own viewing history and does not know

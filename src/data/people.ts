@@ -1124,7 +1124,7 @@ export const people: Person[] = [
     notableFor: ['TVING 「환승연애4」 출연', '서울대학교 졸업', '강남 피부과 의원 원장', '유튜브 「퀸승용」 운영'],
     otherShows: [
       { show: 'EXchange 4', showKo: '환승연애4 (TVING)', year: '2025–26', result: '12화 합류', resultEn: 'Joined in episode 12', scope: [] },
-      { show: 'Queen Seung-yong (YouTube)', showKo: '퀸승용 (유튜브)', year: '2026–', result: '곽민경과 공동 운영', resultEn: 'Runs it with Gwak Min-kyung', scope: ['exchange-4'] },
+      { show: 'Queen Seung-yong (YouTube)', showKo: '퀸승용 (유튜브)', year: '2026–', result: '곽민경과 공동 운영', resultEn: 'Runs it with Gwak Min-kyung', scope: [] },
     ],
     priorSeasons: records['shin-seung-yong'] ?? [],
     priorElsewhere: [
@@ -1138,16 +1138,16 @@ export const people: Person[] = [
         arcEn:
           "He appeared on the fourth season of TVING's EXchange (환승연애), the series that puts former couples back under one roof. It is cited as the case in the franchise that turned into a relationship after broadcast: he and his fellow cast member Gwak Min-kyung have said they were already together before the season aired. In March 2026 the two opened a YouTube channel together under the name Queen Seung-yong (퀸승용). The reality format he has actually been through is the one about feelings; a brain-survival house is new to him.",
         sources: [NAMU_SSY, PRESS_SSY_YT],
-        scope: ['exchange-4'],
+        scope: [],
         scopes: { show: [], showKo: [] },
         arcParts: [
           { text: "헤어진 연인들을 한집에 모아 놓는 TVING 「환승연애」의 네 번째 시즌에 출연했다. ", scope: [] },
-          { text: "이 시리즈에서 방송이 끝난 뒤 실제 연인으로 이어진 사례로 꼽히는데, 상대 출연자 곽민경과는 방송이 나가기도 전에 이미 사귀고 있었다고 본인들이 밝혔다. 두 사람은 2026년 3월 「퀸승용」이라는 이름의 유튜브 채널을 함께 열었다. ", scope: ['exchange-4'] },
+          { text: "이 시리즈에서 방송이 끝난 뒤 실제 연인으로 이어진 사례로 꼽히는데, 상대 출연자 곽민경과는 방송이 나가기도 전에 이미 사귀고 있었다고 본인들이 밝혔다. 두 사람은 2026년 3월 「퀸승용」이라는 이름의 유튜브 채널을 함께 열었다. ", scope: [] },
           { text: "그가 실제로 통과해 본 리얼리티는 감정을 다루는 쪽이었고, 이번이 그의 첫 두뇌 서바이벌이다.", scope: [] },
         ],
         arcEnParts: [
           { text: "He appeared on the fourth season of TVING's EXchange (환승연애), the series that puts former couples back under one roof. ", scope: [] },
-          { text: "It is cited as the case in the franchise that turned into a relationship after broadcast: he and his fellow cast member Gwak Min-kyung have said they were already together before the season aired. In March 2026 the two opened a YouTube channel together under the name Queen Seung-yong (퀸승용). ", scope: ['exchange-4'] },
+          { text: "It is cited as the case in the franchise that turned into a relationship after broadcast: he and his fellow cast member Gwak Min-kyung have said they were already together before the season aired. In March 2026 the two opened a YouTube channel together under the name Queen Seung-yong (퀸승용). ", scope: [] },
           { text: "The reality format he has actually been through is the one about feelings; a brain-survival house is new to him.", scope: [] },
         ],
       },

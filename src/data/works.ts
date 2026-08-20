@@ -65,19 +65,23 @@ import type {
  *      현성주's '세계 포커 대회 우승 경력자로' is a SPLIT rather than a tag: the
  *      clause is structure and the death match after it is `bg2`.
  *
- *   3. A MUSIC COMPETITION IS NOT THIS ATLAS'S SUBJECT. 쇼미더머니 was in the
- *      registry as five ids and is out, by the owner's call, and the rule the
- *      call establishes is worth stating because it is the only one here that
- *      turns on GENRE rather than on the shape of a claim: this atlas exists to
- *      say who already knew whom before a brain-survival house, and a reader
- *      guards their viewing of the shows it is about. Nobody arrives at a
- *      pre-premiere cast map for 피의 게임 part-way through a 2015 rap contest,
- *      waiting to find out which preliminary 서출구 went out in.
+ *   3. A SHOW OF A DIFFERENT GENRE IS NOT THIS ATLAS'S SUBJECT. 쇼미더머니 was
+ *      in the registry as five ids, 솔로지옥3 and 환승연애4 as one each, and all
+ *      seven are out by the owner's call. The rule those calls establish is
+ *      worth stating because it is the only one here that turns on GENRE rather
+ *      than on the shape of a claim: this atlas exists to say who already knew
+ *      whom before a brain-survival house, and a reader guards their viewing of
+ *      the shows it is about. Nobody arrives at a pre-premiere cast map for
+ *      피의 게임 part-way through a 2015 rap contest waiting to find out which
+ *      preliminary 서출구 went out in, or part-way through a dating show hoping
+ *      not to learn who 신승용 left with.
  *
  *      THE COST, STATED, because this is the one carve-out that costs
- *      something. Five elimination rows — 윤비's three and 서출구's two — are
- *      now shown to every reader at every setting, and they ARE results under
- *      §2's own table. They are scoped `[]` rather than left untagged, so they
+ *      something. Seven rows are now shown to every reader at every setting and
+ *      they ARE results under §2's own table: 윤비's three eliminations and
+ *      서출구's two, 최혜선's final couple on 솔로지옥3, and 신승용 leaving
+ *      환승연애4 with 곽민경 — the last two being the ending of that format
+ *      rather than a placement in it. They are scoped `[]` rather than left untagged, so they
  *      read as somebody's decision rather than as a forgotten tag; fail-closed
  *      is untouched. WHERE THIS RULE STOPS: it retires programmes whose genre
  *      is not this one, not results that are merely small. A death match, a
@@ -233,10 +237,6 @@ export const WORKS = {
    *  in 현성주's prose and on the edge between them. One id for both seasons,
    *  because the dataset rows them as one. */
   'poker-gods': { titleKo: '포커 신들의 전쟁', titleEn: 'War of the Poker Gods', kind: 'outside', year: '2021–23' },
-  /** 최혜선 × 이관희 최종 커플, and that it did not survive the broadcast. */
-  'singles-inferno-3': { titleKo: '솔로지옥3', titleEn: 'Single’s Inferno 3', kind: 'outside', year: '2023–24' },
-  /** 신승용 × 곽민경 — a real couple, which is this format's ending. */
-  'exchange-4': { titleKo: '환승연애4', titleEn: 'EXchange 4', kind: 'outside', year: '2025–26' },
 } as const satisfies Record<string, Work>;
 
 /**

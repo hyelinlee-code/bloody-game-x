@@ -47,7 +47,7 @@ export const edgesEn: Record<string, EdgeEn> = {
     label: "Final couple on Single's Inferno 3",
     description:
       "The two were matched as a final couple on Netflix's Single's Inferno 3 (솔로지옥3), released between December 2023 and January 2024 — Lee Gwan-hee a professional basketball player, then with Changwon LG Sakers, and Choi Hye-sun an influencer. It did not turn into a relationship afterwards. Asked directly by the presenter Jang Sung-kyu on the web variety show Eat Breakfast Before You Go 2 (아침먹고 가2) in August 2024, Lee said that Choi was in England and so nothing had come of it, and that they had got as far as a meal and a coffee.",
-    scope: ['singles-inferno-3'],
+    scope: [],
   },
 
   'lee-jin-hyung--yoon-bi--betrayal-s2-4': {

@@ -190,7 +190,7 @@ export function StatusBar({
    * the 52 lines are still drawn, and every bloc, occupation, archetype and air
    * date is still printed. A badge reading "전부 가려짐" would be the same
    * failure with the sign flipped. `{n}개 작품` is the honest unit because it is
-   * the unit the reader just set in the picker — fourteen works, ticked or not
+   * the unit the reader just set in the picker — twelve works, ticked or not
    * — and it reconciles against a figure they can see and change.
    *
    * The ledger 300px to the left already states the tie count for this reader

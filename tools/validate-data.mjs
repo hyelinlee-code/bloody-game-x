@@ -1034,10 +1034,11 @@ if (warnings.length) {
     if (!known.has(id)) fail('scope names "' + id + '", which is not a WorkId in works.ts');
   }
 
-  /* 10a-bis. THE RETIRED GENRES. works.ts's inclusion test §3 takes 쇼미더머니
-     out of the registry by the owner's call: this atlas is a map of a brain
-     survival house, and nobody guards a 2015 rap contest's preliminary rounds
-     the way they guard a season they are part-way through. The rule turns on
+  /* 10a-bis. THE RETIRED GENRES. works.ts's inclusion test §3 takes 쇼미더머니,
+     솔로지옥3 and 환승연애4 out of the registry by the owner's call: this atlas
+     is a map of a brain survival house, and nobody guards a 2015 rap contest's
+     preliminary rounds — or which couple walked out of a dating show — the way
+     they guard a season they are part-way through. The rule turns on
      GENRE, which is the one thing in that test a future author cannot re-derive
      from the shape of a claim — so it is checked here rather than left to a
      docblock somebody has to have read. Restoring the ids would put five
@@ -1045,6 +1046,8 @@ if (warnings.length) {
      the intent, delete this list in the same commit and say why. */
   const RETIRED = [
     ['smtm', '쇼미더머니 — a music competition, not this atlas\'s subject (works.ts inclusion test §3)'],
+    ["singles-inferno-3", "솔로지옥3 — a dating show, not the genre this atlas maps (works.ts inclusion test §3)"],
+    ["exchange-4", "환승연애4 — a dating show, not the genre this atlas maps (works.ts inclusion test §3)"],
   ];
   for (const [prefix, why] of RETIRED) {
     for (const id of ALL_WORK_IDS) {

@@ -339,7 +339,7 @@ export const edges: Edge[] = [
       'https://news.mt.co.kr/mtview.php?no=2024080706041265635',
     ],
     scope: [],
-    scopes: { label: ['singles-inferno-3'], labelEn: ['singles-inferno-3'], description: ['singles-inferno-3'] },
+    scopes: { label: [], labelEn: [], description: [] },
   },
   {
     id: 'lee-jin-hyung--yoon-bi--betrayal-s2-4',
