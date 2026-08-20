@@ -554,59 +554,6 @@
   border-color: var(--accent);
 }
 
-/* ── and the same slot when nothing is sealed ──────────────────────────────
-   A CONFIRMATION IS NOT AN EXPLANATION, so it is not built like one. The block
-   above earns its 16px title by accounting for figures that would otherwise be
-   unexplained; this line has nothing to account for — the counts above it are
-   the whole dataset — and its only job is to say so and name the door.
-
-   IT EXISTS BECAUSE THE OMISSION HAD A COST. Leaving this state silent was the
-   documented rule, and twice the owner read the resulting screen as proof the
-   feature had not shipped, because their own browser holds a full set. A reader
-   who has opened everything is exactly the one with no other reason to look at
-   the badge in the corner.
-
-   Set at --t-xs against the block's --t-body: one line, no panel, no shield.
-   `intro.openLinePx` holds it there, so nobody promotes it later on the grounds
-   that it looks quiet — quiet is the specification. */
-
-.intro__open {
-  display: inline-flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-  font-size: var(--t-xs);
-  line-height: 1.4;
-  color: var(--ink-mid);
-  word-break: keep-all;
-}
-
-.intro__open-state {
-  color: var(--ink-mid);
-}
-
-/* The door, underlined rather than tinted brighter than the state it acts on —
-   the same relationship the sealed block's button has to its title, an order of
-   magnitude down. */
-.intro__open-act {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: var(--t-xs);
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  text-decoration-thickness: 1px;
-  cursor: pointer;
-  transition: color var(--d-fast) var(--ease-out);
-}
-
-.intro__open-act:hover {
-  color: var(--accent-hot);
-}
-
 /* SHORT VIEWPORTS TIGHTEN IT; THEY DO NOT GUT IT. The predecessor stripped its
    border and padding below 760px, and an earlier round deleted the question's
    whole lead there — the same mistake, which is spending the explanation to buy

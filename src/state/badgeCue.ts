@@ -1,65 +1,51 @@
 /**
- * HAS THIS READER BEEN SHOWN WHERE THE SPOILER CONTROL IS?
+ * DOES THE BADGE STILL NEED POINTING AT? ALWAYS, UNTIL THIS VISIT SAYS OTHERWISE.
  *
- * WHY THIS EXISTS. The cold open asks the question, and the status bar's shield
- * badge is the answer's home — it reports what is sealed and it opens the
- * picker. But a reader who has answered once meets the badge only as an 11px
- * shield and eight characters of text, 34px tall, in the corner the eye reaches
- * last. It was reported as exactly that: a thing that looks like a stamp on the
- * page rather than a switch on it. Two earlier rounds fixed the same object by
- * making it honest — a span that looked clickable became a button, a button that
- * opened the field guide started opening the setting instead — and neither round
- * fixed the part that matters here, which is that nobody looks at it.
+ * WHY THIS FILE NO LONGER WRITES TO STORAGE, and it is the third round on one
+ * object, so the history is the argument.
  *
- * So the badge gets pointed at, ONCE, and this flag is the once.
+ * The badge is the reader's own redaction control and it is an 11px shield in
+ * the corner the eye reaches last. Round one pointed at it once per reader and
+ * retired the mark on ANY route into the picker — including the cold open's own
+ * link — so taking the landing page's invitation cost you the one screen that
+ * says where the setting lives. Round two bumped the key to `v2` and narrowed
+ * the retirement to the badge itself. That still spent the whole budget on a
+ * single showing, and the owner spent theirs pressing the badge to check the
+ * mark worked. From then on the atlas looked, to the person who asked for the
+ * feature, exactly like the version before it existed. Twice reported, in these
+ * words: "왜 자꾸 예전 버전으로 돌아가는거야?"
  *
- * IT IS A SEPARATE KEY FROM `bgx.watched` ON PURPOSE. The watched-set is the
- * reader's answer and the cue is our teaching, and folding them together would
- * mean a reader who clears the setting has to be taught again, or worse, that
- * dismissing a coach mark writes an exposure decision. Two facts, two keys.
+ * The instruction is not "teach once". It is "무조건 뜨게": the mark is part of
+ * what this screen SAYS, not an onboarding step to be completed and filed. A
+ * reader who has watched everything is the one with no other reason to look at
+ * that corner, and there is no visit on which pointing at it is wrong.
  *
- * A STORAGE EXCEPTION READS AS "ALREADY SEEN", which is the same direction
- * `hasStoredAnswer` fails and for the same reason: in private mode nothing we
- * write survives, so the alternative is a coach mark on every navigation
- * forever. Over-teaching is annoying in a way that compounds; under-teaching
- * costs a reader one hover over a badge that carries a tooltip anyway.
+ * SO THE ONLY MEMORY IS THIS TAB. Dismissing it — or opening the sheet from it —
+ * puts it away for as long as the page is up, because a card that reappears
+ * while you are reading under it is noise. Reload and it is back. Nothing is
+ * written to localStorage, so no browser can end up permanently unable to be
+ * told where its own control is, which is the state this file spent two rounds
+ * creating.
+ *
+ * IF THIS EVER NEEDS TO BECOME PERSISTENT AGAIN, the thing to persist is not
+ * "seen" — it is "this reader has used the picker from the badge at least
+ * twice", which is evidence they know where it is. Do not reintroduce a
+ * one-shot.
  */
-/**
- * VERSIONED, AND THE SUFFIX IS LOAD-BEARING. A reader who dismissed the first
- * cue dismissed a different object: it was retired by ANY route into the
- * picker, including the cold open's own link, so half the people carrying this
- * key were marked as taught by a screen that never taught them. `v2` is the
- * cue that is retired only by the badge itself. Bump it again if what the mark
- * claims changes; do not bump it to re-nag about the same claim.
- */
-const KEY = 'bgx.cue.badge.v2';
+
+/** Live for this page only. Reset by a reload, which is the point. */
+let dismissedThisVisit = false;
 
 export function hasSeenBadgeCue(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    return localStorage.getItem(KEY) !== null;
-  } catch {
-    return true;
-  }
+  return dismissedThisVisit;
 }
 
 /**
- * Called when the cue has done its job — and its job is narrower than "the
- * reader has seen the picker".
- *
- * THE CLAIM IS A LOCATION: the setting lives in the badge, bottom right. So it
- * is retired by the routes that TEACH that location — pressing the badge, or
- * pressing the cue's own button — and not by the cold open's link, which opens
- * the same sheet from a screen the badge is not on. The first version retired
- * on any open at all, which meant a reader who took the landing page's own
- * invitation was marked as taught and never saw the mark. That is the bug the
- * `v2` key above exists to undo.
+ * Put the mark away for the rest of this visit. Called when the reader
+ * dismisses it, and when they open the picker from the badge or from the mark
+ * itself — in both cases the card has said what it had to say and is now
+ * sitting over the thing it was pointing at.
  */
 export function markBadgeCueSeen(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(KEY, '1');
-  } catch {
-    /* nothing to do: `hasSeenBadgeCue` fails the same way and reads as seen. */
-  }
+  dismissedThisVisit = true;
 }

@@ -875,6 +875,15 @@ export const ui = {
        why the 연결 figure two inches above reads 24 rather than 52. That figure
        is the visible symptom of the setting, so it is what the explanation
        hangs off. */
+    /* THE OPEN STATE'S TITLE, and it names the FEATURE rather than the state.
+       A reader with everything ticked has nothing hidden, so a line reporting
+       that ('가려지는 결과가 없습니다') answers a question they never asked and
+       tells them nothing about what this screen can do for them. They are also
+       the one reader with no other reason to look at the badge. So the title is
+       the offer, and the state is the second clause of the sentence under it. */
+    'intro.openTitle': '결과를 가려 둘 수 있습니다',
+    'intro.openBody':
+      '아직 안 본 시즌의 순위 · 탈락 · 우승만 골라서 가릴 수 있습니다. 지금은 아무것도 가리지 않아서, 위의 숫자는 전체 기록입니다.',
     'intro.scopeTitle': '{n}개 작품의 결과를 가리고 있습니다',
     'intro.scopeBody':
       '순위 · 탈락 · 우승은 가려 두고, 누가 누구를 아는지는 그대로 보여 줍니다. 위의 연결 수도 이 설정에 맞춰 센 것입니다.',
@@ -1482,6 +1491,10 @@ export const ui = {
     'intro.askSkip':
       'Skip and it opens sealed — the badge at the foot of the screen changes it any time',
     /* See the Korean entry for why this is three sentences and not a chip. */
+    /* See the Korean entry: the offer, not the state. */
+    'intro.openTitle': 'You can hide endings you have not seen',
+    'intro.openBody':
+      'Pick the seasons you are still working through and this atlas seals their placements, eliminations and winners. Nothing is hidden right now, so the counts above are the full record.',
     'intro.scopeTitle': 'Endings are hidden for {n} works',
     'intro.scopeBody':
       'Placements, eliminations and winners stay sealed; who knows whom is still here. The connection count above is counted for this setting too.',

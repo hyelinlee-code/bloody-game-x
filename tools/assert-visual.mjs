@@ -2618,33 +2618,35 @@ async function suiteRedaction(browser, base) {
         const { ctx, page } = await openPage(browser, base, { viewport: vp, lang, dpr: 1, watched: 'all' });
         await page.waitForTimeout(1400);
         const open = await page.evaluate(() => {
-          const heavy = document.querySelector('.intro__scope');
-          const line = document.querySelector('.intro__open');
-          const act = document.querySelector('.intro__open-act');
-          const px = (e) => (e ? Math.round(parseFloat(getComputedStyle(e).fontSize)) : null);
+          const px = (s) => {
+            const e = document.querySelector(s);
+            return e ? Math.round(parseFloat(getComputedStyle(e).fontSize)) : null;
+          };
           return {
-            heavy: heavy ? 1 : 0,
-            line: line ? 1 : 0,
-            px: px(line),
-            actLen: (act?.textContent || '').trim().length,
+            block: document.querySelector('.intro__scope') ? 1 : 0,
+            px: px('.intro__scope-title'),
+            bodyLen: (document.querySelector('.intro__scope-body')?.textContent || '').trim().length,
+            actLen: (document.querySelector('.intro__scope-cta')?.textContent || '').trim().length,
           };
         });
-        /* The EXPLAINING block belongs to a reader whose figures need
-           explaining. This one's figures are the dataset. */
-        check(`intro.scopeLine.open.${tag}`, open.heavy, { eq: 0, note: 'nothing sealed, nothing to explain' });
-        /* But the slot is not empty. Leaving it empty was the documented rule
-           and it cost the owner two rounds of reading an unchanged screen as a
-           feature that never shipped — their own browser holds a full set, so
-           the state they meet is the one that said nothing. */
-        check(`intro.openLine.${tag}`, open.line, { eq: 1, note: 'a fully-open reader is still told where the setting is' });
-        check(`intro.openLineAction.${tag}`, open.actLen, { min: 4, note: 'and it names the door rather than only the state' });
-        /* AND IT STAYS QUIET. The sealed title is held at >= 15px by
-           `intro.scopeTitlePx`; this is held under it, from the other side, so
-           the two cannot converge into one weight and lose the distinction
-           between explaining and confirming. */
-        check(`intro.openLinePx.${tag}`, open.px, {
-          max: 13, unit: 'px', note: 'a confirmation may not be built like an explanation',
+        /* THE BLOCK IS ON EVERY RETURNING CURTAIN NOW, sealed or not. It used to
+           be absent here — "nothing sealed, nothing to explain" — which left the
+           one reader who cannot see the feature working with no sign it exists. */
+        check(`intro.scopeLine.open.${tag}`, open.block, { eq: 1, note: 'the offer is made whether or not anything is sealed' });
+        /* AND IT IS THE SAME OBJECT AT THE SAME WEIGHT. The previous round made
+           this state an 11px line and pinned it there with `max: 13`, on the
+           argument that confirming needs less room than explaining. Wrong
+           reader: this one is being told for the first time that the atlas can
+           seal anything at all, and it was reported off the live site as too
+           small to notice. The floor is now the sealed title's own floor, and a
+           future round that shrinks either one fails here. */
+        check(`intro.openBlockPx.${tag}`, open.px, {
+          min: 15, unit: 'px', note: 'the offer is not a footnote — it is what the badge never gets to say',
         });
+        check(`intro.openBlockExplains.${tag}`, open.bodyLen, {
+          min: 40, note: 'what the control does, not merely that it is idle',
+        });
+        check(`intro.openBlockAction.${tag}`, open.actLen, { min: 4, note: 'and one button that opens it' });
         await ctx.close();
       }
     }
@@ -2657,6 +2659,12 @@ async function suiteRedaction(browser, base) {
          two-sided: present for a reader who has never opened the picker, gone
          for one who has — and, while it is up, actually ON the badge rather
          than floating near it. */
+  /* 'seen' NO LONGER MEANS "never again". `badgeCue.ts` keeps its flag in a
+     module variable now, so a fresh context is a fresh visit whatever the
+     browser is carrying — which is the whole fix. The seeded localStorage keys
+     below are the RETIRED ones, kept deliberately: they are what the owner's
+     browser holds, and this asserts that a reader carrying them is still told
+     where their control is. */
   for (const cue of ['fresh', 'seen']) {
     const { ctx, page } = await openPage(browser, base, {
       viewport: VIEWPORTS.laptop, lang: 'ko', dpr: 1, cue,
@@ -2681,9 +2689,10 @@ async function suiteRedaction(browser, base) {
       };
     });
     check(`cue.card.${cue}`, m ? m.card : null, {
-      eq: cue === 'fresh' ? 1 : 0, note: cue === 'fresh' ? 'never opened the picker' : 'has opened it',
+      eq: 1,
+      note: cue === 'fresh' ? 'a first visit is pointed at the badge' : 'and so is a browser carrying the old permanent flag',
     });
-    if (cue === 'fresh') {
+    {
       check('cue.gapToBadgePx', m ? m.gap : null, { min: 2, max: 24, unit: 'px', note: 'sits on the badge, not near it' });
       check('cue.tipOnBadge', m ? m.tipOnBadge : null, { eq: 1, note: 'the tip points inside the badge at every width' });
       check('cue.ringOnBadge', m ? m.ring : null, { eq: 1, note: 'and the badge itself is marked' });
@@ -2745,8 +2754,8 @@ async function suiteRedaction(browser, base) {
       eq: 1, note: `taking the cold open's offer must not retire the mark (stored ${survived.stored})`,
     });
 
-    /* …and the badge does retire it, which is the other half — a mark nothing
-       can dismiss is a permanent decoration. */
+    /* …and the badge puts it away, which is the other half — a mark nothing can
+       dismiss is a permanent decoration sitting on the control it points at. */
     await page.evaluate(() => document.querySelector('.sb__badge')?.click());
     await page.waitForFunction(() => !!document.querySelector('.wpick'), null, { timeout: 8000 }).catch(() => {});
     await page.evaluate(() => document.querySelector('.wpick__done')?.click());
@@ -2754,10 +2763,36 @@ async function suiteRedaction(browser, base) {
     await page.waitForTimeout(900);
     const after = await page.evaluate(() => ({
       card: document.querySelector('.sbcue') ? 1 : 0,
+      /* The retired key. Nothing may write it again — that is what made a
+         browser permanently unable to be told where its own control is. */
       stored: localStorage.getItem('bgx.cue.badge.v2'),
     }));
-    check(`cue.badgeRetiresIt.${lang}`, after.card === 0 && after.stored === '1' ? 1 : 0, {
-      eq: 1, note: `pressing the badge is what teaches the location (stored ${after.stored})`,
+    check(`cue.badgePutsItAway.${lang}`, after.card, {
+      eq: 0, note: 'while the reader is standing in the sheet it points at',
+    });
+    check(`cue.writesNoPermanentFlag.${lang}`, after.stored === null ? 1 : 0, {
+      eq: 1, note: `dismissal may not outlive the visit (stored ${after.stored})`,
+    });
+
+    /* ── AND IT IS BACK ON THE NEXT VISIT. ────────────────────────────────
+       THE CHECK THIS WHOLE OBJECT EXISTS FOR, and the one that was missing
+       through three rounds of shipping it. Twice the owner reported the mark
+       gone; both times the cause was that a previous visit had spent it, and no
+       assertion could see the difference between "correctly retired" and
+       "silently never again". The instruction is 무조건 — every visit, whatever
+       the browser is carrying. So: reload the same context, with whatever it
+       wrote, and the card must be there. */
+    await page.reload({ waitUntil: 'networkidle' });
+    await enterAndSettle(page);
+    const next = await page.evaluate(() => ({
+      card: document.querySelector('.sbcue') ? 1 : 0,
+      ring: document.querySelector('.sb__badge')?.classList.contains('is-cued') ? 1 : 0,
+    }));
+    check(`cue.returnsNextVisit.${lang}`, next.card, {
+      eq: 1, note: 'dismissed last visit, pointed at again on this one',
+    });
+    check(`cue.ringReturnsNextVisit.${lang}`, next.ring, {
+      eq: 1, note: 'and the badge itself is marked again',
     });
     await ctx.close();
   }

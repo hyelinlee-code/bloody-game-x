@@ -316,7 +316,7 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
       if (
         e.key !== 'Escape' &&
         e.target instanceof HTMLElement &&
-        e.target.closest('.wpq-btn, .intro__scope, .intro__open')
+        e.target.closest('.wpq-btn, .intro__scope')
       )
         return;
       e.preventDefault();
@@ -564,19 +564,23 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                   reason to look at the badge.
 
                   So: same slot, same door, a tenth of the weight. */}
-              {sealedWorks === 0 && (
-                /* `watched.hiddenNone` and `watched.open` — the picker's own
-                   words for this state and for its own door. A third phrasing
-                   of "nothing is hidden" is a third thing to keep true. */
-                <p className="intro__open">
-                  <span className="intro__open-state">{t(lang, 'watched.hiddenNone')}</span>
-                  <button type="button" className="intro__open-act" onClick={openScope}>
-                    {t(lang, 'watched.open')}
-                  </button>
-                </p>
-              )}
-              {sealedWorks > 0 && (
-                <div className="intro__scope">
+              {/* ONE BLOCK, TWO STATES, ONE WEIGHT — and the weight is the
+                  correction. This state used to be an 11px line, held there by
+                  an assertion I wrote, on my argument that a confirmation
+                  should be quieter than an explanation. The owner's answer,
+                  after reading it on the live site: "폰트가 너무 작아서 사람들
+                  눈에 보이지도 않을듯 ... 사람들이 이런 기능 있는지도 모를거
+                  같은데."
+
+                  They are right, and my argument had the reader backwards. The
+                  open reader is not being confirmed at — they are being told,
+                  for the first time, that this atlas can seal endings for them
+                  at all. That is the most important sentence on the screen for
+                  the one person who will otherwise never look at the badge. It
+                  gets the same 16px title, the same sentence, the same button
+                  as the sealed state, and the only thing that changes between
+                  them is which sentence is true. */}
+              <div className="intro__scope">
                   <p className="intro__scope-title">
                     {/* The badge's own shield, at the size this block is set
                         in. It is the only mark the two surfaces share, and it
@@ -604,9 +608,13 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                         stroke="none"
                       />
                     </svg>
-                    {t(lang, 'intro.scopeTitle').replace('{n}', String(sealedWorks))}
+                    {sealedWorks > 0
+                      ? t(lang, 'intro.scopeTitle').replace('{n}', String(sealedWorks))
+                      : t(lang, 'intro.openTitle')}
                   </p>
-                  <p className="intro__scope-body">{t(lang, 'intro.scopeBody')}</p>
+                  <p className="intro__scope-body">
+                    {t(lang, sealedWorks > 0 ? 'intro.scopeBody' : 'intro.openBody')}
+                  </p>
                   {/* `watched.open` — the picker's own words for its own door,
                       not a fourth phrasing. The reader meets this exact string
                       on the badge's tooltip and in the coach mark. */}
@@ -614,7 +622,6 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                     {t(lang, 'watched.open')}
                   </button>
                 </div>
-              )}
               <p className="intro__hint">
                 <span>{t(lang, 'intro.hintKeys')}</span>
                 <span className="intro__hint-sub">
