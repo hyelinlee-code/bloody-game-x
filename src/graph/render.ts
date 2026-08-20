@@ -2018,7 +2018,29 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderState, sceneAlpha: n
   const zoomedIn = view.k > LABEL_RANK_K;
   const zoomScale = labelZoomScale(view.k);
   const lod = captionLod(view.k);
-  const nameSize = 12.5 * lod;
+  /**
+   * THE FLOOR IS ENFORCED HERE, NOT MERELY ASSERTED.
+   *
+   * `captionLod` scales this by the camera, and at the laptop dossier — a 512px
+   * uncovered strip, so the fit zoom is the smallest this app ever chooses — the
+   * product lands ON the floor rather than near it. Measured against production:
+   * `captions.minNamePx.laptop.en.dossier` came back 8.99 for a floor of 9,
+   * while three local runs of the same state read 9.54, 9.81 and 9.86. It is not
+   * a regression, it is a boundary, and a boundary that a hundredth of a pixel
+   * of camera noise decides is a boundary that will be crossed again.
+   *
+   * So the size cannot go under it by construction. `LABEL_MIN_PX` is
+   * tokens.css's own absolute minimum, whose note says even that is for a count
+   * pip and never for a sentence — and a name is a sentence about a person. The
+   * alternative, lowering the check to 8.9, is the move this repo forbids in as
+   * many words: the threshold is the claim.
+   *
+   * What it costs at the clamp: a hundredth of a pixel of type, and captions
+   * that stop shrinking slightly earlier than the camera does on the one state
+   * that reaches it.
+   */
+  const LABEL_MIN_PX = 9;
+  const nameSize = Math.max(LABEL_MIN_PX, 12.5 * lod);
   const subSize = Math.round(nameSize * 0.88);
   const alwaysSub = view.k >= 1.8;
 

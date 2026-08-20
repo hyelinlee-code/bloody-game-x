@@ -928,11 +928,15 @@ const VIEWPORTS = {
  *   in which the cold open asks its question, and therefore the only one that
  *   must never be driven through `enterAndSettle`: its Enter would answer for
  *   them.
- * @param {'seen'|'fresh'} cue  Whether the badge coach mark has been dismissed.
- *   `'seen'` by default, because a 300px card pinned over the bottom-right
- *   corner is not the app — it is a first-visit annotation on it, and leaving it
- *   up would put it in the frame of every plate, caption and wall measurement
- *   below. `'fresh'` is for the one suite that measures the mark itself.
+ * @param {'seen'|'fresh'} cue  Which coach-mark storage a context starts with.
+ *   THE NAMES ARE NOW HISTORICAL and the docblock here used to lie about what
+ *   they buy. `'seen'` seeds the RETIRED key `bgx.cue.badge.v2`, which
+ *   `badgeCue.ts` no longer reads — so it does NOT keep the card out of the
+ *   frame, and the card is in every measurement below. That is deliberate: it
+ *   is what a real reader sees, and `cue.card.seen` asserts that a browser
+ *   carrying the old permanent flag is still pointed at its own control.
+ *   `'fresh'` seeds nothing, so `cue.writesNoPermanentFlag` can tell a write
+ *   from a seed.
  */
 async function openPage(
   browser,

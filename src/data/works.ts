@@ -30,11 +30,14 @@ import type {
  * work whose outcome could spoil somebody, and `scope: WorkId[]` on every claim
  * that leans on one — see the note at the head of types.ts.
  *
- * THIS FILE IS VOCABULARY, NOT BEHAVIOUR. Nothing under src/components,
- * src/graph or src/state imports it yet, and phase 1 does not wire it: the
- * accessors that spend this vocabulary are phase 2, the sealed strips are phase
- * 3, and the reader's control is phase 4. Until then this is a deliberately
- * open seam, and the only consumer is the validator.
+ * THIS FILE IS VOCABULARY, AND IT IS NOW SPENT. The paragraph that stood here
+ * said nothing outside the validator imported it — true when phase 1 wrote it,
+ * false since phase 4 shipped the reader's control. `Intro.tsx`, `StatusBar.tsx`,
+ * `WatchedPicker.tsx` and `state/useWatched.ts` all import it today, and
+ * `tools/assert-visual.mjs` parses this file's own registry to pin the profiles
+ * it measures. Adding or retiring an id is therefore a user-visible change, not
+ * a data edit: it moves the picker's rows, the badge's count and the cold open's
+ * figure at once.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * THE INCLUSION TEST — apply this before adding a line to WORKS below.
