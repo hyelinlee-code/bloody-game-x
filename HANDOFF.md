@@ -7,8 +7,7 @@ Written 2026-08-19, at the end of a long session, for a fresh chat.
 **441 / 415 / 0 / 26** on the one unmerged branch (it adds 13 checks of its own).
 
 ```
-origin/main                971ab34 -> f9fa7b1   ← LIVE at bloody-game-x.vercel.app
-caption-legibility-floor   18fa34d              ← 1 commit, pushed, NOT merged
+origin/main   971ab34 -> 21039fe -> here   ← LIVE at bloody-game-x.vercel.app
 ```
 
 **Everything from the redaction project is merged and live.** `main` moved 29
@@ -17,11 +16,8 @@ commits in one step and then twice more; production was asserted after the merge
 three proofs in §1 all passed. The old `phase-1-scope-spine` is fully merged and
 can be deleted.
 
-**One branch is waiting on a decision, not on work.**
-`caption-legibility-floor` adds a hard floor of 9px under any painted name and
-publishes the size the painter actually set. It changes no visible pixel today —
-every state already sits above the floor — so merging it is safe and leaving it
-unmerged loses only the trap it closes. See §5.
+**Nothing is unmerged.** Every branch this session opened is in `main` and
+live, and production was asserted after each merge.
 
 ### What shipped this session, in the order a reader meets it
 
@@ -38,8 +34,11 @@ unmerged loses only the trap it closes. See §5.
    the beaded ring, whose meaning is "present, not competing", so the atlas told
    an unanswered reader that the season 1 champion had been a panellist. Third
    arc state, both painters, the legend and the career table, in one commit.
-4. **쇼미더머니 left the registry** by the owner's call — 19 works to 14. The
-   rows still render for every reader; only the sealing stopped.
+4. **Seven works left the registry** by the owner's call — 19 down to 12.
+   쇼미더머니 (five ids), then 솔로지옥3 and 환승연애4. The rows still render for
+   every reader; only the sealing stopped. The rule is stated by genre in
+   `works.ts` §3 and enforced by name in `validate-data.mjs` §10a-bis, which was
+   checked by re-adding an id and watching the build refuse it.
 5. **All/none on every filter-rail section**, and the blocs gained the pair they
    never had.
 
@@ -157,7 +156,7 @@ Seed a redacted reader in any harness:
 ctx.addInitScript(() => localStorage.setItem('bgx.watched', '[]'))
 ```
 
-`'[]'` = has watched nothing. A **full 14-id array** = has watched everything.
+`'[]'` = has watched nothing. A **full 12-id array** = has watched everything.
 In `assert-visual.mjs` do not hand-roll either: pass `watched: 'none' | 'all'`
 to `openPage`, which also pins `bgx.cue.badge` so the coach mark is not in the
 frame of every other measurement.
@@ -305,7 +304,7 @@ history and had to be reverted.
    sealed". Never reuse one for a fourth case; that reuse is what made the app
    call a champion a panellist. `seasonArcs()` in `plateGeometry.ts` is the one
    layout and reads `sealed` before it reads a rank.
-9. **쇼미더머니 is not a work this atlas seals.** The owner's call, on genre: this
+9. **A show of a different genre is not a work this atlas seals.** The owner's call, on genre: this
    is a map of a brain-survival house and nobody guards a 2015 rap contest's
    preliminaries. The five ids are out of `WORKS`, the five elimination rows are
    scoped `[]`, and `validate-data.mjs` §10a-bis fails the build if they return.
@@ -320,8 +319,8 @@ history and had to be reverted.
 ## 7. Data state
 
 20 people · 52 edges · 3 prior seasons · 15 glossary terms · **309 citations**,
-104 unique, 78.0% namu.wiki · **14 works** in the scope registry (19 before
-쇼미더머니 left it).
+104 unique, 78.0% namu.wiki · **12 works** in the scope registry (19 before
+쇼미더머니, 솔로지옥3 and 환승연애4 left it).
 
 That percentage is pinned in the build: adding a wiki-only `high`-confidence
 edge fails, and sourcing one properly *also* fails until the prose figure comes
@@ -343,17 +342,21 @@ season-2 cohort was five pairs short).
 ## 8. Suggested first moves
 
 1. `npm run check` — confirm 0 failing and read the known-open list.
-2. **Decide `caption-legibility-floor`.** One commit, pushed, changes no pixel.
-   Merge it or don't; it only closes a trap. §5 has the argument.
+2. **Decide whether a fully-open reader is told the control exists.** A reader
+   who has ticked every work gets no scope block on the cold open — the rule is
+   "nothing sealed, nothing to explain", asserted as `intro.scopeLine.open`. It
+   is defensible and it has now twice read to the owner as "the change did not
+   ship", because their own browser holds a full set. A quiet one-line variant
+   for that case is cheap if it is wanted.
 3. **Per-claim reveal.** `missingFrom` still has no consumers, so nothing in the
    app names its own scope (PLAN §3 rule 3) except the sealed table cell's
    accessible name. The Dossier's `faced.noResult` branch is the sharpest case:
    for a reader whose set sealed a result, "nobody numbered either finish" is
    the wrong reason for the right silence.
 4. Then round 17 of the critic loop: `npm run shots`, then `critics.mjs`. Tell it
-   what changed — the third arc state, the coach mark, 쇼미더머니 leaving the
-   registry, the cold open's lead and its returning-reader block — or it will
-   review a product that no longer exists.
+   what changed — the third arc state, the coach mark, the seven works that
+   left the registry, the cold open's lead and its returning-reader block — or
+   it will review a product that no longer exists.
 
 ### `captions.unnamed` — do not start here, and read this before you do
 
