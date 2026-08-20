@@ -3,21 +3,19 @@
 Written 2026-08-19, at the end of a long session, for a fresh chat.
 
 `tsc`, `validate-data` and `vite build` all exit 0. The visual harness runs
-**428 invariants / 408 ok / 0 FAILING / 20 known-open** on `main`, and
-**441 / 415 / 0 / 26** on the one unmerged branch (it adds 13 checks of its own).
+**441 invariants / 420 ok / 0 FAILING / 21 known-open** locally, and
+**441 / 422 / 0 / 19** against the deployed build — the two differ only in which
+of the sampling-sensitive known-open entries happened to fire.
 
 ```
-origin/main   971ab34 -> 21039fe -> here   ← LIVE at bloody-game-x.vercel.app
+origin/main   971ab34 -> cad8fcc   ← LIVE at bloody-game-x.vercel.app
 ```
 
-**Everything from the redaction project is merged and live.** `main` moved 29
-commits in one step and then twice more; production was asserted after the merge
-(402 invariants, 0 FAILING, against bloody-game-x.vercel.app itself) and the
-three proofs in §1 all passed. The old `phase-1-scope-spine` is fully merged and
-can be deleted.
-
-**Nothing is unmerged.** Every branch this session opened is in `main` and
-live, and production was asserted after each merge.
+**Nothing is unmerged.** Every branch this session opened is in `main` and live,
+and production was asserted after each merge — the last one at 441 invariants,
+0 FAILING, against bloody-game-x.vercel.app itself. Five branches are fully
+merged and can be deleted: `phase-0-stop-the-bleeding`, `phase-1-scope-spine`,
+`caption-diagnosis`, `retire-dating-shows`, `caption-legibility-floor`.
 
 ### What shipped this session, in the order a reader meets it
 
