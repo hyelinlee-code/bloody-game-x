@@ -23,11 +23,15 @@ merged and can be deleted: `phase-0-stop-the-bleeding`, `phase-1-scope-spine`,
    returning reader gets a block — 16px title, a sentence, one button — saying
    what is sealed and why the connection count reads what it reads. It replaced
    an 11px chip that the owner correctly said nobody could decode.
-2. **The badge is pointed at.** A first-visit coach mark with a ring, retired
-   only by the badge itself. Its first version was retired by ANY route into the
-   picker, including the cold open's own link, so taking the landing page's
-   invitation cost you the one screen that says where the setting lives. That is
-   why the storage key is `bgx.cue.badge.v2`.
+2. **The badge is pointed at, on every visit.** A card above it plus a ring on
+   the badge itself. It took three rounds to get right and the first two were
+   the same error: a one-shot. Round one retired it on ANY route into the
+   picker, including the cold open's own link; round two bumped the storage key
+   and still spent the whole budget on one showing, which the owner spent
+   testing it. `state/badgeCue.ts` now writes NOTHING — the memory is a module
+   variable, so dismissing puts it away while the page is up and a reload brings
+   it back. Do not reintroduce a persistent flag; that file's docblock says what
+   to persist instead if it is ever really needed.
 3. **The sealed plate mark** — the sixth family, closed. A withheld rank drew
    the beaded ring, whose meaning is "present, not competing", so the atlas told
    an unanswered reader that the season 1 champion had been a panellist. Third
@@ -141,12 +145,13 @@ answered**), the status-bar badge says what is hidden and opens the picker, and
 deep-link arrivals get a banner.
 
 A fourth surface was added this session, and it is the one a reader actually
-meets: **the badge is pointed at, once.** A card above it (`.sbcue`, markup in
-`StatusBar.tsx`) plus a slow ring on the badge itself, for anybody who has never
-opened the picker. `state/badgeCue.ts` holds the flag under its own key —
-`bgx.cue.badge`, deliberately not folded into `bgx.watched`, so dismissing a
-coach mark can never write an exposure decision. It retires when the picker
-opens by ANY route. The owner's report was that the control "너무 숨어있음".
+meets: **the badge is pointed at, every visit.** A card above it (`.sbcue`,
+markup in `StatusBar.tsx`) plus a slow ring on the badge itself.
+`state/badgeCue.ts` keeps the dismissal in a module variable and writes no
+storage at all, so the mark cannot be permanently spent — see §1 item 2 for the
+two rounds that proved it had to work that way. `cue.returnsNextVisit` reloads a
+real page and fails the build if it does not come back; `cue.writesNoPermanentFlag`
+fails it if anything writes `bgx.cue.badge*` again.
 
 Seed a redacted reader in any harness:
 
@@ -156,8 +161,9 @@ ctx.addInitScript(() => localStorage.setItem('bgx.watched', '[]'))
 
 `'[]'` = has watched nothing. A **full 12-id array** = has watched everything.
 In `assert-visual.mjs` do not hand-roll either: pass `watched: 'none' | 'all'`
-to `openPage`, which also pins `bgx.cue.badge` so the coach mark is not in the
-frame of every other measurement.
+to `openPage`. The coach mark is in the frame of every measurement now and that
+is deliberate — it is what a real reader sees — so the suites that must not have
+it dismiss it rather than pre-seeding a flag that no longer exists.
 
 ---
 
@@ -340,12 +346,15 @@ season-2 cohort was five pairs short).
 ## 8. Suggested first moves
 
 1. `npm run check` — confirm 0 failing and read the known-open list.
-2. **Decide whether a fully-open reader is told the control exists.** A reader
-   who has ticked every work gets no scope block on the cold open — the rule is
-   "nothing sealed, nothing to explain", asserted as `intro.scopeLine.open`. It
-   is defensible and it has now twice read to the owner as "the change did not
-   ship", because their own browser holds a full set. A quiet one-line variant
-   for that case is cheap if it is wanted.
+2. **Nothing is owed on the cold open — it is settled, and here is the shape.**
+   One block, two states, one weight: a 16px title, a sentence, one button,
+   whether or not anything is sealed. The sealed state EXPLAINS (its figures are
+   not the dataset's); the open state OFFERS ('결과를 가려 둘 수 있습니다' —
+   naming the feature, because that reader is the one who will otherwise never
+   look at the badge). An earlier round made the open case an 11px line and
+   pinned it there with `max: 13`; the owner read it on the live site and could
+   not tell what it meant. `intro.openBlockPx >= 15` is the floor that replaced
+   that ceiling. Do not make either state quieter than the other.
 3. **Per-claim reveal.** `missingFrom` still has no consumers, so nothing in the
    app names its own scope (PLAN §3 rule 3) except the sealed table cell's
    accessible name. The Dossier's `faced.noResult` branch is the sharpest case:
