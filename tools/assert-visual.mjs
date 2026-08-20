@@ -2617,8 +2617,34 @@ async function suiteRedaction(browser, base) {
       {
         const { ctx, page } = await openPage(browser, base, { viewport: vp, lang, dpr: 1, watched: 'all' });
         await page.waitForTimeout(1400);
-        const scope = await page.evaluate(() => (document.querySelector('.intro__scope') ? 1 : 0));
-        check(`intro.scopeLine.open.${tag}`, scope, { eq: 0, note: 'nothing sealed, nothing to explain' });
+        const open = await page.evaluate(() => {
+          const heavy = document.querySelector('.intro__scope');
+          const line = document.querySelector('.intro__open');
+          const act = document.querySelector('.intro__open-act');
+          const px = (e) => (e ? Math.round(parseFloat(getComputedStyle(e).fontSize)) : null);
+          return {
+            heavy: heavy ? 1 : 0,
+            line: line ? 1 : 0,
+            px: px(line),
+            actLen: (act?.textContent || '').trim().length,
+          };
+        });
+        /* The EXPLAINING block belongs to a reader whose figures need
+           explaining. This one's figures are the dataset. */
+        check(`intro.scopeLine.open.${tag}`, open.heavy, { eq: 0, note: 'nothing sealed, nothing to explain' });
+        /* But the slot is not empty. Leaving it empty was the documented rule
+           and it cost the owner two rounds of reading an unchanged screen as a
+           feature that never shipped — their own browser holds a full set, so
+           the state they meet is the one that said nothing. */
+        check(`intro.openLine.${tag}`, open.line, { eq: 1, note: 'a fully-open reader is still told where the setting is' });
+        check(`intro.openLineAction.${tag}`, open.actLen, { min: 4, note: 'and it names the door rather than only the state' });
+        /* AND IT STAYS QUIET. The sealed title is held at >= 15px by
+           `intro.scopeTitlePx`; this is held under it, from the other side, so
+           the two cannot converge into one weight and lose the distinction
+           between explaining and confirming. */
+        check(`intro.openLinePx.${tag}`, open.px, {
+          max: 13, unit: 'px', note: 'a confirmation may not be built like an explanation',
+        });
         await ctx.close();
       }
     }

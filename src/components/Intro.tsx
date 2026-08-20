@@ -316,7 +316,7 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
       if (
         e.key !== 'Escape' &&
         e.target instanceof HTMLElement &&
-        e.target.closest('.wpq-btn, .intro__scope')
+        e.target.closest('.wpq-btn, .intro__scope, .intro__open')
       )
         return;
       e.preventDefault();
@@ -547,10 +547,34 @@ export function Intro({ dataset, onDone, onDismissBegin, onOpenPicker }: IntroPr
                   reader who meets the badge at the foot of the atlas thirty
                   seconds later recognises the sentence they have already read.
 
-                  ONLY WHEN SOMETHING IS SEALED. For a reader who opened
-                  everything the figures are the whole dataset, there is no
-                  anomaly to explain, and a line saying so would be chrome
-                  reporting its own default back at them. */}
+                  TWO WEIGHTS, BECAUSE THERE ARE TWO JOBS. When something is
+                  sealed the block EXPLAINS: the figures above it are not the
+                  dataset's, and a reader owed that explanation gets a 16px
+                  title and a sentence.
+
+                  When nothing is sealed it CONFIRMS, in one quiet line, and an
+                  earlier version of this comment argued it should not exist at
+                  all — "chrome reporting its own default back at them". That
+                  was wrong twice over. It is not the default: the default is
+                  fully sealed, so a reader seeing this line chose it. And the
+                  omission had a cost that turned up in practice — the owner,
+                  whose own browser holds a full set, twice read the unchanged
+                  screen as proof the feature had never shipped. A reader who
+                  has opened everything is precisely the one with no other
+                  reason to look at the badge.
+
+                  So: same slot, same door, a tenth of the weight. */}
+              {sealedWorks === 0 && (
+                /* `watched.hiddenNone` and `watched.open` — the picker's own
+                   words for this state and for its own door. A third phrasing
+                   of "nothing is hidden" is a third thing to keep true. */
+                <p className="intro__open">
+                  <span className="intro__open-state">{t(lang, 'watched.hiddenNone')}</span>
+                  <button type="button" className="intro__open-act" onClick={openScope}>
+                    {t(lang, 'watched.open')}
+                  </button>
+                </p>
+              )}
               {sealedWorks > 0 && (
                 <div className="intro__scope">
                   <p className="intro__scope-title">
