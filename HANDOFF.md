@@ -1,36 +1,57 @@
 # HANDOFF — Bloody Game X cast atlas
 
-Written 2026-08-13, at the end of a long session, for a fresh chat.
+Written 2026-08-19, at the end of a long session, for a fresh chat.
 
-`tsc`, `validate-data` and `vite build` all exit 0; the visual harness runs
-**378 invariants / 363 ok / 0 FAILING / 15 known-open** — and the profile it
-measures is now pinned rather than accidental, which is why the known-open list
-moved. See §4.
+`tsc`, `validate-data` and `vite build` all exit 0. The visual harness runs
+**428 invariants / 408 ok / 0 FAILING / 20 known-open** on `main`, and
+**441 / 415 / 0 / 26** on the one unmerged branch (it adds 13 checks of its own).
 
 ```
-origin/main          971ab34   ← LIVE at bloody-game-x.vercel.app
-phase-1-scope-spine            ← ahead of main. Current branch. Pushed.
+origin/main                971ab34 -> f9fa7b1   ← LIVE at bloody-game-x.vercel.app
+caption-legibility-floor   18fa34d              ← 1 commit, pushed, NOT merged
 ```
 
-**Pushed, and the preview has been asserted. Not merged.** The owner reads each
-preview before it becomes production; merging is the deploy, so it waits for
-them. Run the three proofs in §1 against the newest preview before any merge —
-they are cheap and the last one has caught something every time.
+**Everything from the redaction project is merged and live.** `main` moved 29
+commits in one step and then twice more; production was asserted after the merge
+(402 invariants, 0 FAILING, against bloody-game-x.vercel.app itself) and the
+three proofs in §1 all passed. The old `phase-1-scope-spine` is fully merged and
+can be deleted.
 
-### What the last preview round found, because it is the lesson and not the fix
+**One branch is waiting on a decision, not on work.**
+`caption-legibility-floor` adds a hard floor of 9px under any painted name and
+publishes the size the painter actually set. It changes no visible pixel today —
+every state already sits above the floor — so merging it is safe and leaving it
+unmerged loses only the trap it closes. See §5.
 
-Two runs of this gate went red on the MOBILE HOVER profile in two different
-ways — `facesProbed 0` on one, a 37.9% face-luma drop on the next — and neither
-was a defect in the app. Both were the rest BASELINE being sampled while the
-scene was still arriving, and every reading in that suite is a ratio against it.
-`settledCores` now makes the baseline agree with itself before anything is
-measured against it, and `hover.restSettled.*` fails loudly when a scene never
-comes to rest.
+### What shipped this session, in the order a reader meets it
 
-The rule that got this right, and it is worth keeping: **measure the anomaly
-before believing it.** Five hand-driven passes on the failing build put the
-"38% darker" face at 0.3–1.4% BRIGHTER. Widening the threshold would have hidden
-a real defect the day one turned up; the threshold is the claim.
+1. **The cold open explains itself.** The question now names its subject, and a
+   returning reader gets a block — 16px title, a sentence, one button — saying
+   what is sealed and why the connection count reads what it reads. It replaced
+   an 11px chip that the owner correctly said nobody could decode.
+2. **The badge is pointed at.** A first-visit coach mark with a ring, retired
+   only by the badge itself. Its first version was retired by ANY route into the
+   picker, including the cold open's own link, so taking the landing page's
+   invitation cost you the one screen that says where the setting lives. That is
+   why the storage key is `bgx.cue.badge.v2`.
+3. **The sealed plate mark** — the sixth family, closed. A withheld rank drew
+   the beaded ring, whose meaning is "present, not competing", so the atlas told
+   an unanswered reader that the season 1 champion had been a panellist. Third
+   arc state, both painters, the legend and the career table, in one commit.
+4. **쇼미더머니 left the registry** by the owner's call — 19 works to 14. The
+   rows still render for every reader; only the sealing stopped.
+5. **All/none on every filter-rail section**, and the blocs gained the pair they
+   never had.
+
+### The lesson from this session, because it is the reusable half
+
+**Measure the anomaly before believing it, and measure the fix before keeping
+it.** Three separate times a confident answer was wrong until something counted:
+a "38% darker face" that was a baseline sampled mid-arrival; a caption fix that
+moved 16 names to 14 until the UNCHANGED build also measured 14; and a shrink
+ladder whose first rung was already under the legibility floor on the viewport
+where most of the drops are. Two of those three shipped nothing. The gate is
+worth what it costs only if a green run can still be disbelieved.
 
 ---
 
@@ -321,19 +342,48 @@ season-2 cohort was five pairs short).
 
 ## 8. Suggested first moves
 
-1. `npm run check` — confirm 0 failing and read the known-open list. It is longer
-   than the 11 the last handoff quoted, and §4 says why: the same defects,
-   measured at full exposure for the first time since Phase 4.
-2. **Work the known-open list down, starting with `captions.unnamed`** (5/13).
-   It is the one the eye actually meets, and it is now honestly measured — a fix
-   there is a fix a reader sees.
+1. `npm run check` — confirm 0 failing and read the known-open list.
+2. **Decide `caption-legibility-floor`.** One commit, pushed, changes no pixel.
+   Merge it or don't; it only closes a trap. §5 has the argument.
 3. **Per-claim reveal.** `missingFrom` still has no consumers, so nothing in the
    app names its own scope (PLAN §3 rule 3) except the sealed table cell's
-   accessible name. The Dossier's `faced.noResult` branch is the sharpest case.
+   accessible name. The Dossier's `faced.noResult` branch is the sharpest case:
+   for a reader whose set sealed a result, "nobody numbered either finish" is
+   the wrong reason for the right silence.
 4. Then round 17 of the critic loop: `npm run shots`, then `critics.mjs`. Tell it
    what changed — the third arc state, the coach mark, 쇼미더머니 leaving the
-   registry, the cold open's lead and its returning-reader line — or it will
+   registry, the cold open's lead and its returning-reader block — or it will
    review a product that no longer exists.
+
+### `captions.unnamed` — do not start here, and read this before you do
+
+Four people in the dense middle go unnamed — 홍진호, 이진형, 박지민, 정근우 —
+and this session spent itself proving which fixes do NOT work. The count is now
+split into the two failures it had been conflating, per state:
+
+    captions.dropReason.stray    13 of 16 — seats FOUND, every one refused
+    captions.dropReason.noSeat    3 of 16 — nowhere legal for the box at all
+
+**Tried and reverted, with numbers, so nobody repeats them:**
+
+- *A 61-seat probe grid* (16 bearings, two radii, closed-form corner standoff,
+  honesty tested against discs behind panels too). Worked as designed — probes
+  taken up to 9 times a state, every one honest. Moved `unnamed` 16 → 14. Then
+  the UNCHANGED build measured 14 as well. The gain was run-to-run noise.
+- *Taxing the probes* so the fixed inventory wins ties: worse (16 → 15). The
+  movement is redistribution, not churn — a label taking a probe VACATES a fixed
+  seat a cramped neighbour then takes.
+- *A per-node shrink ladder.* Cannot start: on the phone `nameSize` is already
+  10.2px, so rung one is 9.18px, under the floor. Forcing a 7px floor recovers
+  two of the four at 7.2px — i.e. the lever works only by making names
+  unreadable, and `captions.unnamed` counts labels rather than legible ones, so
+  it would have scored as a win.
+
+**What that leaves.** These four sit in a cluster interior whose Voronoi cell is
+narrower than the caption box. Honest, legible, and off other faces — pick two.
+The untried lever is re-opening the own-face seat round 15 withdrew, which
+recovers them at the price of `captions.overPlate`. That is a product decision,
+not a solver one, and it is the owner's.
 
 ### Still owed, and named so it is not rediscovered
 
@@ -341,16 +391,14 @@ season-2 cohort was five pairs short).
   badge does it at rest and the picker does it in full. If a third surface ever
   needs to, take the words from `status.watchedBadge` rather than writing a
   fourth phrasing of one state.
-- **`intro.askSkip` still says the badge is at the foot of the screen** and that
-  is now true twice over — the returning curtain names it too. Fine, but if the
-  badge ever moves, three strings move with it.
 - **`.intro` overflows its own viewport at 720px** — `scrollHeight` 816 against a
-  720 client — which is PRE-EXISTING and unrelated to the lead (measured: the
-  scroll height is identical with the lead hidden). It does not clip on a fresh
-  load, but a focus scroll can shift the masthead off the top. Nobody has
-  reported it; it is written down so the next person measures before blaming the
-  lead.
+  720 client — PRE-EXISTING and unrelated to the lead (measured: identical with
+  the lead hidden). It does not clip on a fresh load, but a focus scroll can
+  shift the masthead off the top. Written down so the next person measures
+  before blaming the lead.
+- **The dossier's `faced.noResult` branch**, above — the last place a sealed
+  reader is given a wrong reason rather than a named silence.
 
-Merge to `main` only after a preview run comes back clean. Every commit on this
-branch is verified; nothing is merged yet, and the merge is the owner's call
-because the merge is the deploy.
+The release discipline in §1 still holds and still earns its keep: branch, push,
+let Vercel build, run the three proofs against the preview, and only then merge.
+The merge is the deploy, so the merge is the owner's call.
